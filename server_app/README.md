@@ -1,0 +1,41 @@
+# Server application for continuous waste detection
+
+Meaning of the parameters in `config.json` file:
+
+- `SATELLITE_TYPE`: Name of the satellite that took the images.
+- `DATA_FILE_PATH`: Path of the GeoJSON file containing the AOIs.
+- `OBSERVATION_SPAN_IN_DAYS`: Number of days to analyze.
+- `MAX_CLOUD_COVER`: Cloud coverage in percentage.
+- `DOWNLOAD_DIR_PLANETSCOPE`: Download destination of PlanetScope images.
+- `DOWNLOAD_DIR_SENTINEL-2`: Download destination of Sentinel-2 images.
+- `ESTIMATIONS_FILE_PATH`: Path of the file that will contain the estimation of the polluted areas' extension.
+- `PLANET_API_KEY`: Planet Account API key.
+- `SENTINEL_SH_CLIENT_ID`: Account OAuth client ID in SentinelHub.
+- `SENTINEL_INSTANCE_ID`: Account User ID in SentinelHub.
+- `SENTINEL_SH_CLIENT_SECRET`: Account OAuth Secret in SentinelHub.
+- `CLF_PATH`: Path of Random Forest classifier.
+- `CLASSIFICATION_POSTFIX`: File name postfix of classified image.
+- `HEATMAP_POSTFIX`: File name postfix of heatmap image.
+- `MASKED_CLASSIFICATION_POSTFIX`: File name postfix of masked classified image.
+- `MASKED_HEATMAP_POSTFIX`: File name postfix of masked heatmap image.
+- `FILE_EXTENSION`: Extension of result images.
+- `GARBAGE_C_ID`: Class ID of garbage class.
+- `WATER_C_ID`: Class ID of water class.
+- `MORPHOLOGY_MATRIX_SIZE`: Matrix size (N x N) of kernel in morphological transformations.
+- `MORPHOLOGY_ITERATIONS`: Number of iterations in morphological transformations.
+- `PLANET_ITEM_TYPE`: Represents the class of spacecraft and/or processing level of an item (in the Planet API, an item is an entry in our catalog, and generally represents a single logical observation (or scene) captured by a satellite).
+- `PLANET_ORDERS_URL`: URL for placing orders using Planet API.
+- `PLANET_SEARCH_URL`: URL for searching images using Planet API.
+- `DOWNLOAD_START_TIME`: Start time of downloading.
+- `FIRST_SENTINEL-2_DATE`: Date of first ever acquisition of Sentinel-2.
+- `LOW_PROB_PERCENT`: Threshold percentage of the classifier's prediction confidence for low probability.
+- `MEDIUM_PROB_PERCENT`: Threshold percentage of the classifier's prediction confidence for medium probability.
+- `HIGH_PROB_PERCENT`: Threshold percentage of the classifier's prediction confidence for high probability.
+- `SENTINEL_BLUE_BAND`: The index of the Blue band on the Sentinel-2 image.
+- `SENTINEL_GREEN_BAND`: The index of the Green band on the Sentinel-2 image.
+- `SENTINEL_RED_BAND`: The index of the Red band on the Sentinel-2 image.
+- `SENTINEL_NIR_BAND`: The index of the NIR band on the Sentinel-2 image.
+- `PLANETSCOPE_BLUE_BAND`: The index of the Blue band on the PlanetScope image.
+- `PLANETSCOPE_GREEN_BAND`: The index of the Green band on the PlanetScope image.
+- `PLANETSCOPE_RED_BAND`: The index of the Red band on the PlanetScope image.
+- `PLANETSCOPE_NIR_BAND`: The index of the NIR band on the PlanetScope image.
