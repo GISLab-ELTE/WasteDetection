@@ -2,4 +2,4 @@
 
 This is the working directory of the application.
 
-The new downloads will be here. 
+The results of processes will be here.
