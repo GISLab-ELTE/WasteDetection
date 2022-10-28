@@ -1,0 +1,44 @@
+@import "node_modules/ol/ol.css";
+
+html, body {
+  overflow: hidden;
+  padding: 0;
+  height: 100%;
+  font-family: 'Lucida Grande',Geneva,Arial,Verdana,sans-serif;
+}
+body {
+  position: relative;
+  margin: 10px;
+  background: #FFF;
+}
+h1 {
+  margin: 0;
+  padding: 6px;
+  border: 0;
+  font-size: 20pt;
+}
+#header {
+  height: 43px;
+  padding: 0;
+  background-color: #EEE;
+  border: 1px solid #888;
+}
+#map {
+  position: absolute;
+  top: 100px;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  border: 1px solid #888;
+}
+#type {
+  padding: 6px;
+  margin: 12px;
+  font-size: 12pt;
+}
+#swipe {
+  position: absolute;
+  margin-top: 21px;
+  margin-left: 10px;
+  width: 79%;
+}

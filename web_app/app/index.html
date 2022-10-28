@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="https://openlayers.org/favicon.ico" />
+    <link rel="stylesheet" href="https://unpkg.com/ol-layerswitcher@4.1.0/dist/ol-layerswitcher.css" />
+    <!-- <link rel="stylesheet" href="https://unpkg.com/ol-popup@5.0.0/src/ol-popup.css" /> -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Műanyag hulladék megfigyelés</title>
+  </head>
+  <body>
+    <div id="header"><h1>Műanyag hulladék megfigyelés</h1></div>
+    <div id="map"></div>
+    <form>
+      <label for="type">Helyszín: &nbsp;</label>
+      <select id="type">
+        <option value="kiskore" selected>Kisköre</option>
+        <option value="kanyahaza">Kányaházi tó</option>
+        <option value="pusztazamor">Pusztazámor</option>
+        <option value="raho">Rahó</option>
+      </select>
+      <label id="date" for="type">Dátum: &nbsp;</label>
+      <input id="swipe" type="range" min="0" max="4" value="0">
+    </form>
+
+    <script src="https://unpkg.com/elm-pep@1.0.6/dist/elm-pep.js"></script>
+    <!-- <script src="https://unpkg.com/ol-layerswitcher@4.1.0"></script> -->
+    <!-- <script src="https://unpkg.com/ol-popup@5.0.0"></script> -->
+    <!-- <script src="https://unpkg.com/ol-layerswitcher@4.1.0"></script> -->
+    
+    <!-- Kiskore -->
+    <script src="resources/Kiskore/2019-05-02/kiskore_20190502_classified.js"></script>
+    <script src="resources/Kiskore/2019-05-02/kiskore_20190502_heatmap_high.js"></script>
+    <script src="resources/Kiskore/2019-05-02/kiskore_20190502_heatmap_low.js"></script>
+    <script src="resources/Kiskore/2019-05-02/kiskore_20190502_heatmap_medium.js"></script>
+
+    <script src="resources/Kiskore/2019-07-02/kiskore_20190702_classified.js"></script>
+    <script src="resources/Kiskore/2019-07-02/kiskore_20190702_heatmap_high.js"></script>
+    <script src="resources/Kiskore/2019-07-02/kiskore_20190702_heatmap_low.js"></script>
+    <script src="resources/Kiskore/2019-07-02/kiskore_20190702_heatmap_medium.js"></script>
+
+    <script src="resources/Kiskore/2019-09-02/kiskore_20190902_classified.js"></script>
+    <script src="resources/Kiskore/2019-09-02/kiskore_20190902_heatmap_high.js"></script>
+    <script src="resources/Kiskore/2019-09-02/kiskore_20190902_heatmap_low.js"></script>
+    <script src="resources/Kiskore/2019-09-02/kiskore_20190902_heatmap_medium.js"></script>
+
+    <script src="resources/Kiskore/2020-07-05/kiskore_20200705_classified.js"></script>
+    <script src="resources/Kiskore/2020-07-05/kiskore_20200705_heatmap_high.js"></script>
+    <script src="resources/Kiskore/2020-07-05/kiskore_20200705_heatmap_low.js"></script>
+    <script src="resources/Kiskore/2020-07-05/kiskore_20200705_heatmap_medium.js"></script>
+    
+    <script src="resources/Kiskore/2020-08-01/kiskore_20200801_classified.js"></script>
+    <script src="resources/Kiskore/2020-08-01/kiskore_20200801_heatmap_high.js"></script>
+    <script src="resources/Kiskore/2020-08-01/kiskore_20200801_heatmap_low.js"></script>
+    <script src="resources/Kiskore/2020-08-01/kiskore_20200801_heatmap_medium.js"></script>
+    
+    <!-- Kanyahaza -->
+    <script src="resources/Kanyahaza/2020-09-16/kanyahaza_20200916_classified.js"></script>
+    <script src="resources/Kanyahaza/2020-09-16/kanyahaza_20200916_heatmap_high.js"></script>
+    <script src="resources/Kanyahaza/2020-09-16/kanyahaza_20200916_heatmap_low.js"></script>
+    <script src="resources/Kanyahaza/2020-09-16/kanyahaza_20200916_heatmap_medium.js"></script>
+
+    <script src="resources/Kanyahaza/2021-04-10/kanyahaza_20210410_classified.js"></script>
+    <script src="resources/Kanyahaza/2021-04-10/kanyahaza_20210410_heatmap_high.js"></script>
+    <script src="resources/Kanyahaza/2021-04-10/kanyahaza_20210410_heatmap_low.js"></script>
+    <script src="resources/Kanyahaza/2021-04-10/kanyahaza_20210410_heatmap_medium.js"></script>
+
+    <script src="resources/Kanyahaza/2021-07-09/kanyahaza_20210709_classified.js"></script>
+    <script src="resources/Kanyahaza/2021-07-09/kanyahaza_20210709_heatmap_high.js"></script>
+    <script src="resources/Kanyahaza/2021-07-09/kanyahaza_20210709_heatmap_low.js"></script>
+    <script src="resources/Kanyahaza/2021-07-09/kanyahaza_20210709_heatmap_medium.js"></script>
+
+    <script src="resources/Kanyahaza/2021-07-25/kanyahaza_20210725_classified.js"></script>
+    <script src="resources/Kanyahaza/2021-07-25/kanyahaza_20210725_heatmap_high.js"></script>
+    <script src="resources/Kanyahaza/2021-07-25/kanyahaza_20210725_heatmap_low.js"></script>
+    <script src="resources/Kanyahaza/2021-07-25/kanyahaza_20210725_heatmap_medium.js"></script>
+
+    <script src="resources/Kanyahaza/2021-09-08/kanyahaza_20210908_classified.js"></script>
+    <script src="resources/Kanyahaza/2021-09-08/kanyahaza_20210908_heatmap_high.js"></script>
+    <script src="resources/Kanyahaza/2021-09-08/kanyahaza_20210908_heatmap_low.js"></script>
+    <script src="resources/Kanyahaza/2021-09-08/kanyahaza_20210908_heatmap_medium.js"></script>
+
+    <!-- Pusztazamor -->
+    <script src="resources/Pusztazamor/2021-07-01/pusztazamor_20210701_classified.js"></script>
+    <script src="resources/Pusztazamor/2021-07-01/pusztazamor_20210701_heatmap_high.js"></script>
+    <script src="resources/Pusztazamor/2021-07-01/pusztazamor_20210701_heatmap_low.js"></script>
+    <script src="resources/Pusztazamor/2021-07-01/pusztazamor_20210701_heatmap_medium.js"></script>
+
+    <script src="resources/Pusztazamor/2020-07-01/pusztazamor_20200701_classified.js"></script>
+    <script src="resources/Pusztazamor/2020-07-01/pusztazamor_20200701_heatmap_high.js"></script>
+    <script src="resources/Pusztazamor/2020-07-01/pusztazamor_20200701_heatmap_low.js"></script>
+    <script src="resources/Pusztazamor/2020-07-01/pusztazamor_20200701_heatmap_medium.js"></script>
+
+    <script src="resources/Pusztazamor/2019-06-01/pusztazamor_20190601_classified.js"></script>
+    <script src="resources/Pusztazamor/2019-06-01/pusztazamor_20190601_heatmap_high.js"></script>
+    <script src="resources/Pusztazamor/2019-06-01/pusztazamor_20190601_heatmap_low.js"></script>
+    <script src="resources/Pusztazamor/2019-06-01/pusztazamor_20190601_heatmap_medium.js"></script>
+
+    <script src="resources/Pusztazamor/2018-08-01/pusztazamor_20180801_classified.js"></script>
+    <script src="resources/Pusztazamor/2018-08-01/pusztazamor_20180801_heatmap_high.js"></script>
+    <script src="resources/Pusztazamor/2018-08-01/pusztazamor_20180801_heatmap_low.js"></script>
+    <script src="resources/Pusztazamor/2018-08-01/pusztazamor_20180801_heatmap_medium.js"></script>
+
+    <script src="resources/Pusztazamor/2017-08-01/pusztazamor_20180701_classified.js"></script>
+    <script src="resources/Pusztazamor/2017-08-01/pusztazamor_20180701_heatmap_high.js"></script>
+    <script src="resources/Pusztazamor/2017-08-01/pusztazamor_20180701_heatmap_low.js"></script>
+    <script src="resources/Pusztazamor/2017-08-01/pusztazamor_20180701_heatmap_medium.js"></script>
+
+    <!-- Raho -->
+    <script src="resources/Raho/2020-09-10/raho_20200910_classified.js"></script>
+    <script src="resources/Raho/2020-09-10/raho_20200910_heatmap_high.js"></script>
+    <script src="resources/Raho/2020-09-10/raho_20200910_heatmap_low.js"></script>
+    <script src="resources/Raho/2020-09-10/raho_20200910_heatmap_medium.js"></script>
+
+    <script src="resources/Raho/2020-09-23/raho_20200923_classified.js"></script>
+    <script src="resources/Raho/2020-09-23/raho_20200923_heatmap_high.js"></script>
+    <script src="resources/Raho/2020-09-23/raho_20200923_heatmap_low.js"></script>
+    <script src="resources/Raho/2020-09-23/raho_20200923_heatmap_medium.js"></script>
+
+    <script src="resources/Raho/2021-06-21/raho_20210621_classified.js"></script>
+    <script src="resources/Raho/2021-06-21/raho_20210621_heatmap_high.js"></script>
+    <script src="resources/Raho/2021-06-21/raho_20210621_heatmap_low.js"></script>
+    <script src="resources/Raho/2021-06-21/raho_20210621_heatmap_medium.js"></script>
+
+    <script src="resources/Raho/2021-08-01/raho_20210801_classified.js"></script>
+    <script src="resources/Raho/2021-08-01/raho_20210801_heatmap_high.js"></script>
+    <script src="resources/Raho/2021-08-01/raho_20210801_heatmap_low.js"></script>
+    <script src="resources/Raho/2021-08-01/raho_20210801_heatmap_medium.js"></script>
+
+    <script src="resources/Raho/2021-09-09/raho_20210909_classified.js"></script>
+    <script src="resources/Raho/2021-09-09/raho_20210909_heatmap_high.js"></script>
+    <script src="resources/Raho/2021-09-09/raho_20210909_heatmap_low.js"></script>
+    <script src="resources/Raho/2021-09-09/raho_20210909_heatmap_medium.js"></script>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
