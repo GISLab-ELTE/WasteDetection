@@ -19,6 +19,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from ttkbootstrap.dialogs.colorchooser import ColorChooserDialog
 
 
+
 MAX_PIXEL_COUNT = 40000000
 
 
@@ -262,6 +263,7 @@ class Controller(object):
         :return: None
         """
 
+        self._view.training_view.load_csv_btn.configure(command=self._training_load_csv)
         self._view.training_view.back_btn.configure(command=self._training_on_closing)
         self._view.training_view.open_input_img_btn.configure(command=self._training_open_files)
         self._view.training_view.delete_input_img_btn.configure(command=self._training_delete_files)
@@ -1719,6 +1721,24 @@ class Controller(object):
         """
 
         self._view.training_view.zoom_canvas.wheel(event)
+
+    def _training_load_csv(self) -> None:
+        """
+        Handles training data loading
+        :return: None
+        """
+        csvFileName = self._open_files()[0]
+
+        if csvFileName:
+            name, extension = os.path.splitext(csvFileName)
+            self._model.create_and_save_random_forest(name + extension, name + '.sav')
+
+            tkinter.messagebox.showinfo(
+                parent=self._view.training_view.zoom_canvas,
+                title="Training info",
+                message="Training is complete!\nGo to Settings to reconfigure application!"
+            )    
+
 
     def _training_on_closing(self) -> None:
         """

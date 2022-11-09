@@ -683,43 +683,9 @@ class Model(object):
             except Exception as exc:
                 raise NotEnoughBandsException(img.count, max([blue_ind, green_ind, red_ind, nir_ind]), input_path) from None
 
-            # calculate indices
-            # PI = NIR / (NIR + RED)
-            # NDWI = (GREEN - NIR) / (GREEN + NIR)
-            # NDVI = (NIR - RED) / (NIR + RED)
-            # RNDVI = (RED - NIR) / (RED + NIR)
-            # SR = NIR / RED
+            return Model._calculate_indices(get_list, {"blue": blue, "green": green, "red": red, "nir": nir})
 
-            list_of_bands_and_indices = list()
-
-            for item in get_list:
-                if item == "blue":
-                    list_of_bands_and_indices.append(blue)
-                elif item == "green":
-                    list_of_bands_and_indices.append(green)
-                elif item == "red":
-                    list_of_bands_and_indices.append(red)
-                elif item == "nir":
-                    list_of_bands_and_indices.append(nir)
-                elif item == "pi":
-                    pi = Model._calculate_index(numerator=nir, denominator=nir + red)
-                    list_of_bands_and_indices.append(pi)
-                elif item == "ndwi":
-                    ndwi = Model._calculate_index(numerator=green - nir, denominator=green + nir)
-                    list_of_bands_and_indices.append(ndwi)
-                elif item == "ndvi":
-                    ndvi = Model._calculate_index(numerator=nir - red, denominator=nir + red)
-                    list_of_bands_and_indices.append(ndvi)
-                elif item == "rndvi":
-                    rndvi = Model._calculate_index(numerator=red - nir, denominator=red + nir)
-                    list_of_bands_and_indices.append(rndvi)
-                elif item == "sr":
-                    sr = Model._calculate_index(numerator=nir, denominator=red)
-                    list_of_bands_and_indices.append(sr)
-
-            return list_of_bands_and_indices
-
-    def save_bands_indices(
+    def _save_bands_indices(
             self, satellite_type: str, input_path: str, save: str,
             working_dir: str, postfix: str, file_extension: str) -> str:
         """
@@ -1042,12 +1008,21 @@ class Model(object):
         """
 
         # read training data
-        df = pd.read_csv(training_data_path, sep=';')
+        df = pd.read_csv(training_data_path, sep=';', index_col="FID")
 
-        # narrow training data
+        # introduce noise in data
+        # dataframes_to_merge = [df]
+        # for _ in range(1,10):
+        #     dataframes_to_merge.append(Model._make_noisy_data(df))
+        # df = pd.concat(dataframes_to_merge, ignore_index=True)
+        
+        # df.index.name="FID"      
+        # df.to_csv("E:/Programozas/Hulladekdetektalas/Satellite image/sentinel2/models/noisy_data.csv", sep=";")
+        
+        #narrow training data
         data = df[column_names]
         label = df[label_names]
-        label = np.ravel(label)
+        label = np.ravel(label).astype(str)
 
         # make classification
         clf = RandomForestClassifier(n_estimators=estimators, n_jobs=-1)
@@ -1055,6 +1030,76 @@ class Model(object):
 
         # return random forest for later use
         return clf
+
+    @staticmethod
+    def _calculate_indices(get_list: list[str], bands: dict[str, np.ndarray]) -> List[np.ndarray]:
+            # calculate indices
+            # PI = NIR / (NIR + RED)
+            # NDWI = (GREEN - NIR) / (GREEN + NIR)
+            # NDVI = (NIR - RED) / (NIR + RED)
+            # RNDVI = (RED - NIR) / (RED + NIR)
+            # SR = NIR / RED
+            blue = bands["blue"]
+            green = bands["green"]
+            red = bands["red"]
+            nir = bands["nir"]
+
+            list_of_bands_and_indices = list()
+            for item in get_list:
+                if item == "blue":
+                    list_of_bands_and_indices.append(blue)
+                elif item == "green":
+                    list_of_bands_and_indices.append(green)
+                elif item == "red":
+                    list_of_bands_and_indices.append(red)
+                elif item == "nir":
+                    list_of_bands_and_indices.append(nir)
+                elif item == "pi":
+                    pi = Model._calculate_index(numerator=nir, denominator=nir + red)
+                    list_of_bands_and_indices.append(pi)
+                elif item == "ndwi":
+                    ndwi = Model._calculate_index(numerator=green - nir, denominator=green + nir)
+                    list_of_bands_and_indices.append(ndwi)
+                elif item == "ndvi":
+                    ndvi = Model._calculate_index(numerator=nir - red, denominator=nir + red)
+                    list_of_bands_and_indices.append(ndvi)
+                elif item == "rndvi":
+                    rndvi = Model._calculate_index(numerator=red - nir, denominator=red + nir)
+                    list_of_bands_and_indices.append(rndvi)
+                elif item == "sr":
+                    sr = Model._calculate_index(numerator=nir, denominator=red)
+                    list_of_bands_and_indices.append(sr)
+            return list_of_bands_and_indices
+    
+    @staticmethod
+    def _make_noisy_data(data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Adds noise to given dataframe
+        :param data: the dataframe to add noise to
+        :return: A dataframe that has noisy data added to it.
+        """
+
+        data_copy = data.copy()[["BLUE", "GREEN", "RED", "NIR", "PI", "NDWI", "NDVI", "RNDVI", "SR"]]
+        noise = (np.random.normal(0, .1, data_copy.shape) * 1000).astype(int)
+        data_copy = data_copy + noise
+        bands = {
+            "blue": np.expand_dims(data_copy["BLUE"].to_numpy(), axis=0),
+            "green": np.expand_dims(data_copy["GREEN"].to_numpy(), axis = 0),
+            "red": np.expand_dims(data_copy["RED"].to_numpy(), axis = 0),
+            "nir": np.expand_dims(data_copy["NIR"].to_numpy(), axis = 0)
+        }
+
+        requested_indices = [col.lower() for col in data_copy.columns]
+        labels = [data["SURFACE"].to_numpy(),data["COD"].to_numpy()]
+        indices = [id.flatten() for id in Model._calculate_indices(requested_indices, bands)]
+        labels_indices = [pd.Series(col) for col in labels + indices]
+
+        data_noisy = pd.DataFrame(labels_indices).T
+        data_noisy.columns = data.columns
+        data_noisy.index.name = "FID"
+        
+        return data_noisy
+            
 
     @staticmethod
     def _get_coords_inside_polygon(polygon_coords: List[float], bbox_coords: Tuple[int, ...]) -> List[Tuple[int, int]]:
@@ -1101,7 +1146,7 @@ class Model(object):
             for path in input_paths:
                 file_name = "".join(path.split(".")[:-1]).split("/")[-1]
                 file_names.append(file_name)
-            output_path = working_dir + "/" + "_".join(file_names) + postfix + "." + output_file_extension
+                output_path = working_dir + "/" + "_".join(file_names) + postfix + "." + output_file_extension
         return output_path
 
     @staticmethod

@@ -37,6 +37,10 @@ class TrainingView(ttk.Toplevel):
 
     # Class properties
     @property
+    def load_csv_btn(self) -> ttk.Button:
+        return self._load_csv_btn
+
+    @property
     def back_btn(self) -> ttk.Button:
         return self._back_btn
 
@@ -301,6 +305,7 @@ class TrainingView(ttk.Toplevel):
 
         # initialize user action components
         self._action_lf = ttk.Labelframe(master=self)
+        self._load_csv_btn = ttk.Button(master=self._action_lf)
         self._back_btn = ttk.Button(master=self._action_lf)
         self._open_input_img_btn = ttk.Button(master=self._action_lf)
         self._delete_input_img_btn = ttk.Button(master=self._action_lf)
@@ -341,6 +346,7 @@ class TrainingView(ttk.Toplevel):
 
         # configure user action components
         self._action_lf.configure(text="Actions", padding=10)
+        self._load_csv_btn.configure(text="Load training data")
         self._back_btn.configure(text="Back to main window")
         self._open_input_img_btn.configure(text="Open training image")
         self._delete_input_img_btn.configure(text="Delete training image")
@@ -420,6 +426,7 @@ class TrainingView(ttk.Toplevel):
 
         # style user action components
         self._action_lf["bootstyle"] = "default"
+        self._load_csv_btn["bootstyle"] = "dark"
         self._back_btn["bootstyle"] = "dark"
         self._open_input_img_btn["bootstyle"] = "primary"
         self._delete_input_img_btn["bootstyle"] = "danger"
@@ -454,7 +461,8 @@ class TrainingView(ttk.Toplevel):
 
         # place user action components
         self._action_lf.place(x=20, y=10, height=870, width=400)
-        self._back_btn.grid(row=0, column=0, columnspan=2, sticky="ns", padx=5, pady=5)
+        self._load_csv_btn.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        self._back_btn.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         self._open_input_img_btn.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
         self._delete_input_img_btn.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
 
