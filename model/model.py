@@ -322,18 +322,29 @@ class Model(object):
             bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
                                                         training_labels)
 
+            labeled_image = np.zeros(shape=bands_and_indices[0].shape, dtype=np.int32)
             for mc_id in usable_training_data[training_file].keys():
                 mc_name, coords, bbox_coords = usable_training_data[training_file][mc_id]
                 for i in range(len(coords)):
                     indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
                     for y, x in indices:
                         line = [fid, mc_name, mc_id * 100]
+                        labeled_image[x, y] = mc_id
 
                         for value in bands_and_indices:
                             line.append(value[x, y])
 
                         fid += 1
                         training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=True)
+            
+            stripped_path, extension = os.path.splitext(training_file)
+            labeled_image_path = stripped_path + "_classified" + extension
+            Model._save_tif(
+                input_path=training_file, 
+                array=[labeled_image], 
+                shape=labeled_image.shape, 
+                band_count=1,
+                output_path=labeled_image_path)      
 
         return training_df
 
@@ -521,7 +532,7 @@ class Model(object):
             if not os.path.exists(file):
                 were_wrong_pictures = True
                 continue
-            tmp_file = self.save_bands_indices(
+            tmp_file = self._save_bands_indices(
                 satellite_type=self._persistence.settings["SATELLITE_TYPE"],
                 input_path=file,
                 save=training_labels,
@@ -1032,7 +1043,7 @@ class Model(object):
         return clf
 
     @staticmethod
-    def _calculate_indices(get_list: list[str], bands: dict[str, np.ndarray]) -> List[np.ndarray]:
+    def _calculate_indices(get_list: List[str], bands: Dict[str, np.ndarray]) -> List[np.ndarray]:
             # calculate indices
             # PI = NIR / (NIR + RED)
             # NDWI = (GREEN - NIR) / (GREEN + NIR)
