@@ -1612,7 +1612,7 @@ class Controller(object):
 
                 return
 
-            df = self._model.create_training_df(usable_data)
+            (df, labeled_images) = self._model.create_training_df(usable_data)
             df.sort_values(by=["FID", "COD"], inplace=True)
 
             file = self._save_file("sav")
@@ -1620,6 +1620,7 @@ class Controller(object):
                 name, extension = os.path.splitext(file.name)
                 file.close()
                 df.to_csv(name + ".csv", sep=";", index=False)
+                self._model.save_classification_images(labeled_images)
                 self._model.create_and_save_random_forest(name + ".csv", name + extension)
 
                 tkinter.messagebox.showinfo(

@@ -301,12 +301,12 @@ class Model(object):
 
         return usable_training_data, enough_data
 
-    def create_training_df(self, usable_training_data: Dict[str, Dict]) -> pd.DataFrame:
+    def create_training_df(self, usable_training_data: Dict[str, Dict]) -> Tuple[pd.DataFrame, Dict[str, np.ndarray]]:
         """
         Creates a training DataFrame from the filtered training data.
 
         :param usable_training_data: filtered training data Dictionary
-        :return: a DataFrame containing the training data for Random Forest classifier
+        :return: a DataFrame containing the training data for Random Forest classifier and a dictionary containing the labeling data for each image.
         """
 
         column_labels = ["FID", "SURFACE", "COD"]
@@ -318,6 +318,7 @@ class Model(object):
         fid = 1
         training_df = pd.DataFrame(columns=column_labels)
 
+        labeling_data = {}
         for training_file in usable_training_data.keys():
             bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
                                                         training_labels)
@@ -337,22 +338,30 @@ class Model(object):
                         fid += 1
                         training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=True)
             
-            mc_id_mc_name_pairs = {}
-            for tag_data in self.tag_ids[training_file].items():
-               mc_id, (mc_name, color, tags) = tag_data
-               mc_id_mc_name_pairs[str(mc_id)] =
+            labeling_data[training_file] = labeled_image
+        return training_df, labeling_data
 
-            stripped_path, extension = os.path.splitext(training_file)
+    def save_classification_images(self, labeled_images:Dict[str, np.ndarray]) -> None:
+        """
+        Saves the classification images with their metadata next to the image source. The classified image will have the "_classified" suffix associated with it.
+        
+        :param labeled_images: A dictionary containing the label data of each image.
+        """
+        for (image_path, image_data) in labeled_images.items():    
+            mc_id_mc_name_pairs = {}
+            for tag_data in self.tag_ids[image_path].items():
+               mc_id, (mc_name, color, tags) = tag_data
+               mc_id_mc_name_pairs[str(mc_id)] = mc_name
+
+            stripped_path, extension = os.path.splitext(image_path)
             labeled_image_path = stripped_path + "_classified" + extension
             Model._save_tif(
-                input_path=training_file, 
-                array=[labeled_image], 
-                shape=labeled_image.shape, 
+                input_path=image_path, 
+                array=[image_data], 
+                shape=image_data.shape, 
                 band_count=1,
                 output_path=labeled_image_path,
-                metadata=mc_id_mc_name_pairs)      
-
-        return training_df
+                metadata=mc_id_mc_name_pairs)
 
     @staticmethod
     def estimate_garbage_area(
@@ -842,6 +851,7 @@ class Model(object):
 
         return heatmap_pos, heatmap_neg
 
+   
     # Static public methods
     @staticmethod
     def create_garbage_bbox_geojson(input_path: str, file: TextIO, searched_value: List[int]) -> None:
