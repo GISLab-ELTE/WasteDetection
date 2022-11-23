@@ -340,7 +340,7 @@ class Model(object):
             mc_id_mc_name_pairs = {}
             for tag_data in self.tag_ids[training_file].items():
                mc_id, (mc_name, color, tags) = tag_data
-               mc_id_mc_name_pairs[str(mc_id)] =
+               mc_id_mc_name_pairs[str(mc_id)] = mc_name
 
             stripped_path, extension = os.path.splitext(training_file)
             labeled_image_path = stripped_path + "_classified" + extension
