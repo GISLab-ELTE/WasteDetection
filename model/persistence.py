@@ -57,6 +57,7 @@ class Persistence(object):
         self.training_label_ndvi = None
         self.training_label_rndvi = None
         self.training_label_sr = None
+        self.training_label_apwi = None
         self.training_estimators = None
         self.garbage_mc_id = None
         self.water_mc_id = None
@@ -154,6 +155,9 @@ class Persistence(object):
             if self.get_value("TRAINING_LABEL_SR"):
                 self.training_label_sr = int(self.get_value("TRAINING_LABEL_SR"))
 
+            if self.get_value("TRAINING_LABEL_APWI"):
+                self.training_label_apwi = int(self.get_value("TRAINING_LABEL_APWI"))
+
             if self.get_value("TRAINING_ESTIMATORS"):
                 self.training_estimators = int(self.get_value("TRAINING_ESTIMATORS"))
 
@@ -230,6 +234,7 @@ class Persistence(object):
         self._settings["TRAINING_LABEL_NDVI"] = self.training_label_ndvi
         self._settings["TRAINING_LABEL_RNDVI"] = self.training_label_rndvi
         self._settings["TRAINING_LABEL_SR"] = self.training_label_sr
+        self._settings["TRAINING_LABEL_APWI"] = self.training_label_apwi
         self._settings["TRAINING_ESTIMATORS"] = self.training_estimators
         self._settings["GARBAGE_MC_ID"] = self.garbage_mc_id
         self._settings["WATER_MC_ID"] = self.water_mc_id
