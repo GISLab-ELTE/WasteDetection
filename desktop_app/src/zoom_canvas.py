@@ -32,8 +32,8 @@ class ZoomCanvas(ttk.Frame):
 
         super(ZoomCanvas, self).__init__(master=mainframe)
 
-        self._image = None
-        self._img_id = None
+        self._image_layers = []
+        self._img_layer_ids = []
 
         self._initialize_components()
         self._configure_components()
@@ -111,7 +111,7 @@ class ZoomCanvas(ttk.Frame):
 
                 dataset = np.dstack((red_n, green_n, blue_n))
 
-                self._image = Image.fromarray(dataset, "RGB")
+                self._image_layers.append(Image.fromarray(dataset, "RGB"))
             except Exception:
                 raise
             finally:
@@ -135,7 +135,7 @@ class ZoomCanvas(ttk.Frame):
                     if np.nanmax(dataset) != 0:
                         dataset /= np.nanmax(dataset)
 
-                    self._image = Image.fromarray(np.uint8(color_map(dataset)*255))
+                    self._image_layers.append(Image.fromarray(np.uint8(color_map(dataset)*255)))
             except NotEnoughBandsException:
                 raise
             except TooLargeImageException:
@@ -152,12 +152,14 @@ class ZoomCanvas(ttk.Frame):
         :return: None
         """
 
-        if self._img_id:
-            self._canvas.delete(self._img_id)
-            self._img_id = None
-            self._canvas.imagetk = None  # delete previous image from the canvas
-            self._image = None
-            self._canvas.configure(scrollregion=self._canvas.bbox("all"))
+        for img_id in self._img_layer_ids:
+            self._canvas.delete(img_id)
+
+        self._img_layer_ids.clear()
+        self._canvas.imagetks.clear()  # delete previous image from the canvas
+        self._image_layers.clear()
+        self._canvas.configure(scrollregion=self._canvas.bbox("all"))
+            
 
     def hide_shape(self, tag_id: int) -> None:
         """
@@ -187,7 +189,7 @@ class ZoomCanvas(ttk.Frame):
         :return: tag id of the drawn shape, or None if it could not be placed
         """
 
-        if self._image is None:
+        if len(self._image_layers) == 0:
             return
 
         x = self._canvas.canvasx(event.x)
@@ -286,7 +288,7 @@ class ZoomCanvas(ttk.Frame):
         :return: None
         """
 
-        if self._image is None:
+        if len(self._image_layers) == 0:
             return
 
         scale = 1.0
@@ -299,7 +301,7 @@ class ZoomCanvas(ttk.Frame):
             self._img_scale *= self._delta
         if event.delta == 120:
             scale /= self._delta
-            width, height = self._image.size
+            width, height = self._image_layers[0].size
             new_img_scale = self._img_scale / self._delta
             new_size = int(new_img_scale * width) * int(new_img_scale * height)
             if new_size > MAX_PIXEL_COUNT:
@@ -356,22 +358,25 @@ class ZoomCanvas(ttk.Frame):
         :return: None
         """
 
-        if not self._image:
+        if len(self._image_layers) == 0:
             return
 
-        if self._img_id:
-            self._canvas.delete(self._img_id)
-            self._img_id = None
-            self._canvas.imagetk = None  # delete previous image from the canvas
+        if len(self._img_layer_ids) > 0:
+            for img_id in self._img_layer_ids:
+                self._canvas.delete(img_id)
+            self._img_layer_ids.clear()
+            self._canvas.imagetks.clear()  # delete previous image from the canvas
 
-        width, height = self._image.size
-        self._new_size = int(self._img_scale * width), int(self._img_scale * height)
+        for layer in self._image_layers:
+            width, height = layer.size
+            self._new_size = int(self._img_scale * width), int(self._img_scale * height)
+            
+            imagetk = ImageTk.PhotoImage(layer.resize(self._new_size))
 
-        imagetk = ImageTk.PhotoImage(self._image.resize(self._new_size))
-
-        self._img_id = self._canvas.create_image(self._canvas.coords([self._fix_point]), anchor="nw", image=imagetk)
-        self._canvas.lower(self._img_id)  # set it into background
-        self._canvas.imagetk = imagetk  # keep an extra reference to prevent garbage-collection
+            img_id = self._canvas.create_image(self._canvas.coords([self._fix_point]), anchor="nw", image=imagetk)
+            self._canvas.lower(img_id)  # set it into background
+            self._img_layer_ids.append(img_id)
+            self._canvas.imagetks.append(imagetk)  # keep an extra reference to prevent garbage-collection
 
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
 
@@ -385,6 +390,7 @@ class ZoomCanvas(ttk.Frame):
         self._vertical_sb = AutoScrollbar(master=self.master, orient="vertical")
         self._horizontal_sb = AutoScrollbar(master=self.master, orient="horizontal")
         self._canvas = tk.Canvas(master=self.master)
+        self._canvas.imagetks = []
 
     def _configure_components(self) -> None:
         """
