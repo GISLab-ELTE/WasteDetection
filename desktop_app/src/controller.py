@@ -1440,6 +1440,7 @@ class Controller(object):
         """
 
         selected_file = self._view.training_view.get_curselection_value_listbox()
+        file_name, file_extension = os.path.splitext(selected_file)
 
         if selected_file is None:
             return
@@ -1457,6 +1458,15 @@ class Controller(object):
         satellite_rgb = self._get_satellite_rgb()
 
         self._view.training_view.zoom_canvas.open_image(selected_file, "rgb", satellite_rgb)
+
+        classification_file = file_name + "_classified" + file_extension
+        
+        if os.path.exists(classification_file):
+            self._view.training_view.zoom_canvas.open_image(
+                input_path=classification_file, 
+                image_type="classified", 
+                satellite_rgb=satellite_rgb,
+                color_map=self._model.get_classification_color_map(classification_file, True))
 
         for mc_id in self._model.tag_ids[selected_file].keys():
             for tag_id in self._model.tag_ids[selected_file][mc_id][2]:

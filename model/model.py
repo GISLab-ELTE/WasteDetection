@@ -329,8 +329,9 @@ class Model(object):
                 for i in range(len(coords)):
                     indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
                     for y, x in indices:
-                        line = [fid, mc_name, mc_id * 100]
-                        labeled_image[x, y] = mc_id
+                        mul_mc_id = mc_id * 100
+                        line = [fid, mc_name, mul_mc_id]
+                        labeled_image[x, y] = mul_mc_id
 
                         for value in bands_and_indices:
                             line.append(value[x, y])
@@ -479,7 +480,7 @@ class Model(object):
             labels.append("sr")
         return "-".join(labels)
 
-    def get_classification_color_map(self, input_path: str) -> ListedColormap:
+    def get_classification_color_map(self, input_path: str, transparent_background: bool = False) -> ListedColormap:
         """
         Creates a color map based on the values in the classified image.
 
@@ -506,6 +507,10 @@ class Model(object):
                 color = self._persistence.colors[mc_id]
                 rgba = ImageColor.getcolor(color, "RGBA")
                 rgba = [val / 255 for val in rgba]
+
+                if transparent_background and mc_id == 0:
+                    rgba[-1] = 0
+
                 color_list.append(rgba)
 
             if not color_list:

@@ -54,7 +54,7 @@ class ZoomCanvas(ttk.Frame):
         :return: True or False
         """
 
-        return (tag_id in self._canvas.find_all()) and tag_id != self._img_id and tag_id != self._fix_point
+        return (tag_id in self._canvas.find_all()) and tag_id not in self._img_layer_ids and tag_id != self._fix_point
 
     def open_image(self, input_path: str, image_type: str, satellite_rgb: List[int],
                    color_map: ListedColormap = cm.get_cmap("viridis")) -> None:
@@ -135,7 +135,8 @@ class ZoomCanvas(ttk.Frame):
                     if np.nanmax(dataset) != 0:
                         dataset /= np.nanmax(dataset)
 
-                    self._image_layers.append(Image.fromarray(np.uint8(color_map(dataset)*255)))
+                    image_array = np.uint8(color_map(dataset)*255)
+                    self._image_layers.append(Image.fromarray(image_array))
             except NotEnoughBandsException:
                 raise
             except TooLargeImageException:
@@ -374,9 +375,12 @@ class ZoomCanvas(ttk.Frame):
             imagetk = ImageTk.PhotoImage(layer.resize(self._new_size))
 
             img_id = self._canvas.create_image(self._canvas.coords([self._fix_point]), anchor="nw", image=imagetk)
-            self._canvas.lower(img_id)  # set it into background
             self._img_layer_ids.append(img_id)
             self._canvas.imagetks.append(imagetk)  # keep an extra reference to prevent garbage-collection
+
+        # lower the layers in reverse order, so they stack according to their order in the list
+        for img_id in reversed(self._img_layer_ids):
+            self._canvas.lower(img_id)  # set it into background
 
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
 
