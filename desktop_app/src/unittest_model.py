@@ -4,7 +4,7 @@ import model.persistence as persistence
 import numpy as np
 
 
-DEFAULT_RF_PATH = "../random_forest/random_forest_model.sav"
+DEFAULT_RF_PATH = "../clf/random_forest_model.sav"
 
 
 class TestAddFiles(unittest.TestCase, model.Model):
