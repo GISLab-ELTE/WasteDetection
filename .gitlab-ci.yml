@@ -19,6 +19,8 @@ build:
 deploy_kepaf2023:
   image: ubuntu:latest
   stage: deploy
+  only:
+    - kepaf2023
   dependencies:
     - build
   before_script:
