@@ -1,7 +1,8 @@
-from model import model
 import unittest
-import model.persistence as persistence
 import numpy as np
+import model.persistence as persistence
+
+from model import model
 
 
 DEFAULT_RF_PATH = "../random_forest/random_forest_model.sav"
