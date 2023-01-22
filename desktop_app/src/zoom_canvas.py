@@ -45,6 +45,10 @@ class ZoomCanvas(ttk.Frame):
     def canvas(self) -> tk.Canvas:
         return self._canvas
 
+    @property
+    def image_layers(self) -> List:
+        return self._image_layers
+
     # Non-static public methods
     def is_point_or_polygon(self, tag_id: int) -> bool:
         """
@@ -146,6 +150,22 @@ class ZoomCanvas(ttk.Frame):
 
         self._show_image()
 
+    def open_classification_layer(self, dataset: np.ndarray, color_map: ListedColormap = cm.get_cmap("viridis")):
+        if dataset.shape[0] * dataset.shape[1] > MAX_PIXEL_COUNT:
+                        raise TooLargeImageException(dataset.width * dataset.height, MAX_PIXEL_COUNT)
+
+        unique_values = np.unique(dataset)
+
+        for i in range(len(unique_values)):
+            dataset = np.where(dataset == unique_values[i], i, dataset)
+
+        if np.nanmax(dataset) != 0:
+            dataset /= np.nanmax(dataset)
+
+        image_array = np.uint8(color_map(dataset)*255)
+        self._image_layers.append(Image.fromarray(image_array))
+        self._show_image()
+
     def delete_image(self) -> None:
         """
         Deletes image from canvas.
@@ -207,6 +227,24 @@ class ZoomCanvas(ttk.Frame):
         tag_id = self._canvas.create_oval(x1, y1, x2, y2, fill="red", state="normal")
 
         return tag_id
+
+    def draw_pixel_on_last_layer(self, event, color_hex: str):
+        color_hex = color_hex.lstrip("#")
+        color_rgb = tuple(int(color_hex[i:i+2], 16) for i in (0, 2, 4))
+
+        x, y = self.get_event_coordinates_on_image(event)
+        x, y = (int(x), int(y))
+
+        last_layer = self._image_layers[-1]
+        last_layer.putpixel((x, y), color_rgb)
+        self._redraw_layer(-1)
+
+    def delete_pixel_from_last_layer(self, event):
+        x, y = self.get_event_coordinates_on_image(event)
+        x, y = (int(x), int(y))
+        last_layer = self._image_layers[-1]
+        last_layer.putpixel((x, y), (0,0,0,0))
+        self._redraw_layer(-1)
 
     def get_coords_of_point(self, tag_id: int) -> Tuple[float, float]:
         """
@@ -337,6 +375,15 @@ class ZoomCanvas(ttk.Frame):
         self._rescale(x, y, scale)
         self._show_image()
 
+    def get_event_coordinates_on_image(self, event) -> Tuple[float, float]:
+        x = self._canvas.canvasx(event.x)
+        y = self._canvas.canvasy(event.y)
+
+        size = self._img_scale
+
+        x, y = (x / size), (y / size)
+        return (x, y)
+
     # Non-static protected methods
     def _rescale(self, x: float, y: float, scale: float) -> None:
         """
@@ -383,6 +430,16 @@ class ZoomCanvas(ttk.Frame):
             self._canvas.lower(img_id)  # set it into background
 
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
+
+    def _redraw_layer(self, layer_pos_id) -> None:
+        layer = self._image_layers[layer_pos_id]
+        layer_id = self._img_layer_ids[layer_pos_id]
+        
+        imagetk = ImageTk.PhotoImage(layer.resize(self._new_size))
+        
+        self._canvas.itemconfig(layer_id, image=imagetk)
+        self._canvas.imagetks[layer_pos_id] = imagetk # keep an extra reference to prevent garbage-collection
+
 
     def _initialize_components(self) -> None:
         """
@@ -440,3 +497,5 @@ class ZoomCanvas(ttk.Frame):
         self._delta = 0.9
 
         self._fix_point = self._canvas.create_text(0, 0, anchor='nw', text="", fill="white")
+
+    

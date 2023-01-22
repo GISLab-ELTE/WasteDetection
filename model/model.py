@@ -79,6 +79,14 @@ class Model(object):
     def persistence(self) -> Persistence:
         return self._persistence
 
+    @property
+    def classification_mode(self) -> str:
+        return self._classification_mode
+
+    @property
+    def classification_layer_data(self) -> Dict:
+        return self._classification_layer_data 
+
     # Non-static public methods
     def load_random_forests(self) -> None:
         """
@@ -171,6 +179,41 @@ class Model(object):
         """
 
         self._point_tag_ids.append(tag_id)
+
+    def toggle_classification_mode(self) -> None:
+        if self._classification_mode == "polygon":
+            self._classification_mode = "freehand"
+        elif self._classification_mode == "freehand":
+            self._classification_mode = "polygon"
+
+    def add_classification_layer(self, image_name: str, layer: np.ndarray) -> None:
+        """
+        Adds a new classification layer
+
+        :param image_name: the name of the image
+        :param layer: the array representing the classification layer
+        """
+        self._classification_layer_data[image_name] = layer
+
+    def get_classification_layer_data(self, image_name) -> np.ndarray:
+        """
+        Gets the classification layer data of the requested image
+
+        :param image_name: the name of the image
+        :return: The array containing the classification data of the image
+        """
+        return self._classification_layer_data[image_name]
+
+    def set_classification_pixel_of_layer(self, image_name: str, coordinates: Tuple[int, int], mc_id: int) -> None:
+        """
+        sets a classification pixel of the given layer
+
+        :param layer: the name of the image
+        :param coordinates: the coordinates where the id will be placed
+        :param mc_id: the id that will be placed at the given coordinates
+        """
+        mc_id_mul = mc_id * 100
+        self._classification_layer_data[image_name][coordinates]= mc_id_mul
 
     def save_new_mc(self, training_file: str, mc_id: int, mc_name: str, mc_color: str) -> None:
         """
@@ -296,9 +339,9 @@ class Model(object):
                         usable_training_data[training_file] = dict()
                     usable_training_data[training_file][mc_id] = tag_id_coords[training_file][mc_id]
 
-        enough_data = np.unique([i for s in [list(d.keys()) for d in list(usable_training_data.values())] for i in s])
-        enough_data = len(enough_data) >= 2
-
+        # enough_data = np.unique([i for s in [list(d.keys()) for d in list(usable_training_data.values())] for i in s])
+        # enough_data = len(enough_data) >= 2
+        enough_data = True
         return usable_training_data, enough_data
 
     def create_training_df(self, usable_training_data: Dict[str, Dict]) -> Tuple[pd.DataFrame, Dict[str, np.ndarray]]:
@@ -319,11 +362,31 @@ class Model(object):
         training_df = pd.DataFrame(columns=column_labels)
 
         labeling_data = {}
+        classified_layers = self._classification_layer_data
+        for training_file in classified_layers.keys():
+            bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
+                                                        training_labels)
+            labeled_image = self._classification_layer_data[training_file]
+            # labeled_image = labeled_image[labeled_image != 0]
+            for x in range(labeled_image.shape[0]):
+                for y in range(labeled_image.shape[1]):
+                    if labeled_image[x, y] != 0:
+                    
+                        mul_mc_id = labeled_image[x, y] * 100
+                        line = [fid, "" , mul_mc_id]
+                        
+                        for value in bands_and_indices:
+                                line.append(value[x, y])
+                        
+                        fid += 1
+                        training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=True)
+            labeling_data[training_file] = labeled_image
+
         for training_file in usable_training_data.keys():
             bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
                                                         training_labels)
 
-            labeled_image = np.zeros(shape=bands_and_indices[0].shape, dtype=np.int32)
+            labeled_image = self._classification_layer_data[training_file]
             for mc_id in usable_training_data[training_file].keys():
                 mc_name, coords, bbox_coords = usable_training_data[training_file][mc_id]
                 for i in range(len(coords)):
@@ -341,6 +404,21 @@ class Model(object):
             
             labeling_data[training_file] = labeled_image
         return training_df, labeling_data
+
+    # def add_polygon_data_to_classified_image(self, classified_image_name: str, classification_layer: np.ndarray) -> np.ndarray:
+    #     tag_id_coords = self._tag_id_coords
+
+    #     modified_layer = np.copy(classification_layer)
+
+    #     for mc_id in tag_id_coords[classified_image_name].keys():
+    #             if tag_id_coords[classified_image_name][mc_id][1]:
+    #                 mc_name, coords, bbox_coords = tag_id_coords[classified_image_name][mc_id]
+    #                 for i in range(len(coords)):
+    #                     indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
+    #                     for y, x in indices:
+    #                         mul_mc_id = mc_id * 100
+    #                         modified_layer[x, y] = mul_mc_id
+    #     return modified_layer
 
     def save_classification_images(self, labeled_images:Dict[str, np.ndarray]) -> None:
         """
@@ -485,6 +563,7 @@ class Model(object):
         Creates a color map based on the values in the classified image.
 
         :param input_path: path of the classified image
+        :param transparent_background: whether the black background should be considered transparent
         :return: color map
         """
 
@@ -519,6 +598,43 @@ class Model(object):
             color_map = ListedColormap(color_list)
             return color_map
 
+    def get_classification_color_map_from_layer(self, input_array: np.ndarray, transparent_background: bool = False) -> ListedColormap:
+        """
+        Creates a color map based on the values in the classified image.
+
+        :param input_array: the array of the classified image
+        :param transparent_background: whether the black background should be considered transparent
+        :return: color map
+        """
+
+        unique_values = np.unique(input_array)
+        cond_list = all([val % 100 == 0 for val in unique_values])
+
+        if not cond_list:
+            return cm.get_cmap("viridis")
+
+        color_list = list()
+        for value in unique_values:
+            mc_id = int(value / 100)
+
+            if mc_id >= len(self._persistence.colors):
+                continue
+
+            color = self._persistence.colors[mc_id]
+            rgba = ImageColor.getcolor(color, "RGBA")
+            rgba = [val / 255 for val in rgba]
+
+            if transparent_background and mc_id == 0:
+                rgba[-1] = 0
+
+            color_list.append(rgba)
+
+        if not color_list:
+            return cm.get_cmap("viridis")
+
+        color_map = ListedColormap(color_list)
+        return color_map
+
     # Non-static protected methods
     def _initialize_data_members(self) -> None:
         """
@@ -534,6 +650,8 @@ class Model(object):
         self._point_tag_ids = list()
         self._tag_ids = dict()
         self._tag_id_coords = dict()
+        self._classification_mode = "polygon"
+        self._classification_layer_data = dict()
 
     def _process_hotspot_floating(self, hotspot: bool) -> Tuple[bool, bool]:
         """
