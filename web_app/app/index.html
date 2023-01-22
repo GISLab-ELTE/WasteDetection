@@ -10,18 +10,25 @@
   </head>
   <body>
     <div id="header"><h1>Plastic Waste Monitoring</h1></div>
-    <div id="map"></div>
     <form>
-      <label for="type">Location: &nbsp;</label>
-      <select id="type">
-        <option value="Kiskore" selected>Kisköre</option>
-        <option value="Kanyahaza">Lake Călinești</option>
-        <option value="Pusztazamor">Pusztazámor</option>
-        <option value="Raho">Рахів</option>
-      </select>
-      <label id="date" for="type">Date: &nbsp;</label>
-      <input id="swipe" type="range" min="0" max="4" value="0">
+      <div class="flex-container">
+        <div id="location-div">
+          <label for="type">Location: &nbsp;</label>
+          <select id="type">
+            <option value="Kiskore" selected>Kisköre</option>
+            <option value="Kanyahaza">Lake Călinești</option>
+            <option value="Pusztazamor">Pusztazámor</option>
+            <option value="Raho">Рахів</option>
+          </select>
+        </div>
+        <div id="date-div" style="flex-grow: 9">
+          <label id="date" for="swipe">Date: &nbsp;</label>
+          <input id="swipe" type="range" min="0" max="4" value="0">
+        </div>
+      </div>
     </form>
+
+    <div id="map"></div>
 
     <!-- <script src="https://unpkg.com/elm-pep@1.0.6/dist/elm-pep.js"></script> -->
     <!-- <script src="https://unpkg.com/ol-layerswitcher@4.1.0"></script> -->

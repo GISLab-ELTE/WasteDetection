@@ -31,14 +31,36 @@ h1 {
   right: 0;
   border: 1px solid #888;
 }
+.flex-container {
+  padding-top: 9px;
+  display: flex;
+  flex-direction: row;
+}
+
+/* Responsive layout - makes a one column layout instead of a two-column layout */
+@media (max-width: 800px) {
+  .flex-container {
+    flex-direction: column;
+  }
+  #map {
+    top: 150px;
+  }
+}
+
+form {
+  font-size: 14pt;
+}
 #type {
-  padding: 6px;
-  margin: 12px;
-  font-size: 12pt;
+  font-size: 14pt;
 }
 #swipe {
-  position: absolute;
-  margin-top: 21px;
-  margin-left: 10px;
-  width: 79%;
+  width: 90%;
 }
+#location-div {
+  padding: 6px;
+}
+
+#date-div {
+  padding: 7px;
+}
+
