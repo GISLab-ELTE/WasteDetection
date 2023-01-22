@@ -17,8 +17,7 @@ import {OverviewMap, ZoomSlider} from 'ol/control';
 import { format } from 'ol/coordinate';
 
 // Constant values
-// const base_url = 'http://localhost:3000/;'
-const base_url = 'https://gis.inf.elte.hu/kepaf2023-data/planetscope/';
+const base_url = import.meta.env.VITE_DATA_URL;
 const bingKey = 'AgKv8E2vHuEwgddyzg_pRM6ycSRygeePXSFYTqc8jbikPT8ILyQxm1EF3YUmeRQ2';
 const kiskore_bbox = [2283300, 6021945, 2284684, 6023968];
 const kanyahaza_bbox = [2588995, 6087354, 2597328, 6091368];
@@ -251,7 +250,7 @@ const changeAOI = function () {
   let aoiBbox = null;
   const aoi = selectedAOI.value;
   const swipeValue = swipe.value;
-  
+
   changeDate(Object.keys(aoisWithDates[aoi])[swipeValue]);
   setAOILayers();
 
