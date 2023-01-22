@@ -1,10 +1,11 @@
-from model import model
 import unittest
-import model.persistence as persistence
 import numpy as np
+import model.persistence as persistence
+
+from model import model
 
 
-DEFAULT_RF_PATH = "../clf/random_forest_model.sav"
+DEFAULT_RF_PATH = "desktop_app/clf/random_forest_model.sav"
 
 
 class TestAddFiles(unittest.TestCase, model.Model):
