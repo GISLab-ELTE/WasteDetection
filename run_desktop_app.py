@@ -1,8 +1,8 @@
-import view
-from model import model, persistence
 import traceback
-import controller
 import tkinter.messagebox
+from model import model, persistence
+import desktop_app.src.view as view
+import desktop_app.src.controller as controller
 
 
 if __name__ == "__main__":
