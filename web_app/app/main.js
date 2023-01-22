@@ -5,7 +5,7 @@ import {Map, View} from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import LayerSwitcher from 'ol-layerswitcher';
-import LayerGroup from "ol/layer/group";
+import LayerGroup from "ol/layer/Group";
 import BingMaps from 'ol/source/BingMaps';
 import XYZ from 'ol/source/XYZ';
 import GeoJSON from 'ol/format/GeoJSON';
@@ -18,7 +18,7 @@ import { format } from 'ol/coordinate';
 
 // Constant values
 // const base_url = 'http://localhost:3000/;'
-const base_url = '/';
+const base_url = 'https://gis.inf.elte.hu/kepaf2023-data/planetscope/';
 const bingKey = 'AgKv8E2vHuEwgddyzg_pRM6ycSRygeePXSFYTqc8jbikPT8ILyQxm1EF3YUmeRQ2';
 const kiskore_bbox = [2283300, 6021945, 2284684, 6023968];
 const kanyahaza_bbox = [2588995, 6087354, 2597328, 6091368];
@@ -272,7 +272,7 @@ const changeAOI = function () {
 };
 
 const fetchGeojsonPaths = async function () {
-  const res = await fetch(base_url + 'geojson_files.json')
+  const res = await fetch(base_url + 'geojson_files.json');
   aoisWithDates = await res.json();
 
   for (var out_key of Object.keys(aoisWithDates)) {
@@ -282,7 +282,7 @@ const fetchGeojsonPaths = async function () {
       };
     };
   };
-}
+};
 
 // Events
 selectedAOI.onchange = changeAOI;
