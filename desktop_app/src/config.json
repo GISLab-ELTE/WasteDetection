@@ -1,8 +1,8 @@
 {
     "SATELLITE_TYPE": "Planet",
-    "WORKING_DIR": "../results",
+    "WORKING_DIR": "desktop_app/results",
     "FILE_EXTENSION": "tif",
-    "HOTSPOT_RF_PATH": "C:/Users/trosztt/Documents/ELTE/3. szemeszter/Szoftvertechnol\u00f3gialabor/models/PI.sav",
+    "HOTSPOT_RF_PATH": "../clf/random_forest_model.sav",
     "FLOATING_RF_PATH": "../clf/random_forest_model.sav",
     "MORPHOLOGY_MATRIX_SIZE": "5",
     "MORPHOLOGY_ITERATIONS": "1",

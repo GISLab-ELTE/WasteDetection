@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 # constants
-CONFIG_FILE_NAME = "config.json"
+CONFIG_FILE_NAME = "desktop_app/src/config.json"
 
 
 class Persistence(object):

@@ -1,15 +1,15 @@
 import os
-import view
 import math
-from model import model
 import traceback
 import threading
 import numpy as np
 import tkinter as tk
 import tkinter.messagebox
 import ttkbootstrap as ttk
+import desktop_app.src.view as view
 
 from osgeo import gdal
+from model import model
 from model.exceptions import *
 from tkinter import filedialog as fd
 from ttkbootstrap.constants import *
@@ -945,7 +945,7 @@ class Controller(object):
 
         selected_folder = fd.askdirectory(
             parent=self._view.settings_view,
-            initialdir="../"
+            initialdir="./"
         )
 
         if len(selected_folder) > 0:
@@ -968,7 +968,7 @@ class Controller(object):
         filename = fd.askopenfilename(
             parent=self._view.settings_view,
             title="Open file",
-            initialdir="../",
+            initialdir="./",
             filetypes=filetypes,
         )
 
@@ -1803,7 +1803,7 @@ class Controller(object):
         :return: None
         """
 
-        with open("about.txt", mode="r") as file:
+        with open("desktop_app/src/about.txt", mode="r") as file:
             text = file.read()
             tkinter.messagebox.showinfo(
                 parent=self._view,
@@ -1828,7 +1828,7 @@ class Controller(object):
         filenames = fd.askopenfilenames(
             parent=active_window,
             title="Open files",
-            initialdir="../",
+            initialdir="./",
             filetypes=filetypes,
         )
 
@@ -1862,7 +1862,7 @@ class Controller(object):
         file = fd.asksaveasfile(
             parent=active_window,
             title="Save file",
-            initialdir="../",
+            initialdir="./",
             initialfile="Untitled." + file_extension,
             defaultextension="." + file_extension,
             filetypes=filetypes
