@@ -1367,6 +1367,9 @@ class Model(object):
             dtype="float32",
         )
 
+        numerator_nanmin = np.nanmin(numerator)
+        numerator_nanmax = np.nanmax(numerator)        
+
         # calculate index
         for i in range(rows):
             for j in range(cols):
@@ -1376,9 +1379,9 @@ class Model(object):
                     index[i, j] = numerator[i, j] / denominator[i, j]
                 else:
                     if numerator[i, j] < 0:
-                        index[i, j] = np.nanmin(numerator)
+                        index[i, j] = numerator_nanmin
                     elif numerator[i, j] > 0:
-                        index[i, j] = np.nanmax(numerator)
+                        index[i, j] = numerator_nanmax
                     else:
                         index[i, j] = float("NaN")
 
