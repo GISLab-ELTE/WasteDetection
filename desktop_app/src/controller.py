@@ -791,6 +791,7 @@ class Controller(object):
             if process_id == 1 or process_id == 2:
                 selected_file = view_selected_files[0]
 
+                self._view.clear_canvas("left")
                 self._view.show_image_on_canvas(
                     canvas_name="left",
                     img_or_array=selected_file,
@@ -1469,6 +1470,7 @@ class Controller(object):
 
         satellite_rgb = self._get_satellite_rgb()
 
+        self._view.training_view.zoom_canvas.delete_image()
         self._view.training_view.zoom_canvas.open_image(selected_file, "rgb", satellite_rgb)
 
         layer_data = self._model.get_classification_layer_data(selected_file)

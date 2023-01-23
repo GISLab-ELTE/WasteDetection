@@ -367,9 +367,8 @@ class Model(object):
             bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
                                                         training_labels)
             labeled_image = self._classification_layer_data[training_file]
-            # labeled_image = labeled_image[labeled_image != 0]
-            for x in range(labeled_image.shape[0]):
-                for y in range(labeled_image.shape[1]):
+            classified_positions = np.transpose(np.nonzero(labeled_image))
+            for [x, y] in classified_positions: 
                     if labeled_image[x, y] != 0:
                     
                         mul_mc_id = labeled_image[x, y] * 100
