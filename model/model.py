@@ -364,10 +364,13 @@ class Model(object):
         labeling_data = {}
         classified_layers = self._classification_layer_data
         for training_file in classified_layers.keys():
+            print("Starting to process indices for bands", training_file, "...")
             bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
                                                         training_labels)
+            print("Starting to filter classified pixels...")
             labeled_image = self._classification_layer_data[training_file]
             classified_positions = np.transpose(np.nonzero(labeled_image))
+            print("Classified positions received, starting the iteration...")
             for [x, y] in classified_positions: 
                     if labeled_image[x, y] != 0:
                     
@@ -380,6 +383,7 @@ class Model(object):
                         fid += 1
                         training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=True)
             labeling_data[training_file] = labeled_image
+            print("done.")
 
         for training_file in usable_training_data.keys():
             bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
