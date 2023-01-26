@@ -19,6 +19,8 @@ from matplotlib.colors import ListedColormap
 from sklearn.ensemble import RandomForestClassifier
 from typing import List, Tuple, Callable, Union, TextIO, Dict
 
+import traceback
+
 
 # Constants for model.py
 MAX_CLASS_COUNT = 15
@@ -352,14 +354,14 @@ class Model(object):
         :return: a DataFrame containing the training data for Random Forest classifier and a dictionary containing the labeling data for each image.
         """
 
-        column_labels = ["FID", "SURFACE", "COD"]
+        column_labels = ["SURFACE", "COD"]
         training_labels = self.get_training_labels()
         labels = Model._resolve_bands_indices_string(training_labels)
         labels = [value.upper() for value in labels]
         column_labels += labels
 
-        fid = 1
-        training_df = pd.DataFrame(columns=column_labels)
+        labels = column_labels + labels
+        file_dfs = []
 
         labeling_data = {}
         classified_layers = self._classification_layer_data
@@ -367,45 +369,62 @@ class Model(object):
             print("Starting to process indices for bands", training_file, "...")
             bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
                                                         training_labels)
+            bands_and_indices = np.asarray(bands_and_indices)
             print("Starting to filter classified pixels...")
             labeled_image = self._classification_layer_data[training_file]
-            classified_positions = np.transpose(np.nonzero(labeled_image))
-            print("Classified positions received, starting the iteration...")
-            for [x, y] in classified_positions: 
-                    if labeled_image[x, y] != 0:
-                    
-                        mul_mc_id = labeled_image[x, y] * 100
-                        line = [fid, "" , mul_mc_id]
-                        
-                        for value in bands_and_indices:
-                                line.append(value[x, y])
-                        
-                        fid += 1
-                        training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=True)
+
+            classified_xs, classified_ys = np.nonzero(labeled_image)
+            print("Classified positions received, creating dataframe for image...")
+            classified_pixels = labeled_image[classified_xs, classified_ys].flatten()
+            list_of_columns = [
+                np.full(fill_value = "", shape = classified_pixels.shape),
+                classified_pixels.astype(int)
+            ]
+            classified_bands_and_indices = bands_and_indices[:,classified_xs, classified_ys]
+            for i in range(classified_bands_and_indices.shape[0]):
+                list_of_columns.append(classified_bands_and_indices[i])
+
+           
+            df = pd.DataFrame()
+            df.index.name = "FID"
+            for i in range(len(list_of_columns)):
+                df[labels[i]] = list_of_columns[i]
+
+            # for [x, y] in classified_positions: 
+            #     mul_mc_id = labeled_image[x, y] * 100
+            #     line = ["" , mul_mc_id]
+                
+            #     for value in bands_and_indices:
+            #             line.append(value[x, y])
+                
+            #     training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=False)
             labeling_data[training_file] = labeled_image
+            file_dfs.append(df)
             print("done.")
 
-        for training_file in usable_training_data.keys():
-            bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
-                                                        training_labels)
+        training_df = pd.concat(file_dfs, ignore_index=True)
+        training_df.index.name = "FID"
+        # for training_file in usable_training_data.keys():
+        #     bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
+        #                                                 training_labels)
 
-            labeled_image = self._classification_layer_data[training_file]
-            for mc_id in usable_training_data[training_file].keys():
-                mc_name, coords, bbox_coords = usable_training_data[training_file][mc_id]
-                for i in range(len(coords)):
-                    indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
-                    for y, x in indices:
-                        mul_mc_id = mc_id * 100
-                        line = [fid, mc_name, mul_mc_id]
-                        labeled_image[x, y] = mul_mc_id
+        #     labeled_image = self._classification_layer_data[training_file]
+        #     for mc_id in usable_training_data[training_file].keys():
+        #         mc_name, coords, bbox_coords = usable_training_data[training_file][mc_id]
+        #         for i in range(len(coords)):
+        #             indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
+        #             for y, x in indices:
+        #                 mul_mc_id = mc_id * 100
+        #                 line = [mc_name, mul_mc_id]
+        #                 labeled_image[x, y] = mul_mc_id
 
-                        for value in bands_and_indices:
-                            line.append(value[x, y])
+        #                 for value in bands_and_indices:
+        #                     line.append(value[x, y])
 
-                        fid += 1
-                        training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=True)
+        #                 training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=False)
             
-            labeling_data[training_file] = labeled_image
+        #     labeling_data[training_file] = labeled_image
+        
         return training_df, labeling_data
 
     # def add_polygon_data_to_classified_image(self, classified_image_name: str, classification_layer: np.ndarray) -> np.ndarray:
@@ -1161,7 +1180,8 @@ class Model(object):
         """
 
         # read training data
-        df = pd.read_csv(training_data_path, sep=';', index_col="FID")
+        df = pd.read_csv(training_data_path, sep=';')
+        print(df)
 
         # introduce noise in data
         # dataframes_to_merge = [df]
@@ -1374,19 +1394,37 @@ class Model(object):
         numerator_nanmax = np.nanmax(numerator)        
 
         # calculate index
-        for i in range(rows):
-            for j in range(cols):
-                if np.isnan(numerator[i, j]) or np.isnan(denominator[i, j]):
-                    index[i, j] = float("NaN")
-                elif denominator[i, j] != 0:
-                    index[i, j] = numerator[i, j] / denominator[i, j]
-                else:
-                    if numerator[i, j] < 0:
-                        index[i, j] = numerator_nanmin
-                    elif numerator[i, j] > 0:
-                        index[i, j] = numerator_nanmax
-                    else:
-                        index[i, j] = float("NaN")
+        nan_mask = np.isnan(numerator) | np.isnan(denominator)
+        numerator_zero_mask = numerator == 0
+        denominator_zero_mask = denominator == 0
+
+        invalid_mask = nan_mask | (numerator_zero_mask & denominator_zero_mask)
+        valid_mask = np.logical_not(invalid_mask)
+
+        valid_denominator_non_zero_mask = valid_mask & np.logical_not(denominator_zero_mask)
+        valid_denominator_zero_mask = valid_mask & denominator_zero_mask
+
+        numerator_positive_denumerator_zero_mask = valid_denominator_zero_mask & (numerator > 0)
+        numerator_negative_denumerator_zero_mask = valid_denominator_zero_mask & (numerator < 0)
+
+        index[invalid_mask] = float("NaN")
+        index[numerator_positive_denumerator_zero_mask] = numerator_nanmax
+        index[numerator_negative_denumerator_zero_mask] = numerator_nanmin
+        index[valid_denominator_non_zero_mask] = numerator[valid_denominator_non_zero_mask] / denominator[valid_denominator_non_zero_mask]
+
+        # for i in range(rows):
+        #     for j in range(cols):
+        #         if np.isnan(numerator[i, j]) or np.isnan(denominator[i, j]):
+        #             index[i, j] = float("NaN")
+        #         elif denominator[i, j] != 0:
+        #             index[i, j] = numerator[i, j] / denominator[i, j]
+        #         else:
+        #             if numerator[i, j] < 0:
+        #                 index[i, j] = numerator_nanmin
+        #             elif numerator[i, j] > 0:
+        #                 index[i, j] = numerator_nanmax
+        #             else:
+        #                 index[i, j] = float("NaN")
 
         # return index values
         return index
@@ -1585,6 +1623,8 @@ class Model(object):
             for c in range(split_count):
                 new_array_df = array_df[c * split_size:(c + 1) * split_size].dropna(axis="index")
                 pred_proba = clf.predict_proba(new_array_df)
+                print(pred_proba)
+                print(pred_proba.shape)
                 counter = 0
                 for i in range(c * split_size, (c + 1) * split_size):
                     if i == rows * cols:
@@ -1604,13 +1644,13 @@ class Model(object):
                         elif low_medium_high_values[0] <= max_value < low_medium_high_values[1]:
                             heatmap[i] = LOW_PROB_VALUE
 
-                    classification[i] = classes[max_ind]
+                    classification[i] = int(classes[max_ind]) // 100
 
                     counter += 1
 
             classification = classification.reshape((rows, cols))
             heatmap = heatmap.reshape((rows, cols))
-
+            print(classification)
             classification_output_path = Model._output_path([input_path], working_dir, classification_postfix, file_extension)
             heatmap_output_path = Model._output_path([input_path], working_dir, heatmap_postfix, file_extension)
 
@@ -1634,6 +1674,7 @@ class Model(object):
 
             return classification_output_path, heatmap_output_path
         except Exception:
+            traceback.print_exc()
             return "", ""
         finally:
             del ds

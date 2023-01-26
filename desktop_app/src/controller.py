@@ -1634,7 +1634,8 @@ class Controller(object):
                 return
 
             (df, labeled_images) = self._model.create_training_df(usable_data)
-            df.sort_values(by=["FID", "COD"], inplace=True)
+            df.sort_values(by=["FID", "COD"], inplace=True, ignore_index=True)
+
             file = self._save_file("sav")
             if file:
                 name, extension = os.path.splitext(file.name)
