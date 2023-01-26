@@ -1644,7 +1644,7 @@ class Model(object):
                         elif low_medium_high_values[0] <= max_value < low_medium_high_values[1]:
                             heatmap[i] = LOW_PROB_VALUE
 
-                    classification[i] = int(classes[max_ind]) // 100
+                    classification[i] = classes[max_ind]
 
                     counter += 1
 
