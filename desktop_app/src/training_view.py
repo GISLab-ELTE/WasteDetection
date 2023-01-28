@@ -1,8 +1,8 @@
 import tkinter as tk
 import ttkbootstrap as ttk
 
-from ttkbootstrap.constants import *
 from typing import List, Tuple, Union
+from ttkbootstrap.constants import *
 from desktop_app.src.zoom_canvas import ZoomCanvas
 from desktop_app.src.auto_scrollbar import AutoScrollbar
 

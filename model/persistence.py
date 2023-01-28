@@ -7,10 +7,9 @@ from typing import Dict, Union
 from model.exceptions import *
 from sklearn.ensemble import RandomForestClassifier
 
-
 # constants
-CONFIG_FILE_NAME = "desktop_app/src/config.json"
-
+CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/src/config.json"
+CONFIG_FILE_NAME_SERVER_APP = "server_app/src/config.json"
 
 class Persistence(object):
     """
@@ -18,13 +17,17 @@ class Persistence(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, application_type: str = "desktop_app"):
         """
         The constructor of the Persistence class.
 
         """
 
-        self._config_file = CONFIG_FILE_NAME
+        if application_type.lower() == "desktop_app":
+            self._config_file = CONFIG_FILE_NAME_DESKTOP_APP
+        else:
+            self._config_file = CONFIG_FILE_NAME_SERVER_APP
+
         self._settings = None
         self.data_file = None
         self.clf = None
@@ -57,6 +60,7 @@ class Persistence(object):
         self.training_label_ndvi = None
         self.training_label_rndvi = None
         self.training_label_sr = None
+        self.training_label_apwi = None
         self.training_estimators = None
         self.garbage_mc_id = None
         self.water_mc_id = None
@@ -154,6 +158,9 @@ class Persistence(object):
             if self.get_value("TRAINING_LABEL_SR"):
                 self.training_label_sr = int(self.get_value("TRAINING_LABEL_SR"))
 
+            if self.get_value("TRAINING_LABEL_APWI"):
+                self.training_label_apwi = int(self.get_value("TRAINING_LABEL_APWI"))
+
             if self.get_value("TRAINING_ESTIMATORS"):
                 self.training_estimators = int(self.get_value("TRAINING_ESTIMATORS"))
 
@@ -230,6 +237,7 @@ class Persistence(object):
         self._settings["TRAINING_LABEL_NDVI"] = self.training_label_ndvi
         self._settings["TRAINING_LABEL_RNDVI"] = self.training_label_rndvi
         self._settings["TRAINING_LABEL_SR"] = self.training_label_sr
+        self._settings["TRAINING_LABEL_APWI"] = self.training_label_apwi
         self._settings["TRAINING_ESTIMATORS"] = self.training_estimators
         self._settings["GARBAGE_MC_ID"] = self.garbage_mc_id
         self._settings["WATER_MC_ID"] = self.water_mc_id

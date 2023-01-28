@@ -16,4 +16,4 @@ dependencies:
   - scikit-learn=0.24.2
   - sentinelhub=3.4.4
   - pip:
-    - opencv-python==4.5.3.56
+    - opencv-python-headless==4.5.3.56
