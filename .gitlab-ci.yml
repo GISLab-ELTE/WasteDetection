@@ -48,7 +48,7 @@ webapp-deploy:
   only:
     - master
   dependencies:
-    - build
+    - webapp-build
   before_script:
     - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
     - mkdir -p ~/.ssh
@@ -56,8 +56,8 @@ webapp-deploy:
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
   script:
     - ssh-add <(echo "$CD_PRIVATE_KEY")
-    - ssh -P22 gitlab-deployer@skynet.elte.hu "rm -r /var/www/gis/kepaf2023/*"
-    - scp -P22 -r web_app/app/dist/* gitlab-deployer@skynet.elte.hu:/var/www/gis/kepaf2023/
+    - ssh -P22 gitlab-deployer@gis.inf.elte.hu "rm -r /var/www/gis/waste-detection/*"
+    - scp -P22 -r web_app/app/dist/* gitlab-deployer@gis.inf.elte.hu:/var/www/gis/waste-detection/
   environment:
-    name: kepaf2023
-    url: https://gis.inf.elte.hu/kepaf2023/
+    name: production
+    url: https://gis.inf.elte.hu/waste-detection/
