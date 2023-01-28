@@ -21,11 +21,9 @@ before_script:
 
 model-unittest:
   stage: test
-  script:
-    - cd desktop_app    
+  script: 
     # Setup and activate environment
-    - conda env create -f environment.yml -q
-    - conda activate WasteDetectionDesktopApp
+    - conda env create -f server_app/environment.yml -q
+    - conda activate WasteDetectionServerApp
     # Run unit tests
-    - cd ..
     - python unittest_model.py
