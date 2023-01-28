@@ -51,10 +51,10 @@ class PlanetAPI(BaseAPI):
         :return: None
         """
 
-        self.api_key = self.config_file["PLANET_API_KEY"]
-        self.search_url = self.config_file["PLANET_SEARCH_URL"]
-        self.orders_url = self.config_file["PLANET_ORDERS_URL"]
-        self.item_type = self.config_file["PLANET_ITEM_TYPE"]
+        self.api_key = self.config_file["planet_api_key"]
+        self.search_url = self.config_file["planet_search_url"]
+        self.orders_url = self.config_file["planet_orders_url"]
+        self.item_type = self.config_file["planet_item_type"]
         self.auth = HTTPBasicAuth(self.api_key, "")
         self.headers = {"content-type": "application/json"}
 
@@ -87,7 +87,7 @@ class PlanetAPI(BaseAPI):
                 "type": "RangeFilter",
                 "field_name": "cloud_cover",
                 "config": {
-                    "lte": float(self.config_file["MAX_CLOUD_COVER"]) / 100
+                    "lte": float(self.config_file["max_cloud_cover"]) / 100
                 }
             }
 
@@ -271,7 +271,7 @@ class PlanetAPI(BaseAPI):
         results_urls = [r["location"] for r in results]
         results_names = [r["name"] for r in results]
 
-        data_folder = "/".join([self.config_file["DOWNLOAD_DIR_PLANETSCOPE"],
+        data_folder = "/".join([self.config_file["download_dir_planetscope"],
                                 str(feature_id),
                                 str(date)])
 

@@ -9,6 +9,7 @@ dependencies:
   - pillow=8.3.2
   - shapely=1.7.1
   - gdal=3.3.2
+  - geopandas=0.12.1
   - pip=21.2.4
   - python=3.8.12
   - numpy=1.21.2

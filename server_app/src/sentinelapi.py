@@ -56,7 +56,7 @@ class SentinelAPI(BaseAPI):
                     }
                 };
             }
-        
+
             function evaluatePixel(sample) {
                 return [sample.B02, sample.B03, sample.B04, sample.B08];
             }
@@ -69,9 +69,9 @@ class SentinelAPI(BaseAPI):
         :return: None
         """
 
-        self.sh_client_id = self.config_file["SENTINEL_SH_CLIENT_ID"]
-        self.instance_id = self.config_file["SENTINEL_INSTANCE_ID"]
-        self.sh_client_secret = self.config_file["SENTINEL_SH_CLIENT_SECRET"]
+        self.sh_client_id = self.config_file["sentinel_sh_client_id"]
+        self.instance_id = self.config_file["sentinel_instance_id"]
+        self.sh_client_secret = self.config_file["sentinel_sh_client_secret"]
 
         self.config = SHConfig()
         self.config.sh_client_id = self.sh_client_id
@@ -100,7 +100,7 @@ class SentinelAPI(BaseAPI):
                 DataCollection.SENTINEL2_L2A,
                 bbox=bbox,
                 time=time_interval,
-                query={"eo:cloud_cover": {"lte": int(self.config_file["MAX_CLOUD_COVER"])}},
+                query={"eo:cloud_cover": {"lte": int(self.config_file["max_cloud_cover"])}},
                 fields={"include": ["id", "properties.datetime", "properties.eo:cloud_cover"], "exclude": []},
             )
 
@@ -109,7 +109,7 @@ class SentinelAPI(BaseAPI):
             unique_acquisitions = filter_times(all_timestamps, time_difference)
 
             for timestamp in reversed(unique_acquisitions):
-                data_folder = "/".join([self.config_file["DOWNLOAD_DIR_SENTINEL-2"],
+                data_folder = "/".join([self.config_file["download_dir_sentinel-2"],
                                         str(feature["properties"]["id"]),
                                         dt.datetime.strftime(timestamp, "%Y-%m-%d")])
 
