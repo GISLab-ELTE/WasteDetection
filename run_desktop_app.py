@@ -8,7 +8,7 @@ from model import model, persistence
 
 if __name__ == "__main__":
     try:
-        model = model.Model(persistence.Persistence())
+        model = model.Model(persistence.Persistence(application_type="desktop_app"))
         view = view.View()
         controller = controller.Controller(view, model)
         controller.mainloop()
