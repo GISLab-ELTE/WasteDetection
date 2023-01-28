@@ -131,3 +131,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Other extensions
+*.json
+*.geojson
+*.tif
+*.tiff
