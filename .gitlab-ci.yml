@@ -1,29 +1,63 @@
-image: continuumio/miniconda3
-
-# Change pip's and conda's cache directory to be inside the project directory,
-# since we can only cache local items.
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip/"
-  CONDA_PKGS_DIRS: "$CI_PROJECT_DIR/.cache/conda/"
-
-cache:
-  key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
-  paths:
-    - .cache/pip/
-    - .cache/conda/
-
-before_script:
-  # Configure shell for Anaconda (called in ~/.bashrc, but in CI the shell is not interactive)
-  - source /opt/conda/etc/profile.d/conda.sh
-  # Debug info
-  - cat /etc/os-release
-  - conda info
-
+# Model
 model-unittest:
+  image: continuumio/miniconda3
   stage: test
-  script: 
+  before_script:
+    # Configure shell for Anaconda (called in ~/.bashrc, but in CI the shell is not interactive)
+    - source /opt/conda/etc/profile.d/conda.sh
+    # Debug info
+    - cat /etc/os-release
+    - conda info
+  script:
     # Setup and activate environment
     - conda env create -f server_app/environment.yml -q
     - conda activate WasteDetectionServerApp
     # Run unit tests
     - python unittest_model.py
+  cache:
+    key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .cache/pip/
+      - .cache/conda/
+  # Change pip's and conda's cache directory to be inside the project directory,
+  # since we can only cache local items.
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip/"
+    CONDA_PKGS_DIRS: "$CI_PROJECT_DIR/.cache/conda/"
+
+# Webapp
+webapp-build:
+  image: node:18-bullseye
+  stage: build
+  script:
+    - cd web_app/app/
+    - npm ci
+    - npm run build
+  cache:
+    key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
+    paths:
+      - web_app/app/node_modules/
+  artifacts:
+    paths:
+      - web_app/app/dist/
+    expire_in: 1 week
+
+webapp-deploy:
+  image: ubuntu:latest
+  stage: deploy
+  only:
+    - master
+  dependencies:
+    - webapp-build
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+    - ssh-add <(echo "$CD_PRIVATE_KEY")
+    - ssh -P22 gitlab-deployer@gis.inf.elte.hu "rm -r /var/www/gis/waste-detection/*"
+    - scp -P22 -r web_app/app/dist/* gitlab-deployer@gis.inf.elte.hu:/var/www/gis/waste-detection/
+  environment:
+    name: production
+    url: https://gis.inf.elte.hu/waste-detection/

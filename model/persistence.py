@@ -7,11 +7,9 @@ from typing import Dict, Union
 from model.exceptions import *
 from sklearn.ensemble import RandomForestClassifier
 
-
 # constants
 CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/src/config.json"
 CONFIG_FILE_NAME_SERVER_APP = "server_app/src/config.json"
-
 
 class Persistence(object):
     """
