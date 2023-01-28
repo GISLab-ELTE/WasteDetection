@@ -1021,7 +1021,7 @@ class Controller(object):
         garbage_mc_id = int(self._view.settings_view.garbage_mc_id_spinbox.get())
         water_mc_id = int(self._view.settings_view.water_mc_id_spinbox.get())
 
-        bands_and_indices = ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr"]
+        bands_and_indices = ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr", "apwi"]
         values = list()
         for i in range(len(bands_and_indices)):
             index = "training_" + bands_and_indices[i]
@@ -1097,7 +1097,7 @@ class Controller(object):
         washed_up_after_postfix = self._view.settings_view.washed_up_after_postfix_entry.get()
 
         # Training labels
-        bands_and_indices = ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr"]
+        bands_and_indices = ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr", "apwi"]
         values = list()
         for i in range(len(bands_and_indices)):
             index = "training_" + bands_and_indices[i]
@@ -1307,6 +1307,7 @@ class Controller(object):
         self._view.settings_view.vars["training_ndvi"].set(1 if self._model.persistence.training_label_ndvi else 0)
         self._view.settings_view.vars["training_rndvi"].set(1 if self._model.persistence.training_label_rndvi else 0)
         self._view.settings_view.vars["training_sr"].set(1 if self._model.persistence.training_label_sr else 0)
+        self._view.settings_view.vars["training_apwi"].set(1 if self._model.persistence.training_label_apwi else 0)
 
         # Color settings
         for i in range(len(self._view.settings_view.color_buttons)):
