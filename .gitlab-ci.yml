@@ -27,5 +27,5 @@ model-unittest:
     - conda env create -f environment.yml -q
     - conda activate WasteDetectionDesktopApp
     # Run unit tests
-    - cd src
+    - cd ..
     - python unittest_model.py
