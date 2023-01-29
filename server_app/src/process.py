@@ -1,6 +1,8 @@
+import os
 import time
 import json
 import pickle
+import fnmatch
 import geojson
 
 import numpy as np
@@ -10,6 +12,7 @@ from model import Model
 from pathlib import Path
 from planetapi import PlanetAPI
 from typing import Dict, Optional
+from collections import OrderedDict
 from sentinelapi import SentinelAPI
 from sklearn.ensemble import RandomForestClassifier
 
@@ -161,6 +164,10 @@ class Process(object):
         """
 
         downloaded_images = self.get_satellite_images()
+        sentinel_path = self.config_file["result_dir_sentinel-2"]
+        planet_path = self.config_file["result_dir_planetscope"]
+        satellite_type = self.config_file["satellite_type"]
+        work_dir = sentinel_path if satellite_type.lower() == "Sentinel-2".lower() else planet_path
 
         for feature_id in downloaded_images.keys():
             for date in downloaded_images[feature_id].keys():
@@ -169,6 +176,17 @@ class Process(object):
                     continue
 
                 path = downloaded_images[feature_id][date]
+                dir_name = os.path.dirname(path)
+                masked_heatmap_postfix = self.config_file["masked_heatmap_postfix"]
+
+                processed = False
+                for file in os.listdir(dir_name):
+                    if fnmatch.fnmatch(file, f"*{masked_heatmap_postfix}*"):
+                        processed = True
+                        break
+
+                if processed:
+                    continue
 
                 indices_path = self.model.save_bands_indices(path, "all", "all")
 
@@ -182,7 +200,7 @@ class Process(object):
 
                 Model.get_waste_geojson(
                     input_file=masked_classified,
-                    output_file=Model.output_path(masked_classified, "classified", "geojson"),
+                    output_file="/".join([work_dir, feature_id, date, "classified.geojson"]),
                     search_value=100
                 )
 
@@ -190,7 +208,7 @@ class Process(object):
                 for heatmap_type, value in heatmap_types:
                     Model.get_waste_geojson(
                         input_file=masked_heatmap,
-                        output_file=Model.output_path(masked_heatmap, heatmap_type, "geojson"),
+                        output_file="/".join([work_dir, feature_id, date, heatmap_type + ".geojson"]),
                         search_value=value
                     )
 
@@ -203,21 +221,15 @@ class Process(object):
         with open(self.config_file["estimations_file_path"], "w") as file:
             json.dump(self.estimations, file, indent=4)
 
-        sentinel_path = self.config_file["download_dir_sentinel-2"]
-        planet_path = self.config_file["download_dir_planetscope"]
-        satellite_type = self.config_file["satellite_type"]
-
-        work_dir = sentinel_path if satellite_type.lower() == "Sentinel-2".lower() else planet_path
         geojson_files = Process.find_files(work_dir, "*.geojson", only_one=False)
+        narrowed_geojson_files = OrderedDict()
+        observation_span_in_days = int(self.config_file["observation_span_in_days"])
 
-        for out_key in geojson_files.keys():
-            for in_key in geojson_files[out_key].keys():
-                geojson_files[out_key][in_key].sort()
-                for i in range(len(geojson_files[out_key][in_key])):
-                    geojson_files[out_key][in_key][i] = geojson_files[out_key][in_key][i][3:]
+        for key, value in geojson_files.items():
+            narrowed_geojson_files[key] = OrderedDict(list(value.items())[-observation_span_in_days:])
 
         with open(self.config_file["geojson_files_path"], "w") as file:
-            json.dump(geojson_files, file, indent=4)
+            json.dump(narrowed_geojson_files, file, indent=4)
 
     def get_seconds_until_next_process(self) -> float:
         """
@@ -277,7 +289,7 @@ class Process(object):
 
         print()
 
-    def get_satellite_images(self) -> Dict:
+    def get_satellite_images(self) -> OrderedDict:
         """
         Returns the paths of downloaded images.
 
@@ -347,7 +359,7 @@ class Process(object):
         return clf
 
     @staticmethod
-    def find_files(dir_path: str, file_name_postfix: str, only_one: bool = True) -> Dict:
+    def find_files(dir_path: str, file_name_postfix: str, only_one: bool = True) -> OrderedDict:
         """
         Returns the paths of files in the given directory.
 
@@ -357,16 +369,16 @@ class Process(object):
         :return: dictionary containing the relative paths of files
         """
 
-        images = dict()
+        images = OrderedDict()
 
-        for path in Path(dir_path).rglob(file_name_postfix):
+        for path in sorted(Path(dir_path).rglob(file_name_postfix)):
             rel_path = str(path.relative_to(dir_path))
             split_rel_path = rel_path.split("\\")
             feature_id = split_rel_path[0]
             date = split_rel_path[1]
 
             if feature_id not in images.keys():
-                images[feature_id] = dict()
+                images[feature_id] = OrderedDict()
 
             if only_one:
                 images[feature_id][date] = "/".join([dir_path] + rel_path.split("\\"))
