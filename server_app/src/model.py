@@ -13,8 +13,8 @@ from math import ceil
 from osgeo import gdal
 from shapely.geometry import shape
 from shapely.ops import unary_union
-from sklearn.ensemble import RandomForestClassifier
 from typing import List, Tuple, Union, Dict
+from sklearn.ensemble import RandomForestClassifier
 
 
 class Model(object):
@@ -407,7 +407,16 @@ class Model(object):
         return x_coord, y_coord
 
     @staticmethod
-    def get_bbox_of_pixel(i, j, gt):
+    def get_bbox_of_pixel(i: int, j: int, gt: Tuple[int, ...]) -> List[Tuple[float, float]]:
+        """
+        Calculates the bounding box of a single pixel.
+
+        :param i: row index
+        :param j: column index
+        :param gt: GeoTransform of the picture
+        :return: bounding box of a pixel
+        """
+
         x_size = gt[1]
         y_size = -gt[5]
 
@@ -421,7 +430,15 @@ class Model(object):
         return bbox
 
     @staticmethod
-    def get_bbox_of_all_given_values(input_file, value):
+    def get_bbox_of_all_given_values(input_file: str, value: int) -> List:
+        """
+        Calculates all bounding boxes of all pixels.
+
+        :param input_file: path of input file
+        :param value: numerical value of the pixels
+        :return: list of bounding boxes
+        """
+
         dataset = gdal.Open(input_file, gdal.GA_ReadOnly)
         values = dataset.GetRasterBand(1).ReadAsArray()
         gt = dataset.GetGeoTransform()
@@ -442,7 +459,16 @@ class Model(object):
         return all_bboxes
 
     @staticmethod
-    def get_waste_geojson(input_file, output_file, search_value):
+    def get_waste_geojson(input_file: str, output_file: str, search_value: int) -> None:
+        """
+        Unites the adjacent pixels, then creates a GeoJSON file containing the result polygons.
+
+        :param input_file: path of input file
+        :param output_file: path of output file
+        :param search_value: numerical value of the pixels
+        :return:
+        """
+
         all_bboxes = Model.get_bbox_of_all_given_values(input_file, search_value)
 
         ds = gdal.Open(input_file, gdal.GA_ReadOnly)
