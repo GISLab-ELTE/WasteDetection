@@ -488,6 +488,10 @@ class Model(object):
         else:
             boundary = {"type": "FeatureCollection", "features": []}
 
+        output_dir = os.path.dirname(output_file)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
         with open(output_file, "w") as file:
             geojson.dump(boundary, file)
 
