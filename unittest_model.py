@@ -6,11 +6,12 @@ from model import model
 
 
 DEFAULT_RF_PATH = "desktop_app/clf/random_forest_model.sav"
+CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/src/config.json"
 
 
 class TestAddFiles(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
     
     def test_add_new_file(self) -> None:
         file_name = "NewFile1"
@@ -39,7 +40,7 @@ class TestAddFiles(unittest.TestCase, model.Model):
 
 class TestDeleteFiles(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_delete_file(self):
         self._opened_files += ["NewFile1", "NewFile2", "NewFile0", "NewFile4"]
@@ -65,7 +66,7 @@ class TestDeleteFiles(unittest.TestCase, model.Model):
 
 class TestSaveTrainingInputFile(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_save_file(self):
         path = "D:/Desktop/test.tif"
@@ -89,7 +90,7 @@ class TestSaveTrainingInputFile(unittest.TestCase, model.Model):
 
 class TestSavePointOnCanvas(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_save_point(self):
         tag_id = 42
@@ -102,7 +103,7 @@ class TestSavePointOnCanvas(unittest.TestCase, model.Model):
 
 class TestSaveNewMc(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_save_class(self):
         training_file = "D:/Desktop/test.tif"
@@ -167,7 +168,7 @@ class TestSaveNewMc(unittest.TestCase, model.Model):
 
 class TestDeleteMc(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_delete_class(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -212,7 +213,7 @@ class TestDeleteMc(unittest.TestCase, model.Model):
 
 class TestDeleteTagId(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_delete_tag_ids(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -245,7 +246,7 @@ class TestDeleteTagId(unittest.TestCase, model.Model):
 
 class TestSaveTagId(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_save_tag_ids(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -264,7 +265,7 @@ class TestSaveTagId(unittest.TestCase, model.Model):
 
 class TestSaveTagIdCoords(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_save_tag_id_coord(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -285,7 +286,7 @@ class TestSaveTagIdCoords(unittest.TestCase, model.Model):
 
 class TestDeletePoints(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_delete_points(self):
         for i in range(42):
@@ -299,7 +300,7 @@ class TestDeletePoints(unittest.TestCase, model.Model):
 
 class TestPlacePolygonOnCanvas(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_not_enough_points(self):
         self.save_point_on_canvas(33)
@@ -322,7 +323,7 @@ class TestPlacePolygonOnCanvas(unittest.TestCase, model.Model):
 
 class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_no_usable_one_file(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -443,7 +444,7 @@ class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
 
 class TestGetCoordsInsidePolygon(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
     def test_convex_polygon(self):
         polygon_coords = [1.0, 1.0, 2.0, 5.0, 4.0, 3.0, 3.0, 1.0]
@@ -473,7 +474,7 @@ class TestGetCoordsInsidePolygon(unittest.TestCase, model.Model):
 
 class TestCalculateIndex(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence())
+        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
 
         self.shape = (3, 3)
 
