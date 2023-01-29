@@ -7,9 +7,6 @@ from typing import Dict, Union
 from model.exceptions import *
 from sklearn.ensemble import RandomForestClassifier
 
-# constants
-CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/src/config.json"
-CONFIG_FILE_NAME_SERVER_APP = "server_app/src/config.json"
 
 class Persistence(object):
     """
@@ -17,16 +14,13 @@ class Persistence(object):
 
     """
 
-    def __init__(self, application_type: str = "desktop_app"):
+    def __init__(self, config_file_path: str):
         """
         The constructor of the Persistence class.
 
         """
 
-        if application_type.lower() == "desktop_app":
-            self._config_file = CONFIG_FILE_NAME_DESKTOP_APP
-        else:
-            self._config_file = CONFIG_FILE_NAME_SERVER_APP
+        self._config_file = config_file_path
 
         self._settings = None
         self.data_file = None

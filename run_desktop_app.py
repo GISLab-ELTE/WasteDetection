@@ -7,8 +7,9 @@ from model import model, persistence
 
 
 if __name__ == "__main__":
+    CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/src/config.json"
     try:
-        model = model.Model(persistence.Persistence(application_type="desktop_app"))
+        model = model.Model(persistence.Persistence(config_file_path=CONFIG_FILE_NAME_DESKTOP_APP))
         view = view.View()
         controller = controller.Controller(view, model)
         controller.mainloop()
