@@ -77,6 +77,10 @@ class TrainingView(ttk.Toplevel):
         return self._color_btn
 
     @property
+    def save_btn(self) -> ttk.Button:
+        return self._save_btn
+
+    @property
     def treeview(self) -> ttk.Treeview:
         return self._treeview
 
@@ -332,6 +336,7 @@ class TrainingView(ttk.Toplevel):
         # initialize user action components
         self._action_lf = ttk.Labelframe(master=self)
         self._classification_mode_btn = ttk.Button(master=self._action_lf)
+        self._save_btn = ttk.Button(master=self._action_lf)
         self._back_btn = ttk.Button(master=self._action_lf)
         self._open_input_img_btn = ttk.Button(master=self._action_lf)
         self._delete_input_img_btn = ttk.Button(master=self._action_lf)
@@ -373,6 +378,7 @@ class TrainingView(ttk.Toplevel):
         # configure user action components
         self._action_lf.configure(text="Actions", padding=10)
         self._back_btn.configure(text="Back to main window")
+        self._save_btn.configure(text="Save classification data")
         self._open_input_img_btn.configure(text="Open training image")
         self._delete_input_img_btn.configure(text="Delete training image")
 
@@ -452,6 +458,7 @@ class TrainingView(ttk.Toplevel):
         # style user action components
         self._action_lf["bootstyle"] = "default"
         self._classification_mode_btn["bootstyle"] = "dark"
+        self._save_btn["bootstyle"] = "dark"
         self._back_btn["bootstyle"] = "dark"
         self._open_input_img_btn["bootstyle"] = "primary"
         self._delete_input_img_btn["bootstyle"] = "danger"
@@ -487,11 +494,12 @@ class TrainingView(ttk.Toplevel):
         # place user action components
         self._action_lf.place(x=20, y=10, height=870, width=400)
         self._classification_mode_btn.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        self._save_btn.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
         self._back_btn.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         self._open_input_img_btn.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
         self._delete_input_img_btn.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
 
-        self._opened_files_lf.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
+        self._opened_files_lf.grid(row=3, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
         self._opened_files_lb.grid(row=0, column=0, sticky="nsew")
         self._opened_files_sb_x.grid(row=1, column=0, sticky="ew")
         self._opened_files_sb_y.grid(row=0, column=1, sticky="ns")

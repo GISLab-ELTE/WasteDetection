@@ -275,6 +275,7 @@ class Controller(object):
         self._view.training_view.delete_btn.configure(command=self._training_delete)
         self._view.training_view.training_btn.configure(command=self._training_start_on_separate_thread)
         self._view.training_view.color_btn.configure(command=self._training_change_color_btn_color)
+        self._view.training_view.save_btn.configure(command=self._training_save_classification_data)
 
         self._view.training_view.mc_input.configure(validate="all", validatecommand=(self._alpha_func, "%P"))
         self._view.training_view.mc_spinbox.configure(validate="all", validatecommand=(self._training_mc_id_func, "%P"))
@@ -1432,6 +1433,7 @@ class Controller(object):
 
         tag_ids = self._view.training_view.zoom_canvas.canvas.find_all()
         _ = self._model.delete_points()
+        self._model.delete_classification_data(selected_file)
 
         for tag_id in tag_ids:
             if self._view.training_view.zoom_canvas.is_point_or_polygon(tag_id):
@@ -1454,7 +1456,6 @@ class Controller(object):
         """
 
         selected_file = self._view.training_view.get_curselection_value_listbox()
-
         if selected_file is None:
             return
 
@@ -1640,7 +1641,7 @@ class Controller(object):
             if file:
                 name, extension = os.path.splitext(file.name)
                 file.close()
-                df.to_csv(name + ".csv", sep=";", index=False)
+                df.to_csv(name + ".csv", sep=";", index="FID")
                 self._model.save_classification_images(labeled_images)
                 self._model.create_and_save_random_forest(name + ".csv", name + extension)
 
@@ -1684,6 +1685,28 @@ class Controller(object):
         selected_file = self._view.training_view.get_curselection_value_listbox()
         x, y = self._view.training_view.zoom_canvas.get_event_coordinates_on_image(event)
         self._model.set_classification_pixel_of_layer(selected_file, (int(y), int(x)), 0)
+
+    def _training_save_classification_data(self) -> None:
+        self._training_save_coords_of_tag_ids()
+
+        usable_data, enough_data = self._model.create_usable_training_data()
+        if not enough_data:
+            self._view.training_view.zoom_canvas.delete_image()
+            self._view.training_view.opened_files_lb.selection_clear(0, END)
+
+            message = "Not enough training data!"
+            tkinter.messagebox.showerror(title="Training error", message=message, parent=self._view.training_view)
+
+            return
+
+        _, labeled_images = self._model.create_training_df(usable_data)
+        self._model.save_classification_images(labeled_images)
+        self._view.training_view.opened_files_lb.bind("<<ListboxSelect>>", self._training_listbox_item_selected)
+        tkinter.messagebox.showinfo(
+            parent=self._view.training_view.zoom_canvas,
+            title="Saving info",
+            message="Successfully saved!"
+        )
 
     def _training_place_point_on_canvas(self, event) -> None:
         """

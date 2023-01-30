@@ -217,6 +217,9 @@ class Model(object):
         mc_id_mul = mc_id * 100
         self._classification_layer_data[image_name][coordinates]= mc_id_mul
 
+    def delete_classification_data(self, image_name: str) -> None:
+        self._classification_layer_data.pop(image_name)
+
     def save_new_mc(self, training_file: str, mc_id: int, mc_name: str, mc_color: str) -> None:
         """
         Saves a new training class with the given file name, id, name and color.
@@ -334,17 +337,40 @@ class Model(object):
         usable_training_data = dict()
 
         tag_id_coords = self._tag_id_coords
-        for training_file in tag_id_coords.keys():
-            for mc_id in tag_id_coords[training_file].keys():
-                if tag_id_coords[training_file][mc_id][1]:
+        enough_data = list()
+        for (training_file, mc_data) in tag_id_coords.items():
+            enough_data.append(list(mc_data.keys()))
+            for (mc_id, polygon_data) in mc_data.items():
+                mc_name, coords, bbox_coords = polygon_data
+                if coords:
                     if training_file not in usable_training_data.keys():
                         usable_training_data[training_file] = dict()
-                    usable_training_data[training_file][mc_id] = tag_id_coords[training_file][mc_id]
+                    usable_training_data[training_file][mc_id] = polygon_data
 
-        # enough_data = np.unique([i for s in [list(d.keys()) for d in list(usable_training_data.values())] for i in s])
-        # enough_data = len(enough_data) >= 2
-        enough_data = True
+        for labeled_layer in self._classification_layer_data.values():
+                enough_data.append(labeled_layer[labeled_layer != 0] // 100)
+
+        enough_data = np.unique(np.concatenate(enough_data))
+        enough_data = len(enough_data) >= 2
+        
         return usable_training_data, enough_data
+
+    def add_polygon_values_to_image(self, training_file: str, usable_training_data: Dict[str, Dict]) -> np.ndarray:
+        """
+        Creates a numpy array that adds the polygons to the image layer.
+        :param training_file: the training file that needs to be updated.
+        :return a new image layer containing the updated data.
+        """
+        labeled_layer = self._classification_layer_data[training_file].copy()
+        polygons = usable_training_data[training_file]
+        for (mc_id, polygon_data) in polygons.items():
+            mc_name, coords, bbox_coords = polygon_data
+            for i in range(len(coords)):
+                indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
+                indices = np.asarray(indices).transpose()
+                labeled_layer[indices[1], indices[0]] = mc_id * 100
+
+        return labeled_layer
 
     def create_training_df(self, usable_training_data: Dict[str, Dict]) -> Tuple[pd.DataFrame, Dict[str, np.ndarray]]:
         """
@@ -359,88 +385,40 @@ class Model(object):
         labels = Model._resolve_bands_indices_string(training_labels)
         labels = [value.upper() for value in labels]
         column_labels += labels
-
         labels = column_labels + labels
         file_dfs = []
-
         labeling_data = {}
         classified_layers = self._classification_layer_data
-        for training_file in classified_layers.keys():
-            print("Starting to process indices for bands", training_file, "...")
+
+        for training_file, labeled_layer in classified_layers.items():
             bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
                                                         training_labels)
             bands_and_indices = np.asarray(bands_and_indices)
-            print("Starting to filter classified pixels...")
-            labeled_image = self._classification_layer_data[training_file]
+            if training_file in usable_training_data:
+                labeled_layer = self.add_polygon_values_to_image(training_file, usable_training_data)
 
-            classified_xs, classified_ys = np.nonzero(labeled_image)
-            print("Classified positions received, creating dataframe for image...")
-            classified_pixels = labeled_image[classified_xs, classified_ys].flatten()
+            classified_xs, classified_ys = np.nonzero(labeled_layer)
+            classified_pixels = labeled_layer[classified_xs, classified_ys].flatten()
             list_of_columns = [
                 np.full(fill_value = "", shape = classified_pixels.shape),
                 classified_pixels.astype(int)
             ]
-            classified_bands_and_indices = bands_and_indices[:,classified_xs, classified_ys]
+            classified_bands_and_indices = bands_and_indices[:, classified_xs, classified_ys]
             for i in range(classified_bands_and_indices.shape[0]):
                 list_of_columns.append(classified_bands_and_indices[i])
 
-           
             df = pd.DataFrame()
             df.index.name = "FID"
             for i in range(len(list_of_columns)):
                 df[labels[i]] = list_of_columns[i]
 
-            # for [x, y] in classified_positions: 
-            #     mul_mc_id = labeled_image[x, y] * 100
-            #     line = ["" , mul_mc_id]
-                
-            #     for value in bands_and_indices:
-            #             line.append(value[x, y])
-                
-            #     training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=False)
-            labeling_data[training_file] = labeled_image
+            labeling_data[training_file] = labeled_layer
             file_dfs.append(df)
-            print("done.")
 
         training_df = pd.concat(file_dfs, ignore_index=True)
         training_df.index.name = "FID"
-        # for training_file in usable_training_data.keys():
-        #     bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
-        #                                                 training_labels)
 
-        #     labeled_image = self._classification_layer_data[training_file]
-        #     for mc_id in usable_training_data[training_file].keys():
-        #         mc_name, coords, bbox_coords = usable_training_data[training_file][mc_id]
-        #         for i in range(len(coords)):
-        #             indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
-        #             for y, x in indices:
-        #                 mul_mc_id = mc_id * 100
-        #                 line = [mc_name, mul_mc_id]
-        #                 labeled_image[x, y] = mul_mc_id
-
-        #                 for value in bands_and_indices:
-        #                     line.append(value[x, y])
-
-        #                 training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=False)
-            
-        #     labeling_data[training_file] = labeled_image
-        
         return training_df, labeling_data
-
-    # def add_polygon_data_to_classified_image(self, classified_image_name: str, classification_layer: np.ndarray) -> np.ndarray:
-    #     tag_id_coords = self._tag_id_coords
-
-    #     modified_layer = np.copy(classification_layer)
-
-    #     for mc_id in tag_id_coords[classified_image_name].keys():
-    #             if tag_id_coords[classified_image_name][mc_id][1]:
-    #                 mc_name, coords, bbox_coords = tag_id_coords[classified_image_name][mc_id]
-    #                 for i in range(len(coords)):
-    #                     indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
-    #                     for y, x in indices:
-    #                         mul_mc_id = mc_id * 100
-    #                         modified_layer[x, y] = mul_mc_id
-    #     return modified_layer
 
     def save_classification_images(self, labeled_images:Dict[str, np.ndarray]) -> None:
         """
@@ -1181,16 +1159,6 @@ class Model(object):
 
         # read training data
         df = pd.read_csv(training_data_path, sep=';')
-        print(df)
-
-        # introduce noise in data
-        # dataframes_to_merge = [df]
-        # for _ in range(1,10):
-        #     dataframes_to_merge.append(Model._make_noisy_data(df))
-        # df = pd.concat(dataframes_to_merge, ignore_index=True)
-        
-        # df.index.name="FID"      
-        # df.to_csv("E:/Programozas/Hulladekdetektalas/Satellite image/sentinel2/models/noisy_data.csv", sep=";")
         
         #narrow training data
         data = df[column_names]
@@ -1412,20 +1380,6 @@ class Model(object):
         index[numerator_negative_denumerator_zero_mask] = numerator_nanmin
         index[valid_denominator_non_zero_mask] = numerator[valid_denominator_non_zero_mask] / denominator[valid_denominator_non_zero_mask]
 
-        # for i in range(rows):
-        #     for j in range(cols):
-        #         if np.isnan(numerator[i, j]) or np.isnan(denominator[i, j]):
-        #             index[i, j] = float("NaN")
-        #         elif denominator[i, j] != 0:
-        #             index[i, j] = numerator[i, j] / denominator[i, j]
-        #         else:
-        #             if numerator[i, j] < 0:
-        #                 index[i, j] = numerator_nanmin
-        #             elif numerator[i, j] > 0:
-        #                 index[i, j] = numerator_nanmax
-        #             else:
-        #                 index[i, j] = float("NaN")
-
         # return index values
         return index
 
@@ -1623,8 +1577,7 @@ class Model(object):
             for c in range(split_count):
                 new_array_df = array_df[c * split_size:(c + 1) * split_size].dropna(axis="index")
                 pred_proba = clf.predict_proba(new_array_df)
-                print(pred_proba)
-                print(pred_proba.shape)
+
                 counter = 0
                 for i in range(c * split_size, (c + 1) * split_size):
                     if i == rows * cols:
@@ -1650,7 +1603,6 @@ class Model(object):
 
             classification = classification.reshape((rows, cols))
             heatmap = heatmap.reshape((rows, cols))
-            print(classification)
             classification_output_path = Model._output_path([input_path], working_dir, classification_postfix, file_extension)
             heatmap_output_path = Model._output_path([input_path], working_dir, heatmap_postfix, file_extension)
 

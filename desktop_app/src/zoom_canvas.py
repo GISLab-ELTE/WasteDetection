@@ -2,6 +2,7 @@ import rasterio
 import numpy as np
 import tkinter as tk
 import ttkbootstrap as ttk
+import math
 
 from osgeo import gdal
 from matplotlib import cm
@@ -109,9 +110,19 @@ class ZoomCanvas(ttk.Frame):
                 green = band2.ReadAsArray()
                 red = band3.ReadAsArray()
 
-                blue_n = ((blue.astype(np.float64) - blue.min()) * (255 / blue.max())).astype(np.uint8)
-                green_n = ((green.astype(np.float64) - green.min()) * (255 / green.max())).astype(np.uint8)
-                red_n = ((red.astype(np.float64) - red.min()) * (255 / red.max())).astype(np.uint8)
+                n = 10
+
+                blue_mean, blue_std = blue.mean(), blue.std() * n
+                green_mean, green_std = green.mean(), green.std() * n
+                red_mean, red_std = red.mean(), red.std() * n
+
+                blue_min, blue_max = math.floor(max(blue_mean - blue_std, blue.min())),  math.ceil(min(blue_mean + blue_std, blue.max()))
+                green_min, green_max = math.floor(max(green_mean - green_std, green.min())),  math.ceil(min(green_mean + green_std, green.max()))
+                red_min, red_max = math.floor(max(red_mean - red_std, red.min())),  math.ceil(min(red_mean + red_std, red.max()))
+
+                blue_n = ((blue.astype(np.float64) - blue_min) * (255 / blue_max)).astype(np.uint8)
+                green_n = ((green.astype(np.float64) - green_min) * (255 / green_max)).astype(np.uint8)
+                red_n = ((red.astype(np.float64) - red_min) * (255 / red_max)).astype(np.uint8)
 
                 dataset = np.dstack((red_n, green_n, blue_n))
 
@@ -405,7 +416,6 @@ class ZoomCanvas(ttk.Frame):
 
         :return: None
         """
-
         if len(self._image_layers) == 0:
             return
 
