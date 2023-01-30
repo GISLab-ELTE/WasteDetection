@@ -2,7 +2,7 @@
     "SATELLITE_TYPE": "Planet",
     "WORKING_DIR": "../results",
     "FILE_EXTENSION": "tif",
-    "HOTSPOT_RF_PATH": "E:/Programozas/Hulladekdetektalas/Untitled.sav",
+    "HOTSPOT_RF_PATH": "../clf/random_forest_model.sav",
     "FLOATING_RF_PATH": "../clf/random_forest_model.sav",
     "MORPHOLOGY_MATRIX_SIZE": "5",
     "MORPHOLOGY_ITERATIONS": "1",
