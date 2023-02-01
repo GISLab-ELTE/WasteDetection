@@ -1182,6 +1182,7 @@ class Model(object):
             # NDVI = (NIR - RED) / (NIR + RED)
             # RNDVI = (RED - NIR) / (RED + NIR)
             # SR = NIR / RED
+
             blue = bands["blue"]
             green = bands["green"]
             red = bands["red"]
@@ -1212,6 +1213,10 @@ class Model(object):
                 elif item == "sr":
                     sr = Model._calculate_index(numerator=nir, denominator=red)
                     list_of_bands_and_indices.append(sr)
+                elif item == "apwi":
+                    apwi = Model._calculate_index(numerator=blue, denominator=1 - (red + green + nir) / 3)
+                    list_of_bands_and_indices.append(apwi)
+
             return list_of_bands_and_indices
     
     @staticmethod
