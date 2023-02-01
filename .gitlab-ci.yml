@@ -61,3 +61,6 @@ webapp-deploy:
   environment:
     name: production
     url: https://gis.inf.elte.hu/waste-detection/
+
+include:
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
