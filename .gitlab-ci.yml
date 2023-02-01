@@ -63,4 +63,5 @@ webapp-deploy:
     url: https://gis.inf.elte.hu/waste-detection/
 
 include:
-  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
