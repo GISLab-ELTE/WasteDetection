@@ -1,3 +1,10 @@
+variables:
+  DS_EXCLUDED_ANALYZERS: gemnasium-python
+  
+include:
+  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+  
 # Model
 model-unittest:
   image: continuumio/miniconda3
@@ -62,7 +69,3 @@ webapp-deploy:
   environment:
     name: production
     url: https://gis.inf.elte.hu/waste-detection/
-
-include:
-  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
-  - template: Jobs/Secret-Detection.gitlab-ci.yml
