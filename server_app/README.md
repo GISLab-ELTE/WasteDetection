@@ -1,5 +1,16 @@
 # Server application for continuous waste detection
 
+## Running the application
+
+1. **Create the virtual environment**: `conda env create -f environment.yml`. The name of the new environment will be `WasteDetectionServerApp`.
+2. **Activate environment:** `conda activate WasteDetectionServerApp`.
+3. **Run the application:** `python __main__.py (-st) (-s)` There are two flags that can be used optionally:
+    - `-st`: Starts a startup process before the main loop.
+    - `-s`: Sleeps after execution until the previously set local time.
+   
+
+## Configuration
+
 Meaning of the parameters in `config.sample.json` file:
 
 - `download_dir_planetscope`: Download destination of PlanetScope images.
@@ -42,3 +53,5 @@ Meaning of the parameters in `config.sample.json` file:
 - `planetscope_green`: The index of the Green band on the PlanetScope image.
 - `planetscope_red`: The index of the Red band on the PlanetScope image.
 - `planetscope_nir`: The index of the NIR band on the PlanetScope image.
+
+These values can be overridden if you create a `config.local.json` file in the `resources` folder. In this it is enough to include the fields that you want to change the value of.
