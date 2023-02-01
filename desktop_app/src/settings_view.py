@@ -318,6 +318,7 @@ class SettingsView(ttk.Toplevel):
         self._training_ndvi = ttk.Checkbutton(master=self._training_labels)
         self._training_rndvi = ttk.Checkbutton(master=self._training_labels)
         self._training_sr = ttk.Checkbutton(master=self._training_labels)
+        self._training_apwi = ttk.Checkbutton(master=self._training_labels)
 
         self._color_settings = ttk.Labelframe(master=self)
 
@@ -469,6 +470,7 @@ class SettingsView(ttk.Toplevel):
         self._training_ndvi.configure(text="NDVI", variable=self._vars["training_ndvi"])
         self._training_rndvi.configure(text="RNDVI", variable=self._vars["training_rndvi"])
         self._training_sr.configure(text="SR", variable=self._vars["training_sr"])
+        self._training_apwi.configure(text="APWI", variable=self._vars["training_apwi"])
 
         self._color_settings.configure(text="Color settings", padding=5)
         for i in range(16):
@@ -600,6 +602,7 @@ class SettingsView(ttk.Toplevel):
         self._training_ndvi["bootstyle"] = "default"
         self._training_rndvi["bootstyle"] = "default"
         self._training_sr["bootstyle"] = "default"
+        self._training_apwi["bootstyle"] = "default"
 
         self._color_settings["bootstyle"] = "default"
 
@@ -719,6 +722,7 @@ class SettingsView(ttk.Toplevel):
         self._training_ndvi.grid(row=6, column=0, sticky="nsew", padx=5, pady=5)
         self._training_rndvi.grid(row=7, column=0, sticky="nsew", padx=5, pady=5)
         self._training_sr.grid(row=8, column=0, sticky="nsew", padx=5, pady=5)
+        self._training_apwi.grid(row=9, column=0, sticky="nsew", padx=5, pady=5)
 
         self._color_settings.place(x=910, y=10, height=655, width=160)
 
@@ -747,6 +751,7 @@ class SettingsView(ttk.Toplevel):
         self._vars["training_ndvi"] = ttk.IntVar(master=self)
         self._vars["training_rndvi"] = ttk.IntVar(master=self)
         self._vars["training_sr"] = ttk.IntVar(master=self)
+        self._vars["training_apwi"] = ttk.IntVar(master=self)
 
     def _create_tooltips(self) -> None:
         """
@@ -834,6 +839,7 @@ class SettingsView(ttk.Toplevel):
         ToolTip(self._training_rndvi, "Reversed Normalized Difference Vegetation index: "
                                       "(Red - NIR) / (Red + NIR).")
         ToolTip(self._training_sr, "Simple Ratio: (NIR) / (Red).")
+        ToolTip(self._training_apwi, "Agricultural Plastic Waste Index: (Blue) / (1 - (Red + Green + NIR) / 3).")
 
         # Color settings
         for btn in self._color_buttons:

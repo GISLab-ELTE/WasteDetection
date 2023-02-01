@@ -1,5 +1,4 @@
 import os
-import view
 import math
 import rasterio
 from model import model
@@ -9,8 +8,10 @@ import numpy as np
 import tkinter as tk
 import tkinter.messagebox
 import ttkbootstrap as ttk
+import desktop_app.src.view as view
 
 from osgeo import gdal
+from model import model
 from model.exceptions import *
 from tkinter import Image, filedialog as fd
 from ttkbootstrap.constants import *
@@ -953,7 +954,7 @@ class Controller(object):
 
         selected_folder = fd.askdirectory(
             parent=self._view.settings_view,
-            initialdir="../"
+            initialdir="./"
         )
 
         if len(selected_folder) > 0:
@@ -976,7 +977,7 @@ class Controller(object):
         filename = fd.askopenfilename(
             parent=self._view.settings_view,
             title="Open file",
-            initialdir="../",
+            initialdir="./",
             filetypes=filetypes,
         )
 
@@ -1029,7 +1030,7 @@ class Controller(object):
         garbage_mc_id = int(self._view.settings_view.garbage_mc_id_spinbox.get())
         water_mc_id = int(self._view.settings_view.water_mc_id_spinbox.get())
 
-        bands_and_indices = ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr"]
+        bands_and_indices = ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr", "apwi"]
         values = list()
         for i in range(len(bands_and_indices)):
             index = "training_" + bands_and_indices[i]
@@ -1105,7 +1106,7 @@ class Controller(object):
         washed_up_after_postfix = self._view.settings_view.washed_up_after_postfix_entry.get()
 
         # Training labels
-        bands_and_indices = ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr"]
+        bands_and_indices = ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr", "apwi"]
         values = list()
         for i in range(len(bands_and_indices)):
             index = "training_" + bands_and_indices[i]
@@ -1315,6 +1316,7 @@ class Controller(object):
         self._view.settings_view.vars["training_ndvi"].set(1 if self._model.persistence.training_label_ndvi else 0)
         self._view.settings_view.vars["training_rndvi"].set(1 if self._model.persistence.training_label_rndvi else 0)
         self._view.settings_view.vars["training_sr"].set(1 if self._model.persistence.training_label_sr else 0)
+        self._view.settings_view.vars["training_apwi"].set(1 if self._model.persistence.training_label_apwi else 0)
 
         # Color settings
         for i in range(len(self._view.settings_view.color_buttons)):
@@ -1889,7 +1891,7 @@ class Controller(object):
         :return: None
         """
 
-        with open("about.txt", mode="r") as file:
+        with open("desktop_app/src/about.txt", mode="r") as file:
             text = file.read()
             tkinter.messagebox.showinfo(
                 parent=self._view,
@@ -1914,7 +1916,7 @@ class Controller(object):
         filenames = fd.askopenfilenames(
             parent=active_window,
             title="Open files",
-            initialdir="../",
+            initialdir="./",
             filetypes=filetypes,
         )
 
@@ -1948,7 +1950,7 @@ class Controller(object):
         file = fd.asksaveasfile(
             parent=active_window,
             title="Save file",
-            initialdir="../",
+            initialdir="./",
             initialfile="Untitled." + file_extension,
             defaultextension="." + file_extension,
             filetypes=filetypes

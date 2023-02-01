@@ -9,8 +9,8 @@ from matplotlib import cm
 from model.exceptions import *
 from PIL import Image, ImageTk
 from typing import Tuple, Union, List
-from auto_scrollbar import AutoScrollbar
 from matplotlib.colors import ListedColormap
+from desktop_app.src.auto_scrollbar import AutoScrollbar
 
 
 # constants

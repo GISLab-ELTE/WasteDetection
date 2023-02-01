@@ -538,24 +538,26 @@ class Model(object):
         """
 
         labels = list()
-        if self._persistence.settings["TRAINING_LABEL_BLUE"]:
+        if self._persistence.settings["TRAINING_LABEL_BLUE"] == "1":
             labels.append("blue")
-        if self._persistence.settings["TRAINING_LABEL_GREEN"]:
+        if self._persistence.settings["TRAINING_LABEL_GREEN"] == "1":
             labels.append("green")
-        if self._persistence.settings["TRAINING_LABEL_RED"]:
+        if self._persistence.settings["TRAINING_LABEL_RED"] == "1":
             labels.append("red")
-        if self._persistence.settings["TRAINING_LABEL_NIR"]:
+        if self._persistence.settings["TRAINING_LABEL_NIR"] == "1":
             labels.append("nir")
-        if self._persistence.settings["TRAINING_LABEL_PI"]:
+        if self._persistence.settings["TRAINING_LABEL_PI"] == "1":
             labels.append("pi")
-        if self._persistence.settings["TRAINING_LABEL_NDWI"]:
+        if self._persistence.settings["TRAINING_LABEL_NDWI"] == "1":
             labels.append("ndwi")
-        if self._persistence.settings["TRAINING_LABEL_NDVI"]:
+        if self._persistence.settings["TRAINING_LABEL_NDVI"] == "1":
             labels.append("ndvi")
-        if self._persistence.settings["TRAINING_LABEL_RNDVI"]:
+        if self._persistence.settings["TRAINING_LABEL_RNDVI"] == "1":
             labels.append("rndvi")
-        if self._persistence.settings["TRAINING_LABEL_SR"]:
+        if self._persistence.settings["TRAINING_LABEL_SR"] == "1":
             labels.append("sr")
+        if self._persistence.settings["TRAINING_LABEL_APWI"] == "1":
+            labels.append("apwi")
         return "-".join(labels)
 
     def get_classification_color_map(self, input_path: str, transparent_background: bool = False) -> ListedColormap:
@@ -1395,7 +1397,7 @@ class Model(object):
         string_list = string.lower().split("-")
 
         if "all" in string_list:
-            return ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr"]
+            return ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr", "apwi"]
         elif "all_no_blue" in string_list:
             return ["green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr"]
         elif "bands" in string_list:
@@ -1422,6 +1424,8 @@ class Model(object):
             bands_indices.append("rndvi")
         if "sr" in string_list:
             bands_indices.append("sr")
+        if "apwi" in string_list:
+            bands_indices.append("apwi")
 
         return bands_indices
 
@@ -1573,7 +1577,6 @@ class Model(object):
 
             split_size = ceil(array_df.shape[0] / ceil((array_df.shape[0] * MAX_CLASS_COUNT) / MAX_CLASS_VALUE_COUNT))
             split_count = ceil((array_df.shape[0] * MAX_CLASS_COUNT) / MAX_CLASS_VALUE_COUNT)
-
             for c in range(split_count):
                 new_array_df = array_df[c * split_size:(c + 1) * split_size].dropna(axis="index")
                 pred_proba = clf.predict_proba(new_array_df)

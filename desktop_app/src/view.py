@@ -5,13 +5,12 @@ import ttkbootstrap as ttk
 from model.exceptions import *
 from matplotlib import cm
 from PIL import ImageTk, Image
-from training_view import ZoomCanvas
 from ttkbootstrap.constants import *
-from training_view import TrainingView
-from settings_view import SettingsView
-from auto_scrollbar import AutoScrollbar
 from typing import List, Dict, Tuple, Union
 from matplotlib.colors import ListedColormap
+from desktop_app.src.settings_view import SettingsView
+from desktop_app.src.auto_scrollbar import AutoScrollbar
+from desktop_app.src.training_view import TrainingView, ZoomCanvas
 
 
 THEME = "lumen"
@@ -366,7 +365,7 @@ class View(ttk.Window):
         self._medium_checkbutton.configure(text="Medium probability", variable=self._vars["heatmap_medium"])
         self._low_checkbutton.configure(text="Low probability", variable=self._vars["heatmap_low"])
 
-        self._image = ImageTk.PhotoImage(Image.open("../resources/icon.png").resize((128, 128)))
+        self._image = ImageTk.PhotoImage(Image.open("desktop_app/resources/icon.png").resize((128, 128)))
         self._img_label.configure(image=self._image)
 
         self._stats_lf.columnconfigure(0, weight=5)
