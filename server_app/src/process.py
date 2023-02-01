@@ -4,6 +4,7 @@ import json
 import pickle
 import fnmatch
 import geojson
+import jsonmerge
 
 import numpy as np
 import datetime as dt
@@ -31,7 +32,8 @@ class Process(object):
 
         super(Process, self).__init__()
 
-        self.config_file_name = "config.json"
+        self.config_sample_name = "../resources/config.sample.json"
+        self.config_local_name = "../resources/config.local.json"
 
         self.config_file = self.load_config_file()
         self.data_file = self.load_data_file()
@@ -332,9 +334,17 @@ class Process(object):
         :return: the loaded config file in Dict form
         """
 
-        with open(self.config_file_name, "r") as file:
-            config_file = json.load(file)
-        return config_file
+        with open(self.config_sample_name, "r") as file:
+            config_sample = json.load(file)
+
+        if os.path.exists(self.config_local_name):
+            with open(self.config_local_name, "r") as file:
+                config_local = json.load(file)
+
+            config_file = jsonmerge.merge(config_sample, config_local)
+            return config_file
+        else:
+            return config_sample
 
     def load_data_file(self) -> Dict:
         """
