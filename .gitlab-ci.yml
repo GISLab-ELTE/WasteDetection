@@ -2,6 +2,7 @@
 model-unittest:
   image: continuumio/miniconda3
   stage: test
+  tags: ["powerful"]
   before_script:
     # Configure shell for Anaconda (called in ~/.bashrc, but in CI the shell is not interactive)
     - source /opt/conda/etc/profile.d/conda.sh
