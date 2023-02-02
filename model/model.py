@@ -339,13 +339,15 @@ class Model(object):
         tag_id_coords = self._tag_id_coords
         enough_data = list()
         for (training_file, mc_data) in tag_id_coords.items():
-            enough_data.append(list(mc_data.keys()))
+            usable_mc_ids = []
             for (mc_id, polygon_data) in mc_data.items():
                 mc_name, coords, bbox_coords = polygon_data
                 if coords:
                     if training_file not in usable_training_data.keys():
                         usable_training_data[training_file] = dict()
                     usable_training_data[training_file][mc_id] = polygon_data
+                    usable_mc_ids.append(mc_id)
+            enough_data.append(usable_mc_ids)
 
         for labeled_layer in self._classification_layer_data.values():
                 enough_data.append(labeled_layer[labeled_layer != 0] // 100)
@@ -408,7 +410,6 @@ class Model(object):
                 list_of_columns.append(classified_bands_and_indices[i])
 
             df = pd.DataFrame()
-            df.index.name = "FID"
             for i in range(len(list_of_columns)):
                 df[labels[i]] = list_of_columns[i]
 

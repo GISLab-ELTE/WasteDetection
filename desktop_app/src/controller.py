@@ -1643,7 +1643,7 @@ class Controller(object):
             if file:
                 name, extension = os.path.splitext(file.name)
                 file.close()
-                df.to_csv(name + ".csv", sep=";", index="FID")
+                df.to_csv(name + ".csv", sep=";", index_label="FID")
                 self._model.save_classification_images(labeled_images)
                 self._model.create_and_save_random_forest(name + ".csv", name + extension)
 
