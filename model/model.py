@@ -8,10 +8,10 @@ import pandas as pd
 
 from math import ceil
 from osgeo import gdal
-from model.exceptions import *
 from matplotlib import cm
 from PIL import ImageColor
 from itertools import compress
+from model.exceptions import *
 from shapely.geometry import Point
 from model.persistence import Persistence
 from shapely.geometry.polygon import Polygon
@@ -49,6 +49,7 @@ class Model(object):
 
         super(Model, self).__init__()
 
+        self._classification_mode = None
         self._hotspot_rf = None
         self._floating_rf = None
 
@@ -87,7 +88,7 @@ class Model(object):
 
     @property
     def classification_layer_data(self) -> Dict:
-        return self._classification_layer_data 
+        return self._classification_layer_data
 
     # Non-static public methods
     def load_random_forests(self) -> None:
@@ -195,6 +196,7 @@ class Model(object):
         :param image_name: the name of the image
         :param layer: the array representing the classification layer
         """
+
         self._classification_layer_data[image_name] = layer
 
     def get_classification_layer_data(self, image_name) -> np.ndarray:
@@ -204,18 +206,20 @@ class Model(object):
         :param image_name: the name of the image
         :return: The array containing the classification data of the image
         """
+
         return self._classification_layer_data[image_name]
 
     def set_classification_pixel_of_layer(self, image_name: str, coordinates: Tuple[int, int], mc_id: int) -> None:
         """
         sets a classification pixel of the given layer
 
-        :param layer: the name of the image
+        :param image_name: the name of the image
         :param coordinates: the coordinates where the id will be placed
         :param mc_id: the id that will be placed at the given coordinates
         """
+
         mc_id_mul = mc_id * 100
-        self._classification_layer_data[image_name][coordinates]= mc_id_mul
+        self._classification_layer_data[image_name][coordinates] = mc_id_mul
 
     def delete_classification_data(self, image_name: str) -> None:
         self._classification_layer_data.pop(image_name)
@@ -350,19 +354,21 @@ class Model(object):
             enough_data.append(usable_mc_ids)
 
         for labeled_layer in self._classification_layer_data.values():
-                enough_data.append(labeled_layer[labeled_layer != 0] // 100)
+            enough_data.append(labeled_layer[labeled_layer != 0] // 100)
 
         enough_data = np.unique(np.concatenate(enough_data))
         enough_data = len(enough_data) >= 2
-        
+
         return usable_training_data, enough_data
 
     def add_polygon_values_to_image(self, training_file: str, usable_training_data: Dict[str, Dict]) -> np.ndarray:
         """
         Creates a numpy array that adds the polygons to the image layer.
         :param training_file: the training file that needs to be updated.
+        :param usable_training_data:
         :return a new image layer containing the updated data.
         """
+
         labeled_layer = self._classification_layer_data[training_file].copy()
         polygons = usable_training_data[training_file]
         for (mc_id, polygon_data) in polygons.items():
@@ -379,7 +385,8 @@ class Model(object):
         Creates a training DataFrame from the filtered training data.
 
         :param usable_training_data: filtered training data Dictionary
-        :return: a DataFrame containing the training data for Random Forest classifier and a dictionary containing the labeling data for each image.
+        :return: a DataFrame containing the training data for Random Forest classifier
+                 and a dictionary containing the labeling data for each image.
         """
 
         column_labels = ["SURFACE", "COD"]
@@ -402,7 +409,7 @@ class Model(object):
             classified_xs, classified_ys = np.nonzero(labeled_layer)
             classified_pixels = labeled_layer[classified_xs, classified_ys].flatten()
             list_of_columns = [
-                np.full(fill_value = "", shape = classified_pixels.shape),
+                np.full(fill_value="", shape=classified_pixels.shape),
                 classified_pixels.astype(int)
             ]
             classified_bands_and_indices = bands_and_indices[:, classified_xs, classified_ys]
@@ -421,24 +428,26 @@ class Model(object):
 
         return training_df, labeling_data
 
-    def save_classification_images(self, labeled_images:Dict[str, np.ndarray]) -> None:
+    def save_classification_images(self, labeled_images: Dict[str, np.ndarray]) -> None:
         """
-        Saves the classification images with their metadata next to the image source. The classified image will have the "_classified" suffix associated with it.
+        Saves the classification images with their metadata next to the image source.
+        The classified image will have the "_classified" suffix associated with it.
         
         :param labeled_images: A dictionary containing the label data of each image.
         """
-        for (image_path, image_data) in labeled_images.items():    
+
+        for (image_path, image_data) in labeled_images.items():
             mc_id_mc_name_pairs = {}
             for tag_data in self.tag_ids[image_path].items():
-               mc_id, (mc_name, color, tags) = tag_data
-               mc_id_mc_name_pairs[str(mc_id)] = mc_name
+                mc_id, (mc_name, color, tags) = tag_data
+                mc_id_mc_name_pairs[str(mc_id)] = mc_name
 
             stripped_path, extension = os.path.splitext(image_path)
             labeled_image_path = stripped_path + "_classified" + extension
             Model._save_tif(
-                input_path=image_path, 
-                array=[image_data], 
-                shape=image_data.shape, 
+                input_path=image_path,
+                array=[image_data],
+                shape=image_data.shape,
                 band_count=1,
                 output_path=labeled_image_path,
                 metadata=mc_id_mc_name_pairs)
@@ -527,7 +536,8 @@ class Model(object):
         labels = Model._resolve_bands_indices_string(training_labels)
         labels = [value.upper() for value in labels]
 
-        clf = Model._create_random_forest(training_data_path, labels, ["COD"], int(self._persistence.settings["TRAINING_ESTIMATORS"]))
+        clf = Model._create_random_forest(training_data_path, labels, ["COD"],
+                                          int(self._persistence.settings["TRAINING_ESTIMATORS"]))
 
         pickle.dump(clf, open(output_path, "wb"))
 
@@ -709,7 +719,8 @@ class Model(object):
                         heatmap_path=heatmap,
                         garbage_c_id=int(self._persistence.settings["GARBAGE_MC_ID"]) * 100,
                         water_c_id=int(self._persistence.settings["WATER_MC_ID"]) * 100,
-                        matrix=(int(self._persistence.settings["MORPHOLOGY_MATRIX_SIZE"]), int(self._persistence.settings["MORPHOLOGY_MATRIX_SIZE"])),
+                        matrix=(int(self._persistence.settings["MORPHOLOGY_MATRIX_SIZE"]),
+                                int(self._persistence.settings["MORPHOLOGY_MATRIX_SIZE"])),
                         iterations=int(self._persistence.settings["MORPHOLOGY_ITERATIONS"]),
                         working_dir=self._persistence.settings["WORKING_DIR"],
                         classification_postfix=self._persistence.settings["FLOATING_MASKED_CLASSIFIED_POSTFIX"],
@@ -833,7 +844,8 @@ class Model(object):
                 red = (img.read(red_ind)).astype(dtype="float32")
                 nir = (img.read(nir_ind)).astype(dtype="float32")
             except Exception as exc:
-                raise NotEnoughBandsException(img.count, max([blue_ind, green_ind, red_ind, nir_ind]), input_path) from None
+                raise NotEnoughBandsException(
+                    img.count, max([blue_ind, green_ind, red_ind, nir_ind]), input_path) from None
 
             return Model._calculate_indices(get_list, {"blue": blue, "green": green, "red": red, "nir": nir})
 
@@ -977,7 +989,6 @@ class Model(object):
 
         return heatmap_pos, heatmap_neg
 
-   
     # Static public methods
     @staticmethod
     def create_garbage_bbox_geojson(input_path: str, file: TextIO, searched_value: List[int]) -> None:
@@ -1162,8 +1173,8 @@ class Model(object):
 
         # read training data
         df = pd.read_csv(training_data_path, sep=';')
-        
-        #narrow training data
+
+        # narrow training data
         data = df[column_names]
         label = df[label_names]
         label = np.ravel(label).astype(str)
@@ -1177,49 +1188,49 @@ class Model(object):
 
     @staticmethod
     def _calculate_indices(get_list: List[str], bands: Dict[str, np.ndarray]) -> List[np.ndarray]:
-            # calculate indices
-            # PI = NIR / (NIR + RED)
-            # NDWI = (GREEN - NIR) / (GREEN + NIR)
-            # NDVI = (NIR - RED) / (NIR + RED)
-            # RNDVI = (RED - NIR) / (RED + NIR)
-            # SR = NIR / RED
+        # calculate indices
+        # PI = NIR / (NIR + RED)
+        # NDWI = (GREEN - NIR) / (GREEN + NIR)
+        # NDVI = (NIR - RED) / (NIR + RED)
+        # RNDVI = (RED - NIR) / (RED + NIR)
+        # SR = NIR / RED
 
-            blue = bands["blue"]
-            green = bands["green"]
-            red = bands["red"]
-            nir = bands["nir"]
+        blue = bands["blue"]
+        green = bands["green"]
+        red = bands["red"]
+        nir = bands["nir"]
 
-            list_of_bands_and_indices = list()
-            for item in get_list:
-                if item == "blue":
-                    list_of_bands_and_indices.append(blue)
-                elif item == "green":
-                    list_of_bands_and_indices.append(green)
-                elif item == "red":
-                    list_of_bands_and_indices.append(red)
-                elif item == "nir":
-                    list_of_bands_and_indices.append(nir)
-                elif item == "pi":
-                    pi = Model._calculate_index(numerator=nir, denominator=nir + red)
-                    list_of_bands_and_indices.append(pi)
-                elif item == "ndwi":
-                    ndwi = Model._calculate_index(numerator=green - nir, denominator=green + nir)
-                    list_of_bands_and_indices.append(ndwi)
-                elif item == "ndvi":
-                    ndvi = Model._calculate_index(numerator=nir - red, denominator=nir + red)
-                    list_of_bands_and_indices.append(ndvi)
-                elif item == "rndvi":
-                    rndvi = Model._calculate_index(numerator=red - nir, denominator=red + nir)
-                    list_of_bands_and_indices.append(rndvi)
-                elif item == "sr":
-                    sr = Model._calculate_index(numerator=nir, denominator=red)
-                    list_of_bands_and_indices.append(sr)
-                elif item == "apwi":
-                    apwi = Model._calculate_index(numerator=blue, denominator=1 - (red + green + nir) / 3)
-                    list_of_bands_and_indices.append(apwi)
+        list_of_bands_and_indices = list()
+        for item in get_list:
+            if item == "blue":
+                list_of_bands_and_indices.append(blue)
+            elif item == "green":
+                list_of_bands_and_indices.append(green)
+            elif item == "red":
+                list_of_bands_and_indices.append(red)
+            elif item == "nir":
+                list_of_bands_and_indices.append(nir)
+            elif item == "pi":
+                pi = Model._calculate_index(numerator=nir, denominator=nir + red)
+                list_of_bands_and_indices.append(pi)
+            elif item == "ndwi":
+                ndwi = Model._calculate_index(numerator=green - nir, denominator=green + nir)
+                list_of_bands_and_indices.append(ndwi)
+            elif item == "ndvi":
+                ndvi = Model._calculate_index(numerator=nir - red, denominator=nir + red)
+                list_of_bands_and_indices.append(ndvi)
+            elif item == "rndvi":
+                rndvi = Model._calculate_index(numerator=red - nir, denominator=red + nir)
+                list_of_bands_and_indices.append(rndvi)
+            elif item == "sr":
+                sr = Model._calculate_index(numerator=nir, denominator=red)
+                list_of_bands_and_indices.append(sr)
+            elif item == "apwi":
+                apwi = Model._calculate_index(numerator=blue, denominator=1 - (red + green + nir) / 3)
+                list_of_bands_and_indices.append(apwi)
 
-            return list_of_bands_and_indices
-    
+        return list_of_bands_and_indices
+
     @staticmethod
     def _make_noisy_data(data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -1246,9 +1257,8 @@ class Model(object):
         data_noisy = pd.DataFrame(labels_indices).T
         data_noisy.columns = data.columns
         data_noisy.index.name = "FID"
-        
+
         return data_noisy
-            
 
     @staticmethod
     def _get_coords_inside_polygon(polygon_coords: List[float], bbox_coords: Tuple[int, ...]) -> List[Tuple[int, int]]:
@@ -1295,7 +1305,7 @@ class Model(object):
             for path in input_paths:
                 file_name = "".join(path.split(".")[:-1]).split("/")[-1]
                 file_names.append(file_name)
-                output_path = working_dir + "/" + "_".join(file_names) + postfix + "." + output_file_extension
+            output_path = working_dir + "/" + "_".join(file_names) + postfix + "." + output_file_extension
         return output_path
 
     @staticmethod
@@ -1334,7 +1344,7 @@ class Model(object):
             dataset = driver.Create(output_path, x_pixels, y_pixels, band_count, gdal.GDT_Float32)
             dataset.SetGeoTransform(geotrans)
             dataset.SetProjection(projection)
-            
+
             if not (metadata is None):
                 dataset.SetMetadata(metadata)
 
@@ -1359,15 +1369,13 @@ class Model(object):
         """
 
         # variables
-        rows = numerator.shape[0]
-        cols = numerator.shape[1]
         index = np.ndarray(
             shape=numerator.shape,
             dtype="float32",
         )
 
-        numerator_nanmin = np.nanmin(numerator)
-        numerator_nanmax = np.nanmax(numerator)        
+        numerator_nan_min = np.nanmin(numerator)
+        numerator_nan_max = np.nanmax(numerator)
 
         # calculate index
         nan_mask = np.isnan(numerator) | np.isnan(denominator)
@@ -1380,13 +1388,14 @@ class Model(object):
         valid_denominator_non_zero_mask = valid_mask & np.logical_not(denominator_zero_mask)
         valid_denominator_zero_mask = valid_mask & denominator_zero_mask
 
-        numerator_positive_denumerator_zero_mask = valid_denominator_zero_mask & (numerator > 0)
-        numerator_negative_denumerator_zero_mask = valid_denominator_zero_mask & (numerator < 0)
+        numerator_positive_denominator_zero_mask = valid_denominator_zero_mask & (numerator > 0)
+        numerator_negative_denominator_zero_mask = valid_denominator_zero_mask & (numerator < 0)
 
         index[invalid_mask] = float("NaN")
-        index[numerator_positive_denumerator_zero_mask] = numerator_nanmax
-        index[numerator_negative_denumerator_zero_mask] = numerator_nanmin
-        index[valid_denominator_non_zero_mask] = numerator[valid_denominator_non_zero_mask] / denominator[valid_denominator_non_zero_mask]
+        index[numerator_positive_denominator_zero_mask] = numerator_nan_max
+        index[numerator_negative_denominator_zero_mask] = numerator_nan_min
+        index[valid_denominator_non_zero_mask] = \
+            numerator[valid_denominator_non_zero_mask] / denominator[valid_denominator_non_zero_mask]
 
         # return index values
         return index
