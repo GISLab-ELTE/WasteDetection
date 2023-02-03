@@ -1,5 +1,7 @@
 import os
 import math
+import rasterio
+from model import model
 import traceback
 import threading
 import numpy as np
@@ -11,12 +13,13 @@ import desktop_app.src.view as view
 from osgeo import gdal
 from model import model
 from model.exceptions import *
-from tkinter import filedialog as fd
+from tkinter import Image, filedialog as fd
 from ttkbootstrap.constants import *
 from matplotlib.figure import Figure
 from typing import Union, List, TextIO, Tuple, Set
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from ttkbootstrap.dialogs.colorchooser import ColorChooserDialog
+
 
 
 MAX_PIXEL_COUNT = 40000000
@@ -39,7 +42,10 @@ class Controller(object):
         self._view = view_instance
         self._model = model_instance
 
+        self._view.training_view.set_classification_mode(self._model.classification_mode)
+
         self._bind_commands()
+        
 
     # Non-static public methods
     def mainloop(self) -> None:
@@ -262,6 +268,7 @@ class Controller(object):
         :return: None
         """
 
+        self._view.training_view.classification_mode_btn.configure(command=self._training_toggle_classification_mode)
         self._view.training_view.back_btn.configure(command=self._training_on_closing)
         self._view.training_view.open_input_img_btn.configure(command=self._training_open_files)
         self._view.training_view.delete_input_img_btn.configure(command=self._training_delete_files)
@@ -269,10 +276,12 @@ class Controller(object):
         self._view.training_view.delete_btn.configure(command=self._training_delete)
         self._view.training_view.training_btn.configure(command=self._training_start_on_separate_thread)
         self._view.training_view.color_btn.configure(command=self._training_change_color_btn_color)
+        self._view.training_view.save_btn.configure(command=self._training_save_classification_data)
 
         self._view.training_view.mc_input.configure(validate="all", validatecommand=(self._alpha_func, "%P"))
         self._view.training_view.mc_spinbox.configure(validate="all", validatecommand=(self._training_mc_id_func, "%P"))
 
+        self._set_classification_mode_mouse_handlers(self._model.classification_mode)
         self._view.training_view.zoom_canvas.canvas.bind("<ButtonPress-1>", self._training_place_point_on_canvas)
         self._view.training_view.zoom_canvas.canvas.bind("<ButtonPress-2>", self._training_place_polygon_on_canvas)
         self._view.training_view.zoom_canvas.canvas.bind("<ButtonPress-3>", self._training_canvas_move_from)
@@ -295,7 +304,6 @@ class Controller(object):
 
         :return: None
         """
-
         self._register_validator_functions()
         self._register_invalidator_functions()
 
@@ -785,6 +793,7 @@ class Controller(object):
             if process_id == 1 or process_id == 2:
                 selected_file = view_selected_files[0]
 
+                self._view.clear_canvas("left")
                 self._view.show_image_on_canvas(
                     canvas_name="left",
                     img_or_array=selected_file,
@@ -1372,6 +1381,15 @@ class Controller(object):
                 if file not in self._model.tag_ids.keys():
                     self._model.save_training_input_file(file)
                     self._view.training_view.add_file_to_listbox(file)
+
+                    classification_file = name + "_classified" + extension
+                    if os.path.exists(classification_file):
+                        with rasterio.open(classification_file, "r") as classification_dataset:
+                            classification_data = classification_dataset.read(1)
+                    else:
+                        classification_data = np.zeros(shape=(rows, cols), dtype=int)
+                    self._model.add_classification_layer(file, classification_data)
+
             finally:
                 del dataset
 
@@ -1417,6 +1435,7 @@ class Controller(object):
 
         tag_ids = self._view.training_view.zoom_canvas.canvas.find_all()
         _ = self._model.delete_points()
+        self._model.delete_classification_data(selected_file)
 
         for tag_id in tag_ids:
             if self._view.training_view.zoom_canvas.is_point_or_polygon(tag_id):
@@ -1439,7 +1458,6 @@ class Controller(object):
         """
 
         selected_file = self._view.training_view.get_curselection_value_listbox()
-
         if selected_file is None:
             return
 
@@ -1455,7 +1473,14 @@ class Controller(object):
 
         satellite_rgb = self._get_satellite_rgb()
 
+        self._view.training_view.zoom_canvas.delete_image()
         self._view.training_view.zoom_canvas.open_image(selected_file, "rgb", satellite_rgb)
+
+        layer_data = self._model.get_classification_layer_data(selected_file)
+        
+        self._view.training_view.zoom_canvas.open_classification_layer(
+        dataset=layer_data,
+        color_map=self._model.get_classification_color_map_from_layer(layer_data, True))
 
         for mc_id in self._model.tag_ids[selected_file].keys():
             for tag_id in self._model.tag_ids[selected_file][mc_id][2]:
@@ -1611,14 +1636,15 @@ class Controller(object):
 
                 return
 
-            df = self._model.create_training_df(usable_data)
-            df.sort_values(by=["FID", "COD"], inplace=True)
+            (df, labeled_images) = self._model.create_training_df(usable_data)
+            df.sort_values(by=["FID", "COD"], inplace=True, ignore_index=True)
 
             file = self._save_file("sav")
             if file:
                 name, extension = os.path.splitext(file.name)
                 file.close()
-                df.to_csv(name + ".csv", sep=";", index=False)
+                df.to_csv(name + ".csv", sep=";", index_label="FID")
+                self._model.save_classification_images(labeled_images)
                 self._model.create_and_save_random_forest(name + ".csv", name + extension)
 
                 tkinter.messagebox.showinfo(
@@ -1649,6 +1675,40 @@ class Controller(object):
             self._view.training_view.opened_files_lb.event_generate("<<ListboxSelect>>")
             self._view.training_view.process_pb.stop()
             self._view.training_view.process_pb.configure(value=0, mode="determinate")
+
+    def _training_draw_on_canvas(self, event) -> None:
+        mc_id = self._view.training_view.draw_pixel_on_canvas(event)
+        selected_file = self._view.training_view.get_curselection_value_listbox()
+        x, y = self._view.training_view.zoom_canvas.get_event_coordinates_on_image(event)
+        self._model.set_classification_pixel_of_layer(selected_file, (int(y), int(x)), mc_id)
+
+    def _training_remove_pixel_from_canvas(self, event) -> None:
+        self._view.training_view.remove_pixel_from_canvas(event)
+        selected_file = self._view.training_view.get_curselection_value_listbox()
+        x, y = self._view.training_view.zoom_canvas.get_event_coordinates_on_image(event)
+        self._model.set_classification_pixel_of_layer(selected_file, (int(y), int(x)), 0)
+
+    def _training_save_classification_data(self) -> None:
+        self._training_save_coords_of_tag_ids()
+
+        usable_data, enough_data = self._model.create_usable_training_data()
+        if not enough_data:
+            self._view.training_view.zoom_canvas.delete_image()
+            self._view.training_view.opened_files_lb.selection_clear(0, END)
+
+            message = "Not enough training data!"
+            tkinter.messagebox.showerror(title="Training error", message=message, parent=self._view.training_view)
+
+            return
+
+        _, labeled_images = self._model.create_training_df(usable_data)
+        self._model.save_classification_images(labeled_images)
+        self._view.training_view.opened_files_lb.bind("<<ListboxSelect>>", self._training_listbox_item_selected)
+        tkinter.messagebox.showinfo(
+            parent=self._view.training_view.zoom_canvas,
+            title="Saving info",
+            message="Successfully saved!"
+        )
 
     def _training_place_point_on_canvas(self, event) -> None:
         """
@@ -1720,6 +1780,34 @@ class Controller(object):
         """
 
         self._view.training_view.zoom_canvas.wheel(event)
+
+    def _training_toggle_classification_mode(self) -> None:
+        """
+        Handles classificaton mode toggling
+        :return: None
+        """
+        self._model.toggle_classification_mode()
+        self._view.training_view.set_classification_mode(self._model.classification_mode)
+        self._set_classification_mode_mouse_handlers(self._model.classification_mode)        
+
+    def _set_classification_mode_mouse_handlers(self, classification_mode: str) -> None:
+        """
+        Updates the mouse handlers based on classification mode
+        """
+
+        if classification_mode == "polygon":
+            self._view.training_view.zoom_canvas.canvas.unbind("<ButtonPress-1>")
+            self._view.training_view.zoom_canvas.canvas.unbind("<B1-Motion>")
+            self._view.training_view.zoom_canvas.canvas.unbind("<Shift-1>")
+            self._view.training_view.zoom_canvas.canvas.unbind("<Shift-B1-Motion>")
+            self._view.training_view.zoom_canvas.canvas.bind("<ButtonPress-1>", self._training_place_point_on_canvas)
+        elif classification_mode == "freehand":
+            self._view.training_view.zoom_canvas.canvas.unbind("<ButtonPress-1>")
+            self._view.training_view.zoom_canvas.canvas.bind("<ButtonPress-1>", self._training_draw_on_canvas)
+            self._view.training_view.zoom_canvas.canvas.bind("<B1-Motion>", self._training_draw_on_canvas)
+            self._view.training_view.zoom_canvas.canvas.bind("<Shift-1>", self._training_remove_pixel_from_canvas)
+            self._view.training_view.zoom_canvas.canvas.bind("<Shift-B1-Motion>", self._training_remove_pixel_from_canvas)
+
 
     def _training_on_closing(self) -> None:
         """

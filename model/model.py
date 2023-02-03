@@ -19,6 +19,8 @@ from matplotlib.colors import ListedColormap
 from sklearn.ensemble import RandomForestClassifier
 from typing import List, Tuple, Callable, Union, TextIO, Dict
 
+import traceback
+
 
 # Constants for model.py
 MAX_CLASS_COUNT = 15
@@ -78,6 +80,14 @@ class Model(object):
     @property
     def persistence(self) -> Persistence:
         return self._persistence
+
+    @property
+    def classification_mode(self) -> str:
+        return self._classification_mode
+
+    @property
+    def classification_layer_data(self) -> Dict:
+        return self._classification_layer_data 
 
     # Non-static public methods
     def load_random_forests(self) -> None:
@@ -171,6 +181,44 @@ class Model(object):
         """
 
         self._point_tag_ids.append(tag_id)
+
+    def toggle_classification_mode(self) -> None:
+        if self._classification_mode == "polygon":
+            self._classification_mode = "freehand"
+        elif self._classification_mode == "freehand":
+            self._classification_mode = "polygon"
+
+    def add_classification_layer(self, image_name: str, layer: np.ndarray) -> None:
+        """
+        Adds a new classification layer
+
+        :param image_name: the name of the image
+        :param layer: the array representing the classification layer
+        """
+        self._classification_layer_data[image_name] = layer
+
+    def get_classification_layer_data(self, image_name) -> np.ndarray:
+        """
+        Gets the classification layer data of the requested image
+
+        :param image_name: the name of the image
+        :return: The array containing the classification data of the image
+        """
+        return self._classification_layer_data[image_name]
+
+    def set_classification_pixel_of_layer(self, image_name: str, coordinates: Tuple[int, int], mc_id: int) -> None:
+        """
+        sets a classification pixel of the given layer
+
+        :param layer: the name of the image
+        :param coordinates: the coordinates where the id will be placed
+        :param mc_id: the id that will be placed at the given coordinates
+        """
+        mc_id_mul = mc_id * 100
+        self._classification_layer_data[image_name][coordinates]= mc_id_mul
+
+    def delete_classification_data(self, image_name: str) -> None:
+        self._classification_layer_data.pop(image_name)
 
     def save_new_mc(self, training_file: str, mc_id: int, mc_name: str, mc_color: str) -> None:
         """
@@ -289,53 +337,111 @@ class Model(object):
         usable_training_data = dict()
 
         tag_id_coords = self._tag_id_coords
-        for training_file in tag_id_coords.keys():
-            for mc_id in tag_id_coords[training_file].keys():
-                if tag_id_coords[training_file][mc_id][1]:
+        enough_data = list()
+        for (training_file, mc_data) in tag_id_coords.items():
+            usable_mc_ids = []
+            for (mc_id, polygon_data) in mc_data.items():
+                mc_name, coords, bbox_coords = polygon_data
+                if coords:
                     if training_file not in usable_training_data.keys():
                         usable_training_data[training_file] = dict()
-                    usable_training_data[training_file][mc_id] = tag_id_coords[training_file][mc_id]
+                    usable_training_data[training_file][mc_id] = polygon_data
+                    usable_mc_ids.append(mc_id)
+            enough_data.append(usable_mc_ids)
 
-        enough_data = np.unique([i for s in [list(d.keys()) for d in list(usable_training_data.values())] for i in s])
+        for labeled_layer in self._classification_layer_data.values():
+                enough_data.append(labeled_layer[labeled_layer != 0] // 100)
+
+        enough_data = np.unique(np.concatenate(enough_data))
         enough_data = len(enough_data) >= 2
-
+        
         return usable_training_data, enough_data
 
-    def create_training_df(self, usable_training_data: Dict[str, Dict]) -> pd.DataFrame:
+    def add_polygon_values_to_image(self, training_file: str, usable_training_data: Dict[str, Dict]) -> np.ndarray:
+        """
+        Creates a numpy array that adds the polygons to the image layer.
+        :param training_file: the training file that needs to be updated.
+        :return a new image layer containing the updated data.
+        """
+        labeled_layer = self._classification_layer_data[training_file].copy()
+        polygons = usable_training_data[training_file]
+        for (mc_id, polygon_data) in polygons.items():
+            mc_name, coords, bbox_coords = polygon_data
+            for i in range(len(coords)):
+                indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
+                indices = np.asarray(indices).transpose()
+                labeled_layer[indices[1], indices[0]] = mc_id * 100
+
+        return labeled_layer
+
+    def create_training_df(self, usable_training_data: Dict[str, Dict]) -> Tuple[pd.DataFrame, Dict[str, np.ndarray]]:
         """
         Creates a training DataFrame from the filtered training data.
 
         :param usable_training_data: filtered training data Dictionary
-        :return: a DataFrame containing the training data for Random Forest classifier
+        :return: a DataFrame containing the training data for Random Forest classifier and a dictionary containing the labeling data for each image.
         """
 
-        column_labels = ["FID", "SURFACE", "COD"]
+        column_labels = ["SURFACE", "COD"]
         training_labels = self.get_training_labels()
         labels = Model._resolve_bands_indices_string(training_labels)
         labels = [value.upper() for value in labels]
         column_labels += labels
+        labels = column_labels + labels
+        file_dfs = []
+        labeling_data = {}
+        classified_layers = self._classification_layer_data
 
-        fid = 1
-        training_df = pd.DataFrame(columns=column_labels)
-
-        for training_file in usable_training_data.keys():
+        for training_file, labeled_layer in classified_layers.items():
             bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
                                                         training_labels)
+            bands_and_indices = np.asarray(bands_and_indices)
+            if training_file in usable_training_data:
+                labeled_layer = self.add_polygon_values_to_image(training_file, usable_training_data)
 
-            for mc_id in usable_training_data[training_file].keys():
-                mc_name, coords, bbox_coords = usable_training_data[training_file][mc_id]
-                for i in range(len(coords)):
-                    indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
-                    for y, x in indices:
-                        line = [fid, mc_name, mc_id * 100]
+            classified_xs, classified_ys = np.nonzero(labeled_layer)
+            classified_pixels = labeled_layer[classified_xs, classified_ys].flatten()
+            list_of_columns = [
+                np.full(fill_value = "", shape = classified_pixels.shape),
+                classified_pixels.astype(int)
+            ]
+            classified_bands_and_indices = bands_and_indices[:, classified_xs, classified_ys]
+            for i in range(classified_bands_and_indices.shape[0]):
+                list_of_columns.append(classified_bands_and_indices[i])
 
-                        for value in bands_and_indices:
-                            line.append(value[x, y])
+            df = pd.DataFrame()
+            for i in range(len(list_of_columns)):
+                df[labels[i]] = list_of_columns[i]
 
-                        fid += 1
-                        training_df = training_df.append(dict(zip(column_labels, line)), ignore_index=True)
+            labeling_data[training_file] = labeled_layer
+            file_dfs.append(df)
 
-        return training_df
+        training_df = pd.concat(file_dfs, ignore_index=True)
+        training_df.index.name = "FID"
+
+        return training_df, labeling_data
+
+    def save_classification_images(self, labeled_images:Dict[str, np.ndarray]) -> None:
+        """
+        Saves the classification images with their metadata next to the image source. The classified image will have the "_classified" suffix associated with it.
+        
+        :param labeled_images: A dictionary containing the label data of each image.
+        """
+        for (image_path, image_data) in labeled_images.items():    
+            mc_id_mc_name_pairs = {}
+            for tag_data in self.tag_ids[image_path].items():
+               mc_id, (mc_name, color, tags) = tag_data
+               mc_id_mc_name_pairs[str(mc_id)] = mc_name
+
+            stripped_path, extension = os.path.splitext(image_path)
+            labeled_image_path = stripped_path + "_classified" + extension
+            Model._save_tif(
+                input_path=image_path, 
+                array=[image_data], 
+                shape=image_data.shape, 
+                band_count=1,
+                output_path=labeled_image_path,
+                metadata=mc_id_mc_name_pairs)
 
     @staticmethod
     def estimate_garbage_area(
@@ -455,11 +561,12 @@ class Model(object):
             labels.append("apwi")
         return "-".join(labels)
 
-    def get_classification_color_map(self, input_path: str) -> ListedColormap:
+    def get_classification_color_map(self, input_path: str, transparent_background: bool = False) -> ListedColormap:
         """
         Creates a color map based on the values in the classified image.
 
         :param input_path: path of the classified image
+        :param transparent_background: whether the black background should be considered transparent
         :return: color map
         """
 
@@ -482,6 +589,10 @@ class Model(object):
                 color = self._persistence.colors[mc_id]
                 rgba = ImageColor.getcolor(color, "RGBA")
                 rgba = [val / 255 for val in rgba]
+
+                if transparent_background and mc_id == 0:
+                    rgba[-1] = 0
+
                 color_list.append(rgba)
 
             if not color_list:
@@ -489,6 +600,43 @@ class Model(object):
 
             color_map = ListedColormap(color_list)
             return color_map
+
+    def get_classification_color_map_from_layer(self, input_array: np.ndarray, transparent_background: bool = False) -> ListedColormap:
+        """
+        Creates a color map based on the values in the classified image.
+
+        :param input_array: the array of the classified image
+        :param transparent_background: whether the black background should be considered transparent
+        :return: color map
+        """
+
+        unique_values = np.unique(input_array)
+        cond_list = all([val % 100 == 0 for val in unique_values])
+
+        if not cond_list:
+            return cm.get_cmap("viridis")
+
+        color_list = list()
+        for value in unique_values:
+            mc_id = int(value / 100)
+
+            if mc_id >= len(self._persistence.colors):
+                continue
+
+            color = self._persistence.colors[mc_id]
+            rgba = ImageColor.getcolor(color, "RGBA")
+            rgba = [val / 255 for val in rgba]
+
+            if transparent_background and mc_id == 0:
+                rgba[-1] = 0
+
+            color_list.append(rgba)
+
+        if not color_list:
+            return cm.get_cmap("viridis")
+
+        color_map = ListedColormap(color_list)
+        return color_map
 
     # Non-static protected methods
     def _initialize_data_members(self) -> None:
@@ -505,6 +653,8 @@ class Model(object):
         self._point_tag_ids = list()
         self._tag_ids = dict()
         self._tag_id_coords = dict()
+        self._classification_mode = "polygon"
+        self._classification_layer_data = dict()
 
     def _process_hotspot_floating(self, hotspot: bool) -> Tuple[bool, bool]:
         """
@@ -523,7 +673,7 @@ class Model(object):
             if not os.path.exists(file):
                 were_wrong_pictures = True
                 continue
-            tmp_file = self.save_bands_indices(
+            tmp_file = self._save_bands_indices(
                 satellite_type=self._persistence.settings["SATELLITE_TYPE"],
                 input_path=file,
                 save=training_labels,
@@ -685,47 +835,9 @@ class Model(object):
             except Exception as exc:
                 raise NotEnoughBandsException(img.count, max([blue_ind, green_ind, red_ind, nir_ind]), input_path) from None
 
-            # calculate indices
-            # PI = NIR / (NIR + RED)
-            # NDWI = (GREEN - NIR) / (GREEN + NIR)
-            # NDVI = (NIR - RED) / (NIR + RED)
-            # RNDVI = (RED - NIR) / (RED + NIR)
-            # SR = NIR / RED
+            return Model._calculate_indices(get_list, {"blue": blue, "green": green, "red": red, "nir": nir})
 
-            list_of_bands_and_indices = list()
-
-            for item in get_list:
-                if item == "blue":
-                    list_of_bands_and_indices.append(blue)
-                elif item == "green":
-                    list_of_bands_and_indices.append(green)
-                elif item == "red":
-                    list_of_bands_and_indices.append(red)
-                elif item == "nir":
-                    list_of_bands_and_indices.append(nir)
-                elif item == "pi":
-                    pi = Model._calculate_index(numerator=nir, denominator=nir + red)
-                    list_of_bands_and_indices.append(pi)
-                elif item == "ndwi":
-                    ndwi = Model._calculate_index(numerator=green - nir, denominator=green + nir)
-                    list_of_bands_and_indices.append(ndwi)
-                elif item == "ndvi":
-                    ndvi = Model._calculate_index(numerator=nir - red, denominator=nir + red)
-                    list_of_bands_and_indices.append(ndvi)
-                elif item == "rndvi":
-                    rndvi = Model._calculate_index(numerator=red - nir, denominator=red + nir)
-                    list_of_bands_and_indices.append(rndvi)
-                elif item == "sr":
-                    sr = Model._calculate_index(numerator=nir, denominator=red)
-                    list_of_bands_and_indices.append(sr)
-                elif item == "apwi":
-                    novel = Model._calculate_index(numerator=blue, denominator=1 - (red + green + nir) / 3)
-                    list_of_bands_and_indices.append(novel)
-
-
-            return list_of_bands_and_indices
-
-    def save_bands_indices(
+    def _save_bands_indices(
             self, satellite_type: str, input_path: str, save: str,
             working_dir: str, postfix: str, file_extension: str) -> str:
         """
@@ -865,6 +977,7 @@ class Model(object):
 
         return heatmap_pos, heatmap_neg
 
+   
     # Static public methods
     @staticmethod
     def create_garbage_bbox_geojson(input_path: str, file: TextIO, searched_value: List[int]) -> None:
@@ -1049,11 +1162,11 @@ class Model(object):
 
         # read training data
         df = pd.read_csv(training_data_path, sep=';')
-
-        # narrow training data
+        
+        #narrow training data
         data = df[column_names]
         label = df[label_names]
-        label = np.ravel(label)
+        label = np.ravel(label).astype(str)
 
         # make classification
         clf = RandomForestClassifier(n_estimators=estimators, n_jobs=-1)
@@ -1061,6 +1174,81 @@ class Model(object):
 
         # return random forest for later use
         return clf
+
+    @staticmethod
+    def _calculate_indices(get_list: List[str], bands: Dict[str, np.ndarray]) -> List[np.ndarray]:
+            # calculate indices
+            # PI = NIR / (NIR + RED)
+            # NDWI = (GREEN - NIR) / (GREEN + NIR)
+            # NDVI = (NIR - RED) / (NIR + RED)
+            # RNDVI = (RED - NIR) / (RED + NIR)
+            # SR = NIR / RED
+
+            blue = bands["blue"]
+            green = bands["green"]
+            red = bands["red"]
+            nir = bands["nir"]
+
+            list_of_bands_and_indices = list()
+            for item in get_list:
+                if item == "blue":
+                    list_of_bands_and_indices.append(blue)
+                elif item == "green":
+                    list_of_bands_and_indices.append(green)
+                elif item == "red":
+                    list_of_bands_and_indices.append(red)
+                elif item == "nir":
+                    list_of_bands_and_indices.append(nir)
+                elif item == "pi":
+                    pi = Model._calculate_index(numerator=nir, denominator=nir + red)
+                    list_of_bands_and_indices.append(pi)
+                elif item == "ndwi":
+                    ndwi = Model._calculate_index(numerator=green - nir, denominator=green + nir)
+                    list_of_bands_and_indices.append(ndwi)
+                elif item == "ndvi":
+                    ndvi = Model._calculate_index(numerator=nir - red, denominator=nir + red)
+                    list_of_bands_and_indices.append(ndvi)
+                elif item == "rndvi":
+                    rndvi = Model._calculate_index(numerator=red - nir, denominator=red + nir)
+                    list_of_bands_and_indices.append(rndvi)
+                elif item == "sr":
+                    sr = Model._calculate_index(numerator=nir, denominator=red)
+                    list_of_bands_and_indices.append(sr)
+                elif item == "apwi":
+                    apwi = Model._calculate_index(numerator=blue, denominator=1 - (red + green + nir) / 3)
+                    list_of_bands_and_indices.append(apwi)
+
+            return list_of_bands_and_indices
+    
+    @staticmethod
+    def _make_noisy_data(data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Adds noise to given dataframe
+        :param data: the dataframe to add noise to
+        :return: A dataframe that has noisy data added to it.
+        """
+
+        data_copy = data.copy()[["BLUE", "GREEN", "RED", "NIR", "PI", "NDWI", "NDVI", "RNDVI", "SR"]]
+        noise = (np.random.normal(0, .1, data_copy.shape) * 1000).astype(int)
+        data_copy = data_copy + noise
+        bands = {
+            "blue": np.expand_dims(data_copy["BLUE"].to_numpy(), axis=0),
+            "green": np.expand_dims(data_copy["GREEN"].to_numpy(), axis = 0),
+            "red": np.expand_dims(data_copy["RED"].to_numpy(), axis = 0),
+            "nir": np.expand_dims(data_copy["NIR"].to_numpy(), axis = 0)
+        }
+
+        requested_indices = [col.lower() for col in data_copy.columns]
+        labels = [data["SURFACE"].to_numpy(),data["COD"].to_numpy()]
+        indices = [id.flatten() for id in Model._calculate_indices(requested_indices, bands)]
+        labels_indices = [pd.Series(col) for col in labels + indices]
+
+        data_noisy = pd.DataFrame(labels_indices).T
+        data_noisy.columns = data.columns
+        data_noisy.index.name = "FID"
+        
+        return data_noisy
+            
 
     @staticmethod
     def _get_coords_inside_polygon(polygon_coords: List[float], bbox_coords: Tuple[int, ...]) -> List[Tuple[int, int]]:
@@ -1107,13 +1295,14 @@ class Model(object):
             for path in input_paths:
                 file_name = "".join(path.split(".")[:-1]).split("/")[-1]
                 file_names.append(file_name)
-            output_path = working_dir + "/" + "_".join(file_names) + postfix + "." + output_file_extension
+                output_path = working_dir + "/" + "_".join(file_names) + postfix + "." + output_file_extension
         return output_path
 
     @staticmethod
     def _save_tif(
             input_path: str, array: List[np.ndarray], shape: Tuple[int, int],
-            band_count: int, output_path: str, new_geo_trans: Tuple[float, float] = None) -> None:
+            band_count: int, output_path: str, new_geo_trans: Tuple[float, float] = None,
+            metadata: Dict[str, str] = None) -> None:
         """
         Saves arrays (1 or more) to a georeferenced tif file.
 
@@ -1123,6 +1312,7 @@ class Model(object):
         :param band_count: number of bands in the output tif file
         :param output_path: path of the output image
         :param new_geo_trans: other GeoTransform if it is needed
+        :param metadata: metadata that can be added to the file if needed
         :return: None
         """
 
@@ -1144,6 +1334,9 @@ class Model(object):
             dataset = driver.Create(output_path, x_pixels, y_pixels, band_count, gdal.GDT_Float32)
             dataset.SetGeoTransform(geotrans)
             dataset.SetProjection(projection)
+            
+            if not (metadata is None):
+                dataset.SetMetadata(metadata)
 
             for band in range(band_count):
                 outband = dataset.GetRasterBand(band + 1)
@@ -1173,20 +1366,27 @@ class Model(object):
             dtype="float32",
         )
 
+        numerator_nanmin = np.nanmin(numerator)
+        numerator_nanmax = np.nanmax(numerator)        
+
         # calculate index
-        for i in range(rows):
-            for j in range(cols):
-                if np.isnan(numerator[i, j]) or np.isnan(denominator[i, j]):
-                    index[i, j] = float("NaN")
-                elif denominator[i, j] != 0:
-                    index[i, j] = numerator[i, j] / denominator[i, j]
-                else:
-                    if numerator[i, j] < 0:
-                        index[i, j] = np.nanmin(numerator)
-                    elif numerator[i, j] > 0:
-                        index[i, j] = np.nanmax(numerator)
-                    else:
-                        index[i, j] = float("NaN")
+        nan_mask = np.isnan(numerator) | np.isnan(denominator)
+        numerator_zero_mask = numerator == 0
+        denominator_zero_mask = denominator == 0
+
+        invalid_mask = nan_mask | (numerator_zero_mask & denominator_zero_mask)
+        valid_mask = np.logical_not(invalid_mask)
+
+        valid_denominator_non_zero_mask = valid_mask & np.logical_not(denominator_zero_mask)
+        valid_denominator_zero_mask = valid_mask & denominator_zero_mask
+
+        numerator_positive_denumerator_zero_mask = valid_denominator_zero_mask & (numerator > 0)
+        numerator_negative_denumerator_zero_mask = valid_denominator_zero_mask & (numerator < 0)
+
+        index[invalid_mask] = float("NaN")
+        index[numerator_positive_denumerator_zero_mask] = numerator_nanmax
+        index[numerator_negative_denumerator_zero_mask] = numerator_nanmin
+        index[valid_denominator_non_zero_mask] = numerator[valid_denominator_non_zero_mask] / denominator[valid_denominator_non_zero_mask]
 
         # return index values
         return index
@@ -1386,6 +1586,7 @@ class Model(object):
             for c in range(split_count):
                 new_array_df = array_df[c * split_size:(c + 1) * split_size].dropna(axis="index")
                 pred_proba = clf.predict_proba(new_array_df)
+
                 counter = 0
                 for i in range(c * split_size, (c + 1) * split_size):
                     if i == rows * cols:
@@ -1411,7 +1612,6 @@ class Model(object):
 
             classification = classification.reshape((rows, cols))
             heatmap = heatmap.reshape((rows, cols))
-
             classification_output_path = Model._output_path([input_path], working_dir, classification_postfix, file_extension)
             heatmap_output_path = Model._output_path([input_path], working_dir, heatmap_postfix, file_extension)
 
@@ -1434,8 +1634,8 @@ class Model(object):
             )
 
             return classification_output_path, heatmap_output_path
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc()
             return "", ""
         finally:
             del ds
