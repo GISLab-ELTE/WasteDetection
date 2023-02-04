@@ -23,7 +23,6 @@ class Persistence(object):
 
         self.config_file_path = config_file_path
         self.clf = None
-        self.colors = None
         self.data_file = None
 
         self.load()
@@ -47,12 +46,6 @@ class Persistence(object):
             with open(self.clf_path, "rb") as file:
                 self.clf = pickle.load(file)
 
-        self.colors = list()
-        for i in range(16):
-            index = f"color_{i}"
-            if hasattr(self, index):
-                self.colors.append(getattr(self, index))
-
     def save(self) -> None:
         """
         Saves the values of the data members to the config file.
@@ -60,7 +53,7 @@ class Persistence(object):
         :return: None
         """
 
-        settings = json.dumps(self.__dict__, indent=2)
+        settings = self.__dict__
 
         with open(self.config_file_path, "r") as file:
             stored_config = json.load(file)
@@ -68,7 +61,7 @@ class Persistence(object):
         new_config = jsonmerge.merge(stored_config, settings)
 
         with open(self.config_file_path, "w") as file:
-            json.dump(new_config, file)
+            json.dump(new_config, file, indent=4)
 
     # Static protected methods
     @staticmethod
