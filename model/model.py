@@ -101,14 +101,14 @@ class Model(object):
         """
 
         try:
-            with open(self._persistence.settings["HOTSPOT_RF_PATH"], "rb") as file:
+            with open(self._persistence.hotspot_rf_path, "rb") as file:
                 self._hotspot_rf = pickle.load(file)
         except Exception:
             self._hotspot_rf = None
             raise HotspotRandomForestFileException()
 
         try:
-            with open(self._persistence.settings["FLOATING_RF_PATH"], "rb") as file:
+            with open(self._persistence.floating_rf_path, "rb") as file:
                 self._floating_rf = pickle.load(file)
         except Exception:
             self._floating_rf = None
@@ -400,7 +400,7 @@ class Model(object):
         classified_layers = self._classification_layer_data
 
         for training_file, labeled_layer in classified_layers.items():
-            bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
+            bands_and_indices = self._get_bands_indices(self._persistence.satellite_type, training_file,
                                                         training_labels)
             bands_and_indices = np.asarray(bands_and_indices)
             if training_file in usable_training_data:
@@ -537,7 +537,7 @@ class Model(object):
         labels = [value.upper() for value in labels]
 
         clf = Model._create_random_forest(training_data_path, labels, ["COD"],
-                                          int(self._persistence.settings["TRAINING_ESTIMATORS"]))
+                                          int(self._persistence.training_estimators))
 
         pickle.dump(clf, open(output_path, "wb"))
 
@@ -549,25 +549,25 @@ class Model(object):
         """
 
         labels = list()
-        if self._persistence.settings["TRAINING_LABEL_BLUE"] == "1":
+        if self._persistence.training_label_blue == 1:
             labels.append("blue")
-        if self._persistence.settings["TRAINING_LABEL_GREEN"] == "1":
+        if self._persistence.training_label_green == 1:
             labels.append("green")
-        if self._persistence.settings["TRAINING_LABEL_RED"] == "1":
+        if self._persistence.training_label_red == 1:
             labels.append("red")
-        if self._persistence.settings["TRAINING_LABEL_NIR"] == "1":
+        if self._persistence.training_label_nir == 1:
             labels.append("nir")
-        if self._persistence.settings["TRAINING_LABEL_PI"] == "1":
+        if self._persistence.training_label_pi == 1:
             labels.append("pi")
-        if self._persistence.settings["TRAINING_LABEL_NDWI"] == "1":
+        if self._persistence.training_label_ndwi == 1:
             labels.append("ndwi")
-        if self._persistence.settings["TRAINING_LABEL_NDVI"] == "1":
+        if self._persistence.training_label_ndvi == 1:
             labels.append("ndvi")
-        if self._persistence.settings["TRAINING_LABEL_RNDVI"] == "1":
+        if self._persistence.training_label_rndvi == 1:
             labels.append("rndvi")
-        if self._persistence.settings["TRAINING_LABEL_SR"] == "1":
+        if self._persistence.training_label_sr == 1:
             labels.append("sr")
-        if self._persistence.settings["TRAINING_LABEL_APWI"] == "1":
+        if self._persistence.training_label_apwi == 1:
             labels.append("apwi")
         return "-".join(labels)
 
@@ -684,28 +684,28 @@ class Model(object):
                 were_wrong_pictures = True
                 continue
             tmp_file = self._save_bands_indices(
-                satellite_type=self._persistence.settings["SATELLITE_TYPE"],
+                satellite_type=self._persistence.satellite_type,
                 input_path=file,
                 save=training_labels,
-                working_dir=self._persistence.settings["WORKING_DIR"],
+                working_dir=self._persistence.working_dir,
                 postfix="_",
-                file_extension=self._persistence.settings["FILE_EXTENSION"],
+                file_extension=self._persistence.file_extension,
             )
 
-            low = int(self._persistence.settings["HEATMAP_LOW_PROB"]) / 100
-            medium = int(self._persistence.settings["HEATMAP_MEDIUM_PROB"]) / 100
-            high = int(self._persistence.settings["HEATMAP_HIGH_PROB"]) / 100
+            low = int(self._persistence.heatmap_low_prob) / 100
+            medium = int(self._persistence.heatmap_medium_prob) / 100
+            high = int(self._persistence.heatmap_high_prob) / 100
             clf = self._hotspot_rf if hotspot else self._floating_rf
 
             classification, heatmap = Model.create_classification_and_heatmap_with_random_forest(
                 input_path=tmp_file,
                 clf=clf,
                 low_medium_high_values=(low, medium, high),
-                garbage_c_id=int(self._persistence.settings["GARBAGE_MC_ID"]) * 100,
-                working_dir=self._persistence.settings["WORKING_DIR"],
-                classification_postfix=self._persistence.settings["HOTSPOT_CLASSIFIED_POSTFIX"],
-                heatmap_postfix=self._persistence.settings["HOTSPOT_HEATMAP_POSTFIX"],
-                file_extension=self._persistence.settings["FILE_EXTENSION"]
+                garbage_c_id=int(self._persistence.garbage_mc_id) * 100,
+                working_dir=self._persistence.working_dir,
+                classification_postfix=self._persistence.hotspot_classified_postfix,
+                heatmap_postfix=self._persistence.hotspot_heatmap_postfix,
+                file_extension=self._persistence.file_extension
             )
 
             if classification and heatmap:
@@ -717,15 +717,15 @@ class Model(object):
                         original_input_path=tmp_file,
                         classification_path=classification,
                         heatmap_path=heatmap,
-                        garbage_c_id=int(self._persistence.settings["GARBAGE_MC_ID"]) * 100,
-                        water_c_id=int(self._persistence.settings["WATER_MC_ID"]) * 100,
-                        matrix=(int(self._persistence.settings["MORPHOLOGY_MATRIX_SIZE"]),
-                                int(self._persistence.settings["MORPHOLOGY_MATRIX_SIZE"])),
-                        iterations=int(self._persistence.settings["MORPHOLOGY_ITERATIONS"]),
-                        working_dir=self._persistence.settings["WORKING_DIR"],
-                        classification_postfix=self._persistence.settings["FLOATING_MASKED_CLASSIFIED_POSTFIX"],
-                        heatmap_postfix=self._persistence.settings["FLOATING_MASKED_HEATMAP_POSTFIX"],
-                        file_extension=self._persistence.settings["FILE_EXTENSION"]
+                        garbage_c_id=int(self._persistence.garbage_mc_id) * 100,
+                        water_c_id=int(self._persistence.water_mc_id) * 100,
+                        matrix=(int(self._persistence.morphology_matrix_size),
+                                int(self._persistence.morphology_matrix_size)),
+                        iterations=int(self._persistence.morphology_iterations),
+                        working_dir=self._persistence.working_dir,
+                        classification_postfix=self._persistence.floating_masked_classified_postfix,
+                        heatmap_postfix=self._persistence.floating_masked_heatmap_postfix,
+                        file_extension=self._persistence.file_extension
                     )
 
                     if not ((file, masked_classification, masked_heatmap) in self._result_files_floating):
@@ -757,20 +757,20 @@ class Model(object):
                     were_wrong_pictures = True
                     continue
 
-                difference, coords_information = self._get_pi_difference(self._persistence.settings["SATELLITE_TYPE"],
+                difference, coords_information = self._get_pi_difference(self._persistence.satellite_type,
                                                                          file_1, file_2)
 
                 if not (difference is None) and not (coords_information is None):
                     before, after = self._get_pi_difference_heatmap(difference)
 
                     before_path = Model._output_path([file_1, file_2],
-                                                     self._persistence.settings["WORKING_DIR"],
-                                                     "_" + self._persistence.settings["WASHED_UP_BEFORE_POSTFIX"],
-                                                     self._persistence.settings["FILE_EXTENSION"])
+                                                     self._persistence.working_dir,
+                                                     "_" + self._persistence.washed_up_before_postfix,
+                                                     self._persistence.file_extension)
                     after_path = Model._output_path([file_1, file_2],
-                                                    self._persistence.settings["WORKING_DIR"],
-                                                    "_" + self._persistence.settings["WASHED_UP_AFTER_POSTFIX"],
-                                                    self._persistence.settings["FILE_EXTENSION"])
+                                                    self._persistence.working_dir,
+                                                    "_" + self._persistence.washed_up_after_postfix,
+                                                    self._persistence.file_extension)
 
                     Model._save_tif(
                         input_path=file_1,
@@ -809,10 +809,10 @@ class Model(object):
         :raise NameError: if wrong satellite name is given
         """
 
-        satellite_name = satellite_type.upper().split("-")[0]
-        band_name = band.upper()
+        satellite_name = satellite_type.lower().split("-")[0]
+        band_name = band.lower()
 
-        index = satellite_name + "_" + band_name + "_BAND"
+        index = satellite_name + "_" + band_name + "_band"
 
         if index in settings_file.keys():
             return int(settings_file[index])
@@ -834,10 +834,10 @@ class Model(object):
         with rasterio.open(input_path, "r") as img:
             # read bands
             try:
-                blue_ind = Model._get_satellite_band(self._persistence.settings, satellite_type, "Blue")
-                green_ind = Model._get_satellite_band(self._persistence.settings, satellite_type, "Green")
-                red_ind = Model._get_satellite_band(self._persistence.settings, satellite_type, "Red")
-                nir_ind = Model._get_satellite_band(self._persistence.settings, satellite_type, "NIR")
+                blue_ind = Model._get_satellite_band(self._persistence.__dict__, satellite_type, "Blue")
+                green_ind = Model._get_satellite_band(self._persistence.__dict__, satellite_type, "Green")
+                red_ind = Model._get_satellite_band(self._persistence.__dict__, satellite_type, "Red")
+                nir_ind = Model._get_satellite_band(self._persistence.__dict__, satellite_type, "NIR")
 
                 blue = (img.read(blue_ind)).astype(dtype="float32")
                 green = (img.read(green_ind)).astype(dtype="float32")
@@ -967,7 +967,7 @@ class Model(object):
 
             for i in range(rows):
                 for j in range(cols):
-                    N_EQUAL_PARTS = int(self._persistence.settings["WASHED_UP_HEATMAP_SECTIONS"])
+                    N_EQUAL_PARTS = int(self._persistence.washed_up_heatmap_sections)
 
                     value_pos = mean_difference_pos[i, j]
                     equal_part_pos = max_pos / N_EQUAL_PARTS
