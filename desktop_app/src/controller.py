@@ -21,7 +21,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from ttkbootstrap.dialogs.colorchooser import ColorChooserDialog
 
 
-
 MAX_PIXEL_COUNT = 40000000
 
 
@@ -1115,9 +1114,9 @@ class Controller(object):
 
         # Satellite type
         if self._view.settings_view.vars["satellite_rb"].get() == 1:
-            self._model.persistence.satellite_type = "Planet"
+            self._model.persistence.satellite_type = "planetscope"
         elif self._view.settings_view.vars["satellite_rb"].get() == 2:
-            self._model.persistence.satellite_type = "Sentinel-2"
+            self._model.persistence.satellite_type = "sentinel-2"
 
         # Sentinel-2 settings
         self._model.persistence.sentinel_blue_band = blue_value
@@ -1165,7 +1164,7 @@ class Controller(object):
             self._model.persistence.colors[i] = color
 
         # Save changes
-        self._model.persistence.save_constants()
+        self._model.persistence.save()
         try:
             self._model.load_random_forests()
         except HotspotRandomForestFileException:
@@ -1204,12 +1203,12 @@ class Controller(object):
         :return: None
         """
 
-        self._model.persistence.load_constants()
+        self._model.persistence.load()
 
         # Satellite type
-        if self._model.persistence.satellite_type == "Planet":
+        if self._model.persistence.satellite_type.lower() == "planetscope":
             self._view.settings_view.vars["satellite_rb"].set(1)
-        elif self._model.persistence.satellite_type == "Sentinel-2":
+        elif self._model.persistence.satellite_type.lower() == "sentinel-2":
             self._view.settings_view.vars["satellite_rb"].set(2)
         else:
             self._view.settings_view.vars["satellite_rb"].set(0)
@@ -1872,12 +1871,12 @@ class Controller(object):
         """
 
         satellite_rgb = list()
-        if self._model.persistence.satellite_type == "Planet":
+        if self._model.persistence.satellite_type.lower() == "planetscope":
             red = self._model.persistence.planet_red_band
             green = self._model.persistence.planet_green_band
             blue = self._model.persistence.planet_blue_band
             satellite_rgb += [red, green, blue]
-        elif self._model.persistence.satellite_type == "Sentinel-2":
+        elif self._model.persistence.satellite_type.lower() == "sentinel-2":
             red = self._model.persistence.sentinel_red_band
             green = self._model.persistence.sentinel_green_band
             blue = self._model.persistence.sentinel_blue_band
