@@ -2,6 +2,7 @@ import os
 import pickle
 import geojson
 import rasterio
+import traceback
 import cv2 as cv
 import numpy as np
 import pandas as pd
@@ -18,8 +19,6 @@ from shapely.geometry.polygon import Polygon
 from matplotlib.colors import ListedColormap
 from sklearn.ensemble import RandomForestClassifier
 from typing import List, Tuple, Callable, Union, TextIO, Dict
-
-import traceback
 
 
 # Constants for model.py

@@ -53,7 +53,8 @@ class Persistence(object):
         :return: None
         """
 
-        settings = self.__dict__
+        settings = dict(self.__dict__)
+        del settings["config_file_path"]
 
         with open(self.config_file_path, "r") as file:
             stored_config = json.load(file)
