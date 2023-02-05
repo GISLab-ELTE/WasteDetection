@@ -1,7 +1,6 @@
 import os
 import math
 import rasterio
-from model import model
 import traceback
 import threading
 import numpy as np
@@ -13,7 +12,7 @@ import desktop_app.src.view as view
 from osgeo import gdal
 from model import model
 from model.exceptions import *
-from tkinter import Image, filedialog as fd
+from tkinter import filedialog as fd
 from ttkbootstrap.constants import *
 from matplotlib.figure import Figure
 from typing import Union, List, TextIO, Tuple, Set
@@ -44,7 +43,6 @@ class Controller(object):
         self._view.training_view.set_classification_mode(self._model.classification_mode)
 
         self._bind_commands()
-        
 
     # Non-static public methods
     def mainloop(self) -> None:
@@ -803,7 +801,7 @@ class Controller(object):
                 self._view.left_img_lf.configure(text="Source image")
 
                 model_source_files, model_result_files = self._model_get_source_and_result_files()
-
+                self._view.clear_canvas("right")
                 if selected_file in model_source_files:
                     index = model_source_files.index(selected_file)
                     classification = model_result_files[index][0]
@@ -817,8 +815,6 @@ class Controller(object):
                     )
 
                     self._view.right_img_lf.configure(text="Classified image")
-                else:
-                    self._view.clear_canvas("right")
             else:
                 self._view.clear_canvas("left")
                 self._view.clear_canvas("right")
@@ -830,6 +826,7 @@ class Controller(object):
                 selected_file_1 = view_selected_files[0]
                 selected_file_2 = view_selected_files[1]
 
+                self._view.clear_canvas("left")
                 self._view.show_image_on_canvas(
                     canvas_name="left",
                     img_or_array=selected_file_1,
@@ -839,6 +836,7 @@ class Controller(object):
 
                 self._view.left_img_lf.configure(text="Source image 1")
 
+                self._view.clear_canvas("right")
                 self._view.show_image_on_canvas(
                     canvas_name="right",
                     img_or_array=selected_file_2,
@@ -1872,9 +1870,9 @@ class Controller(object):
 
         satellite_rgb = list()
         if self._model.persistence.satellite_type.lower() == "planetscope":
-            red = self._model.persistence.planet_red_band
-            green = self._model.persistence.planet_green_band
-            blue = self._model.persistence.planet_blue_band
+            red = self._model.persistence.planetscope_red_band
+            green = self._model.persistence.planetscope_green_band
+            blue = self._model.persistence.planetscope_blue_band
             satellite_rgb += [red, green, blue]
         elif self._model.persistence.satellite_type.lower() == "sentinel-2":
             red = self._model.persistence.sentinel_red_band
