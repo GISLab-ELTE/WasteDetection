@@ -39,7 +39,7 @@
     "sentinel_green_band": 2,
     "sentinel_red_band": 3,
     "sentinel_nir_band": 4,
-    "config_file_path": "desktop_app/src/config.json",
+    "data_file": null,
     "clf": null,
     "colors": [
         "#000000",
@@ -58,6 +58,5 @@
         "#c21e52",
         "#31d12e",
         "#0ff026"
-    ],
-    "data_file": null
+    ]
 }
