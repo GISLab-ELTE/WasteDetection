@@ -6,7 +6,7 @@ from model import model
 
 
 DEFAULT_RF_PATH = "desktop_app/clf/random_forest_model.sav"
-CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/src/config.json"
+CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/resources/config.json"
 
 
 class TestAddFiles(unittest.TestCase, model.Model):
