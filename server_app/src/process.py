@@ -10,7 +10,7 @@ import numpy as np
 import datetime as dt
 
 from model import Model
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 from planetapi import PlanetAPI
 from typing import Dict, Optional
 from collections import OrderedDict
