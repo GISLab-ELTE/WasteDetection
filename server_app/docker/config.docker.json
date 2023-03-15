@@ -4,7 +4,7 @@
   "result_dir_planetscope": "/workspace/work_dir/webapp_results/automatic/planetscope",
   "result_dir_sentinel-2": "/workspace/work_dir/webapp_results/automatic/sentinel-2",
   "estimations_file_path": "/workspace/work_dir/webapp_results/automatic/estimations.json",
-  "geojson_files_path" : "/mnt/d/Desktop/work_dir/webapp_results/automatic/geojson_files.json",
+  "geojson_files_path" : "/workspace/work_dir/webapp_results/automatic/geojson_files.json",
   "planet_api_key": "***REMOVED***",
   "sentinel_sh_client_id": "44626c18-bbcb-499d-8f38-14554b0d1e06",
   "sentinel_instance_id": "35e3c432-b20d-4ab8-8a37-cc56561afcb4",
