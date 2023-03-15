@@ -10,7 +10,7 @@ import numpy as np
 import datetime as dt
 
 from model import Model
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from planetapi import PlanetAPI
 from typing import Dict, Optional
 from collections import OrderedDict
@@ -383,7 +383,8 @@ class Process(object):
 
         for path in sorted(Path(dir_path).rglob(file_name_postfix)):
             rel_path = str(path.relative_to(dir_path))
-            split_rel_path = rel_path.split("\\")
+            rel_path = rel_path.replace("\\", "/")
+            split_rel_path = rel_path.split("/")
             feature_id = split_rel_path[0]
             date = split_rel_path[1]
 
@@ -391,11 +392,11 @@ class Process(object):
                 images[feature_id] = OrderedDict()
 
             if only_one:
-                images[feature_id][date] = "/".join([dir_path] + rel_path.split("\\"))
+                images[feature_id][date] = "/".join([dir_path] + rel_path.split("/"))
             else:
                 if date not in images[feature_id].keys():
                     images[feature_id][date] = list()
-                images[feature_id][date].append("/".join([dir_path] + rel_path.split("\\")))
+                images[feature_id][date].append("/".join([dir_path] + rel_path.split("/")))
 
         return images
 
