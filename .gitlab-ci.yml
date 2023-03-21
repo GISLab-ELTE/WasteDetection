@@ -69,3 +69,23 @@ webapp-deploy:
   environment:
     name: production
     url: https://gis.inf.elte.hu/waste-detection/
+
+serverapp-image:
+  stage: deploy
+  image: docker:latest
+  tags:
+    - docker
+    - docker-socket
+  variables:
+    IMAGE_FOLDER: server_app
+    IMAGE_NAME: "$CI_REGISTRY_IMAGE/server_app"
+  before_script:
+    - docker version
+    # Login to GitLab Container Registry
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    # Build Docker image
+    - docker build $IMAGE_FOLDER --pull -t "$IMAGE_NAME"
+    # Push Docker image to registries
+    - docker push "$IMAGE_NAME"
+
