@@ -6,7 +6,7 @@ WORKDIR /workspace
 
 COPY . .
 
-RUN conda env create -f environment.yml -q
+RUN conda env create -f environment.yml -q && conda clean --all -q
 
 RUN chmod 755 docker/start_server.sh
 
