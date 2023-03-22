@@ -18,7 +18,7 @@
         }
 
         img.screenshot {
-            width: 500px;
+            width: 625px;
             border: 0;
         }
 
@@ -30,6 +30,10 @@
         a:hover {
             color: #00adee;
             text-decoration: underline;
+        }
+
+        p {
+            display: inline;
         }
     </style>
   </head>
@@ -58,8 +62,16 @@
             </div>
             <div class="col-12 col-lg-6">
                 <h4>Description</h4>
-                Our monitoring system automatically searches for newly recorded satellite images and downloads them on a daily basis. 
-                After this a <i>Random Forest</i> model classifies the images and displays the results in this web application.
+                The goal of our research is to develop an accurate classification method for
+                plastic waste detection to provide a viable platform for repeatable, cost-effective
+                and large-scale monitoring. Such a robust waste monitoring solution would speed
+                up the detection of illegal waste hot-spots close to water flows and floating waste
+                islands on rivers, as well as support waste collection actions with an automatic
+                monitoring system. This application automatically searches for newly recorded 
+                satellite images and downloads them on a daily basis. After this a <i>Random Forest</i> 
+                model classifies the pictures and displays the results in the web view.
+                You can check out the extension of polluted areas on the set locations 
+                in the previous five days when the cloud cover over them was 0%.
                 <br>
                 <br>
 
@@ -67,11 +79,38 @@
                 <ul>
                     <li>
                         <b>Location: </b>
-                        You can choose from four previosly set locations: <i>Kisköre, Lake Călinești, Pusztazámor and Рахів</i>
+                        You can choose from four previosly set locations: 
+                        <i>
+                            <a href="https://goo.gl/maps/NT4vUMRAMj85fbuo9">Kisköre</a>, 
+                            <a href="https://goo.gl/maps/DdvVcAoQom5bEuGD9">Lake Călinești</a>, 
+                            <a href="https://goo.gl/maps/PjAxwq1fL6thphRY8">Pusztazámor</a> and 
+                            <a href="https://goo.gl/maps/auupf9ozG5aXG9LQ6">Рахів</a>
+                        </i>
                     </li>
                     <li>
                         <b>Date: </b>
                         It can be changed using the swipe. You can select from the last five most recent days when the cloud cover over the areas was 0%.
+                    </li>
+                    <li>
+                        <b>Colors: </b>
+                        <ul>
+                            <li>
+                                <b>Classified: <i><p style="color: #ff8000; ">Orange</p></i></b>.
+                                All pixels that were classified as plastic waste. 
+                            </li>
+                            <li>
+                                <b>Heatmap High: <i><p style="color: Red; ">Red</p></i></b>.
+                                Pixels that were classified as plastic waste with a confidence of 90% or higher.
+                            </li>
+                            <li>
+                                <b>Heatmap Medium: <i><p style="color: #ffff00; ">Yellow</p></i></b>.
+                                Pixels that were classified as plastic waste with a confidence between 80% and 90%.
+                            </li>
+                            <li>
+                                <b>Heatmap Low: <i><p style="color: Green; ">Green</p></i></b>.
+                                Pixels that were classified as plastic waste with a confidence between 70% and 80%.
+                            </li>
+                        </ul>
                     </li>
                 </ul>
             </div>
