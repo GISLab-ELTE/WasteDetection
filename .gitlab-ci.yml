@@ -53,8 +53,6 @@ webapp-build:
 webapp-deploy:
   image: ubuntu:latest
   stage: deploy
-  only:
-    - master
   dependencies:
     - webapp-build
   before_script:
@@ -69,6 +67,11 @@ webapp-deploy:
   environment:
     name: production
     url: https://gis.inf.elte.hu/waste-detection/
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        - web_app/**/*
+        - .gitlab-ci.yml
 
 serverapp-image:
   stage: deploy
@@ -91,5 +94,7 @@ serverapp-image:
     # Remove old, now dangling versions of the image
     -  docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME" --format "{{.ID}}" | xargs docker image rm
   rules:
-    - changes:
-      - server_app/**/*
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        - server_app/**/*
+        - .gitlab-ci.yml
