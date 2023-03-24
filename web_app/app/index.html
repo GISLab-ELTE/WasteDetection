@@ -2,39 +2,44 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
     <link rel="icon" type="image/x-icon" href="https://openlayers.org/favicon.ico" />
     <link rel="stylesheet" href="https://unpkg.com/ol-layerswitcher@4.1.0/dist/ol-layerswitcher.css" />
-    <!-- <link rel="stylesheet" href="https://unpkg.com/ol-popup@5.0.0/src/ol-popup.css" /> -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Plastic Waste Monitoring</title>
   </head>
   <body>
-    <div id="header"><h1>Plastic Waste Monitoring</h1></div>
-    <form>
-      <div class="flex-container">
-        <div id="location-div">
-          <label for="type">Location: &nbsp;</label>
-          <select id="type">
+    <div class="container-fluid">
+      <div id="user-inputs" class="row">
+        <div id="header" class="col-12">
+          <h1>Plastic Waste Monitoring</h1>
+          <hr>
+        </div>
+        <div class="col-12 col-lg-2">
+          <label for="type" class="form-label"><b>Location:</b></label>
+          <select id="type" class="form-select form-select-lg mb-3" aria-label="Location">
             <option value="Kiskore" selected>Kisköre</option>
             <option value="Kanyahaza">Lake Călinești</option>
             <option value="Pusztazamor">Pusztazámor</option>
             <option value="Raho">Рахів</option>
           </select>
         </div>
-        <div id="date-div" style="flex-grow: 9">
-          <label id="date" for="swipe">Date: &nbsp;</label>
-          <input id="swipe" type="range" min="0" max="4" value="0">
+        <div class="col-12 col-lg-10">
+          <label id="date" class="form-label" for="swipe"><b>Date:</b> 2022-02-20</label>
+          <input id="swipe" class="form-range" type="range" min="0" max="4" value="0">
         </div>
       </div>
-    </form>
-
-    <div id="map"></div>
-
-    <!-- <script src="https://unpkg.com/elm-pep@1.0.6/dist/elm-pep.js"></script> -->
-    <!-- <script src="https://unpkg.com/ol-layerswitcher@4.1.0"></script> -->
-    <!-- <script src="https://unpkg.com/ol-popup@5.0.0"></script> -->
-    <!-- <script src="https://unpkg.com/ol-layerswitcher@4.1.0"></script> -->
+      <div class="row">
+        <div class="col-12">
+          <div id="map" ></div>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="./main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
   </body>
 </html>

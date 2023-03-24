@@ -270,6 +270,14 @@ const changeAOI = function () {
   }
 };
 
+const resizeMap = function () {
+  var mapWidth = document.getElementById('map').offsetWidth;
+  var userInputsHeight = document.getElementById('user-inputs').offsetHeight;
+  var remainingHeight = window.innerHeight - userInputsHeight - 10
+  document.getElementById('map').style.height = remainingHeight.toString() + "px";
+  map.updateSize();
+};
+
 const fetchGeojsonPaths = async function () {
   const res = await fetch(base_url + 'geojson_files.json');
   aoisWithDates = await res.json();
@@ -293,5 +301,11 @@ swipe.addEventListener('input', function () {
   setAOILayers(aoi);
 });
 
+window.onresize = function()
+{
+  setTimeout( resizeMap, 200);
+}
+
 await fetchGeojsonPaths();
 changeAOI();
+resizeMap();
