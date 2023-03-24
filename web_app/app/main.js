@@ -220,7 +220,7 @@ const removeLayersFromMap = function() {
 const changeDate = function(newDate) {
   var dateArray = newDate.split('-');
   dateArray.reverse();
-  document.getElementById('date').innerHTML = 'Date: ' + dateArray.join('/');
+  document.getElementById('date').innerHTML = '<b>Date:</b> ' + dateArray.join('/');
 }
 
 const setAOILayers = function() {
@@ -271,7 +271,6 @@ const changeAOI = function () {
 };
 
 const resizeMap = function () {
-  var mapWidth = document.getElementById('map').offsetWidth;
   var userInputsHeight = document.getElementById('user-inputs').offsetHeight;
   var remainingHeight = window.innerHeight - userInputsHeight - 10
   document.getElementById('map').style.height = remainingHeight.toString() + "px";
@@ -307,5 +306,5 @@ window.onresize = function()
 }
 
 await fetchGeojsonPaths();
-changeAOI();
 resizeMap();
+changeAOI();
