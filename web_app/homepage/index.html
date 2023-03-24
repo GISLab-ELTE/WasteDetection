@@ -12,14 +12,8 @@
 
     <style>
         #header img {
-            float: right;
             height: 60px;
             margin: 5px;
-        }
-
-        img.screenshot {
-            width: 625px;
-            border: 0;
         }
 
         a, a:visited, a:active {
@@ -30,6 +24,11 @@
         a:hover {
             color: #00adee;
             text-decoration: underline;
+        }
+
+        h5 {
+            margin-top: 20px;
+            margin-bottom: 20px;
         }
 
         p {
@@ -44,20 +43,20 @@
             <div id="header" class="col-12">
                 <h1>Plastic Waste Monitoring</h1>
                 <a href="https://petkupa.hu/eng/">
-                    <img src="imgs/pet_logo_en.png" alt="Plastic Cup logo">
+                    <img src="imgs/pet_logo_en.png" class="float-end" alt="Plastic Cup logo">
                 </a>
                 <a href="https://lechnerkozpont.hu/en">
-                    <img src="imgs/lechner_logo.png" alt="Lechner logo">
+                    <img src="imgs/lechner_logo.png" class="float-end" alt="Lechner logo">
                 </a>
                 <a href="https://www.inf.elte.hu/en/">
-                    <img src="imgs/ik-logo-nagy-en.png" alt="ELTE FI logo">
+                    <img src="imgs/ik-logo-nagy-en.png" class="float-end" alt="ELTE FI logo">
                 </a>
             </div>
         </div>
         <!-- Web Application -->
         <div class="row">
             <div class="col-12">
-                <h2><a href="https://gis.inf.elte.hu/waste-detection/">Web Application</a></h2>
+                <h2>Web Application</h2>
                 <hr>
             </div>
             <div class="col-12 col-lg-6">
@@ -115,7 +114,10 @@
                 </ul>
             </div>
             <div class="col-12 col-lg-6">
-                <img src="imgs/screenshot_webapp.png" class="screenshot" alt="Web view of the plastic waste monitoring results over the set locations.">
+                <div class="text-center">
+                    <img src="imgs/screenshot_webapp.png" class="img-fluid" alt="Web view of the plastic waste monitoring results over the set locations.">
+                    <h5><a href="https://gis.inf.elte.hu/waste-detection/">Click here for interactive DEMO</a></h5>
+                </div>
             </div>
         </div>
         <!-- Publications -->
