@@ -88,4 +88,5 @@ serverapp-image:
     - docker build $IMAGE_FOLDER --pull -t "$IMAGE_NAME"
     # Push Docker image to registries
     - docker push "$IMAGE_NAME"
-
+    # Remove old, now dangling versions of the image
+    -  docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME" --format "{{.ID}}" | xargs docker image rm
