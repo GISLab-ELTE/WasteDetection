@@ -9,7 +9,7 @@ include:
   
 # Model
 model-unittest:
-  image: "$IMAGE_NAME_SERVER"
+  image: "$IMAGE_NAME_BASE"
   stage: test
   before_script:
     # Configure shell for Anaconda (called in ~/.bashrc, but in CI the shell is not interactive)
