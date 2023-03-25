@@ -1,5 +1,7 @@
 variables:
   DS_EXCLUDED_ANALYZERS: gemnasium-python
+  IMAGE_NAME_BASE: "$CI_REGISTRY_IMAGE/base"
+  IMAGE_NAME_SERVER: "$CI_REGISTRY_IMAGE/server_app"
   
 include:
   - template: Jobs/Dependency-Scanning.gitlab-ci.yml
@@ -7,9 +9,8 @@ include:
   
 # Model
 model-unittest:
-  image: continuumio/miniconda3
+  image: "$IMAGE_NAME_SERVER"
   stage: test
-  tags: ["powerful"]
   before_script:
     # Configure shell for Anaconda (called in ~/.bashrc, but in CI the shell is not interactive)
     - source /opt/conda/etc/profile.d/conda.sh
@@ -17,21 +18,10 @@ model-unittest:
     - cat /etc/os-release
     - conda info
   script:
-    # Setup and activate environment
-    - conda env create -f server_app/environment.yml -q
+    # Activate environment
     - conda activate WasteDetectionServerApp
     # Run unit tests
     - python unittest_model.py
-  cache:
-    key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
-    paths:
-      - .cache/pip/
-      - .cache/conda/
-  # Change pip's and conda's cache directory to be inside the project directory,
-  # since we can only cache local items.
-  variables:
-    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip/"
-    CONDA_PKGS_DIRS: "$CI_PROJECT_DIR/.cache/conda/"
 
 # Webapp
 webapp-build:
@@ -73,26 +63,54 @@ webapp-deploy:
         - web_app/**/*
         - .gitlab-ci.yml
 
-serverapp-image:
-  stage: deploy
+serverapp-build:
+  stage: build
   image: docker:latest
   tags:
     - docker
     - docker-socket
   variables:
     IMAGE_FOLDER: server_app
-    IMAGE_NAME: "$CI_REGISTRY_IMAGE/server_app"
+  before_script:
+    - docker version
+  script:
+    # Build Docker images
+    - docker build $IMAGE_FOLDER --pull --target base -t "$IMAGE_NAME_BASE:$CI_COMMIT_SHORT_SHA"
+    - docker build $IMAGE_FOLDER -t "$IMAGE_NAME_SERVER:$CI_COMMIT_SHORT_SHA"
+  after_script:
+    # Remove Docker images if job failed or cancelled
+    - >
+      if [ $CI_JOB_STATUS != 'success' ]; then
+        docker image rm "$IMAGE_NAME_BASE:$CI_COMMIT_SHORT_SHA"
+        docker image rm "$IMAGE_NAME_SERVER:$CI_COMMIT_SHORT_SHA"
+      fi
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        - server_app/**/*
+        - .gitlab-ci.yml
+
+serverapp-deploy:
+  stage: deploy
+  image: docker:latest
+  tags:
+    - docker
+    - docker-socket
   before_script:
     - docker version
     # Login to GitLab Container Registry
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    # Build Docker image
-    - docker build $IMAGE_FOLDER --pull -t "$IMAGE_NAME"
-    # Push Docker image to registries
-    - docker push "$IMAGE_NAME"
-    # Remove old, now dangling versions of the image
-    -  docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME" --format "{{.ID}}" | xargs docker image rm
+    # Tag Docker images as latest
+    - docker tag "$IMAGE_NAME_BASE:$CI_COMMIT_SHORT_SHA" "$IMAGE_NAME_BASE:latest"
+    - docker tag "$IMAGE_NAME_SERVER:$CI_COMMIT_SHORT_SHA" "$IMAGE_NAME_SERVER:latest"
+    - docker image rm "$IMAGE_NAME_BASE:$CI_COMMIT_SHORT_SHA"
+    - docker image rm "$IMAGE_NAME_SERVER:$CI_COMMIT_SHORT_SHA"
+    # Push Docker images to registries
+    - docker push "$IMAGE_NAME_BASE:latest"
+    - docker push "$IMAGE_NAME_SERVER:latest"
+    # Remove old, now dangling versions of the images
+    - docker image ls --filter "dangling=true" --filter "reference=$CI_REGISTRY_IMAGE" --format "{{.ID}}" | xargs docker image rm
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       changes:
