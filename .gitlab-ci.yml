@@ -123,11 +123,13 @@ serverapp:
   tags:
     - docker
     - docker-socket
+  variables:
+    IMAGE_FOLDER: server_app
   before_script:
     - *docker-login
   script:
     # Build Docker images
-    - docker build $IMAGE_FOLDER -t "$IMAGE_NAME_SERVER:latest"
+    - docker build $IMAGE_FOLDER --pull -t "$IMAGE_NAME_SERVER:latest"
     # Push Docker images to registries
     - docker push "$IMAGE_NAME_SERVER:latest"
     # Remove old, now dangling versions of the image
@@ -136,6 +138,7 @@ serverapp:
       if [ $DANGLING_NUMBER -gt 0 ]; then
          docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_SERVER" --format "{{.ID}}" | xargs docker image rm
       fi
+  rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       changes:
         - server_app/**/*
