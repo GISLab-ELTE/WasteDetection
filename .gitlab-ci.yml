@@ -2,14 +2,14 @@ variables:
   DS_EXCLUDED_ANALYZERS: gemnasium-python
   IMAGE_NAME_BASE: "$CI_REGISTRY_IMAGE/base"
   IMAGE_NAME_SERVER: "$CI_REGISTRY_IMAGE/server_app"
-  
+
 include:
   - template: Jobs/Dependency-Scanning.gitlab-ci.yml
   - template: Jobs/Secret-Detection.gitlab-ci.yml
-  
+
 # Model
 model-unittest:
-  image: "$IMAGE_NAME_SERVER"
+  image: "$IMAGE_NAME_BASE"
   stage: test
   before_script:
     # Configure shell for Anaconda (called in ~/.bashrc, but in CI the shell is not interactive)
@@ -84,7 +84,12 @@ webapp-demo-deploy:
         - web_app/**/*
         - .gitlab-ci.yml
 
-serverapp-build:
+.docker-login: &docker-login
+    - docker version
+    # Login to GitLab Container Registry
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+baseimage:
   stage: build
   image: docker:latest
   tags:
@@ -93,46 +98,44 @@ serverapp-build:
   variables:
     IMAGE_FOLDER: server_app
   before_script:
-    - docker version
+    - *docker-login
   script:
-    # Build Docker images
-    - docker build $IMAGE_FOLDER --pull --target base -t "$IMAGE_NAME_BASE:$CI_COMMIT_SHORT_SHA"
-    - docker build $IMAGE_FOLDER -t "$IMAGE_NAME_SERVER:$CI_COMMIT_SHORT_SHA"
-  after_script:
-    # Remove Docker images if job failed or cancelled
+    # Build Docker image
+    - docker build $IMAGE_FOLDER --pull --target base -t "$IMAGE_NAME_BASE:latest"
+    # Push Docker image to registries
+    - docker push "$IMAGE_NAME_BASE:latest"
+    # Remove old, now dangling versions of the image
+    - DANGLING_NUMBER=$(docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_BASE"  --format "{{.ID}}" | wc -l)
     - >
-      if [ $CI_JOB_STATUS != 'success' ]; then
-        docker image rm "$IMAGE_NAME_BASE:$CI_COMMIT_SHORT_SHA"
-        docker image rm "$IMAGE_NAME_SERVER:$CI_COMMIT_SHORT_SHA"
+      if [ $DANGLING_NUMBER -gt 0 ]; then
+         docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_BASE" --format "{{.ID}}" | xargs docker image rm
       fi
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       changes:
-        - server_app/**/*
+        - server_app/Dockerfile
+        - server_app/environment.yml
         - .gitlab-ci.yml
 
-serverapp-deploy:
+serverapp:
   stage: deploy
   image: docker:latest
   tags:
     - docker
     - docker-socket
   before_script:
-    - docker version
-    # Login to GitLab Container Registry
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - *docker-login
   script:
-    # Tag Docker images as latest
-    - docker tag "$IMAGE_NAME_BASE:$CI_COMMIT_SHORT_SHA" "$IMAGE_NAME_BASE:latest"
-    - docker tag "$IMAGE_NAME_SERVER:$CI_COMMIT_SHORT_SHA" "$IMAGE_NAME_SERVER:latest"
-    - docker image rm "$IMAGE_NAME_BASE:$CI_COMMIT_SHORT_SHA"
-    - docker image rm "$IMAGE_NAME_SERVER:$CI_COMMIT_SHORT_SHA"
+    # Build Docker images
+    - docker build $IMAGE_FOLDER -t "$IMAGE_NAME_SERVER:latest"
     # Push Docker images to registries
-    - docker push "$IMAGE_NAME_BASE:latest"
     - docker push "$IMAGE_NAME_SERVER:latest"
-    # Remove old, now dangling versions of the images
-    - docker image ls --filter "dangling=true" --filter "reference=$CI_REGISTRY_IMAGE" --format "{{.ID}}" | xargs docker image rm
-  rules:
+    # Remove old, now dangling versions of the image
+    - DANGLING_NUMBER=$(docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_SERVER"  --format "{{.ID}}" | wc -l)
+    - >
+      if [ $DANGLING_NUMBER -gt 0 ]; then
+         docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_SERVER" --format "{{.ID}}" | xargs docker image rm
+      fi
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       changes:
         - server_app/**/*
