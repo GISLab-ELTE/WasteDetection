@@ -5,16 +5,15 @@ import {Map, View} from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import LayerSwitcher from 'ol-layerswitcher';
-import LayerGroup from "ol/layer/Group";
+import LayerGroup from 'ol/layer/Group';
 import BingMaps from 'ol/source/BingMaps';
 import XYZ from 'ol/source/XYZ';
 import GeoJSON from 'ol/format/GeoJSON';
 import {Fill, Stroke, Style} from 'ol/style';
 import {Vector as VectorSource} from 'ol/source';
-import {Tile, Vector as VectorLayer} from 'ol/layer';
+import {Vector as VectorLayer} from 'ol/layer';
 import {defaults} from 'ol/control/defaults';
 import {ZoomSlider} from 'ol/control';
-import { format } from 'ol/coordinate';
 
 // Constant values
 const base_url = import.meta.env.VITE_DATA_URL;
@@ -266,7 +265,7 @@ const changeAOI = function () {
 const resizeMap = function () {
   var userInputsHeight = document.getElementById('user-inputs').offsetHeight;
   var remainingHeight = window.innerHeight - userInputsHeight - 10
-  document.getElementById('map').style.height = remainingHeight.toString() + "px";
+  document.getElementById('map').style.height = remainingHeight.toString() + 'px';
   map.updateSize();
 };
 
