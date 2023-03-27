@@ -1,14 +1,11 @@
 @import "node_modules/ol/ol.css";
 
-body:not(#header) {
-  font-size: 16pt;
-}
-
 #swipe {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 #map {
+  padding-top: 15px;
   width: 100%;
   height: 1px;
 } 
