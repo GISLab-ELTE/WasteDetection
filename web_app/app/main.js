@@ -1,7 +1,7 @@
 import './style.css';
 import 'ol/ol.css';
 import 'ol-layerswitcher/dist/ol-layerswitcher.css';
-import {Map, View} from 'ol';
+import { Map, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import LayerSwitcher from 'ol-layerswitcher';
@@ -9,11 +9,11 @@ import LayerGroup from 'ol/layer/Group';
 import BingMaps from 'ol/source/BingMaps';
 import XYZ from 'ol/source/XYZ';
 import GeoJSON from 'ol/format/GeoJSON';
-import {Fill, Stroke, Style} from 'ol/style';
-import {Vector as VectorSource} from 'ol/source';
-import {Vector as VectorLayer} from 'ol/layer';
-import {defaults} from 'ol/control/defaults';
-import {ZoomSlider} from 'ol/control';
+import { Fill, Stroke, Style } from 'ol/style';
+import { Vector as VectorSource } from 'ol/source';
+import { Vector as VectorLayer } from 'ol/layer';
+import { defaults } from 'ol/control/defaults';
+import { ZoomSlider } from 'ol/control';
 
 // Constant values
 const base_url = import.meta.env.VITE_DATA_URL;
@@ -97,10 +97,10 @@ const styleFunctionHeatmapLow = function (feature) {
 };
 
 // VectorSources and VectorLayers
-const sourceClassified = new VectorSource({format: new GeoJSON()});
-const sourceHeatmapLow = new VectorSource({format: new GeoJSON()});
-const sourceHeatmapMedium = new VectorSource({format: new GeoJSON()});
-const sourceHeatmapHigh = new VectorSource({format: new GeoJSON()});
+const sourceClassified = new VectorSource({ format: new GeoJSON() });
+const sourceHeatmapLow = new VectorSource({ format: new GeoJSON() });
+const sourceHeatmapMedium = new VectorSource({ format: new GeoJSON() });
+const sourceHeatmapHigh = new VectorSource({ format: new GeoJSON() });
 
 const layerClassified = new VectorLayer({
   title: 'Classified',
@@ -201,7 +201,7 @@ map.addControl(layerSwitcher);
 
 // Functions
 // TODO: is this needed?
-const removeLayersFromMap = function() {
+const removeLayersFromMap = function () {
   for (const source of sourcesAndLayers['sources']) {
     source.clear();
   };
@@ -209,13 +209,13 @@ const removeLayersFromMap = function() {
   map.removeLayer(geojsonLayerGroup);
 };
 
-const changeDate = function(newDate) {
+const changeDate = function (newDate) {
   var dateArray = newDate.split('-');
   dateArray.reverse();
   document.getElementById('date').innerHTML = '<b>Date:</b> ' + dateArray.join('/');
 }
 
-const setAOILayers = function() {
+const setAOILayers = function () {
   const aoi = selectedAOI.value;
   const swipeValue = swipe.value;
   const date = Object.keys(aoisWithDates[aoi])[swipeValue];
@@ -292,9 +292,8 @@ swipe.addEventListener('input', function () {
   setAOILayers(aoi);
 });
 
-window.onresize = function()
-{
-  setTimeout( resizeMap, 200);
+window.onresize = function () {
+  setTimeout(resizeMap, 200);
 }
 
 await fetchGeojsonPaths();
