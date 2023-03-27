@@ -1,11 +1,15 @@
 @import "node_modules/ol/ol.css";
 
+#type {
+  margin-bottom: 15px;
+}
+
 #swipe {
-  margin-top: 8px;
+  padding-top: 20px;
+  padding-bottom: 15px;
 }
 
 #map {
-  padding-top: 15px;
   width: 100%;
   height: 1px;
 } 
