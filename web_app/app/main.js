@@ -13,7 +13,7 @@ import {Fill, Stroke, Style} from 'ol/style';
 import {Vector as VectorSource} from 'ol/source';
 import {Tile, Vector as VectorLayer} from 'ol/layer';
 import {defaults} from 'ol/control/defaults';
-import {OverviewMap, ZoomSlider} from 'ol/control';
+import {ZoomSlider} from 'ol/control';
 import { format } from 'ol/coordinate';
 
 // Constant values
@@ -188,13 +188,6 @@ const map = new Map({
     maxZoom: 19,
   }),
   controls: defaults({ attribution: false }).extend([
-    new OverviewMap({
-      layers: [
-        new Tile({
-          source: new OSM()
-        })
-      ]
-    }),
     new ZoomSlider()
   ])
 });
