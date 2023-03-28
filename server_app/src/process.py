@@ -223,7 +223,7 @@ class Process(object):
         with open(self.config_file["estimations_file_path"], "w") as file:
             json.dump(self.estimations, file, indent=4)
 
-        geojson_files = Process.find_files(work_dir, "*.geojson", only_one=False)
+        geojson_files = self.find_geojson_files(work_dir)
         narrowed_geojson_files = OrderedDict()
         observation_span_in_days = int(self.config_file["observation_span_in_days"])
 
@@ -368,6 +368,26 @@ class Process(object):
             clf = pickle.load(file)
         return clf
 
+    def find_geojson_files(self, dir_path: str) -> Dict:
+        """
+        Find relative GeoJSON file paths.
+
+        :param dir_path: root directory of the search
+        :return: dictionary containing the relative paths of files
+        """
+
+        geojson_files = Process.find_files(dir_path, "*.geojson", only_one=False)
+
+        rel_path_start_dir = os.path.dirname(self.config_file["geojson_files_path"])
+        for outer_key, outer_value in geojson_files.items():
+            for inner_key, inner_value in outer_value.items():
+                for i in range(len(inner_value)):
+                    rel_path = os.path.relpath(inner_value[i], start=rel_path_start_dir)
+                    rel_path = rel_path.replace("\\", "/")
+                    geojson_files[outer_key][inner_key][i] = rel_path
+
+        return geojson_files
+
     @staticmethod
     def find_files(dir_path: str, file_name_postfix: str, only_one: bool = True) -> OrderedDict:
         """
@@ -376,7 +396,7 @@ class Process(object):
         :param dir_path: root directory of the search
         :param file_name_postfix: file name postfix of wanted files
         :param only_one: only one result or all
-        :return: dictionary containing the relative paths of files
+        :return: dictionary containing the absolute paths of files
         """
 
         images = OrderedDict()
