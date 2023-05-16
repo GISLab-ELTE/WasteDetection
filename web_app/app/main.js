@@ -2,7 +2,8 @@ import './style.css';
 import 'ol/ol.css';
 import 'ol-layerswitcher/dist/ol-layerswitcher.css';
 import { Map, View } from 'ol';
-import TileLayer from 'ol/layer/Tile';
+import TileLayer from 'ol/layer/WebGLTile.js';
+import GeoTIFF from 'ol/source/GeoTIFF.js';
 import OSM from 'ol/source/OSM';
 import LayerSwitcher from 'ol-layerswitcher';
 import LayerGroup from 'ol/layer/Group';
@@ -26,6 +27,7 @@ const raho_bbox = [2693024, 6114066, 2693905, 6114776];
 // Variables
 var geojsonLayerGroup;
 var aoisWithDates;
+var satelliteImagesPaths;
 
 // HTML elements
 const selectedAOI = document.getElementById('type');
@@ -102,21 +104,29 @@ const sourceHeatmapLow = new VectorSource({ format: new GeoJSON() });
 const sourceHeatmapMedium = new VectorSource({ format: new GeoJSON() });
 const sourceHeatmapHigh = new VectorSource({ format: new GeoJSON() });
 
+const layerGeoTiff = new TileLayer({
+  title: 'Satellite image',
+  visible: false,
+});
 const layerClassified = new VectorLayer({
   title: 'Classified',
   style: styleFunctionClassified,
+  visible: false,
 });
 const layerHeatmapLow = new VectorLayer({
   title: 'Heatmap Low',
   style: styleFunctionHeatmapLow,
+  visible: false,
 });
 const layerHeatmapMedium = new VectorLayer({
   title: 'Heatmap Medium',
   style: styleFunctionHeatmapMedium,
+  visible: false,
 });
 const layerHeatmapHigh = new VectorLayer({
   title: 'Heatmap High',
   style: styleFunctionHeatmapHigh,
+  visible: true,
 });
 
 // Dictionary of sources and layers
@@ -223,11 +233,24 @@ const setAOILayers = function () {
 
   removeLayersFromMap();
 
+  layerGeoTiff.setSource(new GeoTIFF({
+    sources: [
+      {
+        url: satelliteImagesPaths[aoi][date]['src'],
+        bands: [3, 2, 1],
+        nodata: 0,
+        max: satelliteImagesPaths[aoi][date]['max'],
+      },
+    ],
+    transition: 0,
+  }));
+  layers[0] = layerGeoTiff;
+
   for (let i = 0; i < 4; i++) {
     sourcesAndLayers['sources'][i].setUrl(aoisWithDates[aoi][date][i]);
     sourcesAndLayers['sources'][i].refresh();
     sourcesAndLayers['layers'][i].setSource(sourcesAndLayers['sources'][i]);
-    layers[i] = sourcesAndLayers['layers'][i];
+    layers[i + 1] = sourcesAndLayers['layers'][i];
   };
 
   geojsonLayerGroup = new LayerGroup({
@@ -269,6 +292,17 @@ const resizeMap = function () {
   map.updateSize();
 };
 
+const fetchSatelliteImagePaths = async function () {
+  const res = await fetch(base_url + 'satellite_images.json');
+  satelliteImagesPaths = await res.json();
+
+  for (var out_key of Object.keys(satelliteImagesPaths)) {
+    for (var in_key of Object.keys(satelliteImagesPaths[out_key])) {
+      satelliteImagesPaths[out_key][in_key]['src'] = base_url + satelliteImagesPaths[out_key][in_key]['src'];
+    }
+  }
+};
+
 const fetchGeojsonPaths = async function () {
   const res = await fetch(base_url + 'geojson_files.json');
   aoisWithDates = await res.json();
@@ -296,6 +330,7 @@ window.onresize = function () {
   setTimeout(resizeMap, 200);
 }
 
+await fetchSatelliteImagePaths();
 await fetchGeojsonPaths();
 resizeMap();
 changeAOI();
