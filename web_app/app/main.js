@@ -238,6 +238,7 @@ const setAOILayers = function () {
         url: satelliteImagesPaths[aoi][date]['src'],
         bands: [3, 2, 1],
         nodata: 0,
+        min: satelliteImagesPaths[aoi][date]['min'],
         max: satelliteImagesPaths[aoi][date]['max'],
       },
     ],
