@@ -98,7 +98,7 @@ const styleFunctionHeatmapLow = function (feature) {
   return stylesHeatmapLow[feature.getGeometry().getType()];
 };
 
-// VectorSources and VectorLayers
+// Sources and layers
 const sourceClassified = new VectorSource({ format: new GeoJSON() });
 const sourceHeatmapLow = new VectorSource({ format: new GeoJSON() });
 const sourceHeatmapMedium = new VectorSource({ format: new GeoJSON() });
@@ -210,7 +210,6 @@ var layerSwitcher = new LayerSwitcher({
 map.addControl(layerSwitcher);
 
 // Functions
-// TODO: is this needed?
 const removeLayersFromMap = function () {
   for (const source of sourcesAndLayers['sources']) {
     source.clear();
