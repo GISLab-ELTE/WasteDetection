@@ -309,7 +309,7 @@ class Process(object):
         if satellite_type.lower() == "Sentinel-2".lower():
             images = Process.find_files(sentinel_path, "response.tiff")
         elif satellite_type.lower() == "PlanetScope".lower():
-            images = Process.find_files(planet_path, "*AnalyticMS_SR_clip.tif")
+            images = Process.find_files(planet_path, "*AnalyticMS_SR_clip_reproject.tif")
 
         return images
 
