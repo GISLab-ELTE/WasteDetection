@@ -490,9 +490,10 @@ class Model(object):
 
             coords = list(map(list, bbox))
 
-            new_coords = Model.transform_coordinates(coords, input_crs, output_crs)
+            # new_coords = Model.transform_coordinates(coords, input_crs, output_crs)
+            # bbox_transformed = list(map(tuple, new_coords))
 
-            bbox_transformed = list(map(tuple, new_coords))
+            bbox_transformed = list(map(tuple, coords))
 
             polygon = geojson.Polygon([bbox_transformed])
 
@@ -563,32 +564,32 @@ class Model(object):
         return transformed_coords
 
     @staticmethod
-    def transform_coordinates_to_wgs84(data_file: Dict) -> Dict:
+    def transform_coordinates_to_epsg_3857(data_file: Dict) -> Dict:
         """
-        Transforms all coordinates from given CRS to WGS84.
+        Transforms all coordinates from given CRS to EPSG:3857.
 
         :param data_file: dictionary containing the AOIs in GeoJSON format
         :return: transformed version of data_file
         """
 
-        if "crs" in data_file.keys() and data_file["crs"]["properties"]["name"] != "urn:ogc:def:crs:OGC:1.3:CRS84":
-            transformed_data_file = copy.deepcopy(data_file)
-            for feature in transformed_data_file["features"]:
+        transformed_data_file = copy.deepcopy(data_file)
+        for feature in transformed_data_file["features"]:
 
-                input_crs = transformed_data_file["crs"]["properties"]["name"]
-                output_crs = "epsg:4326"
+            input_crs = "epsg:4326"
+            output_crs = "epsg:3857"
 
-                coordinates = feature["geometry"]["coordinates"][0]
+            coordinates = feature["geometry"]["coordinates"][0]
 
-                transformed_coords = Model.transform_coordinates(coordinates, input_crs, output_crs)
+            transformed_coords = Model.transform_coordinates(coordinates, input_crs, output_crs)
 
-                feature["geometry"]["coordinates"] = [transformed_coords]
+            feature["geometry"]["coordinates"] = [transformed_coords]
 
-            transformed_data_file["crs"]["properties"]["name"] = "urn:ogc:def:crs:OGC:1.3:CRS84"
+        transformed_data_file["crs"] = dict()
+        transformed_data_file["crs"]["properties"] = dict()
+        transformed_data_file["crs"]["properties"]["name"] = "urn:ogc:def:crs:EPSG::3857"
 
-            return transformed_data_file
-        else:
-            return data_file
+        return transformed_data_file
+
 
     @staticmethod
     def resolve_bands_indices_string(string: str) -> List[str]:
