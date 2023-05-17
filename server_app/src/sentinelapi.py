@@ -94,7 +94,7 @@ class SentinelAPI(BaseAPI):
         for feature in self.data_file["features"]:
             bbox_coords = SentinelAPI.get_bbox_of_polygon(feature["geometry"]["coordinates"][0])
 
-            bbox = BBox(bbox=bbox_coords, crs=CRS.WGS84)
+            bbox = BBox(bbox=bbox_coords, crs=CRS.POP_WEB)
 
             search_iterator = self.catalog.search(
                 DataCollection.SENTINEL2_L2A,
