@@ -122,10 +122,16 @@ class PlanetAPI(BaseAPI):
                     }
                 }
 
+                reproject = {
+                    "reproject": {
+                        "projection": "EPSG:3857"
+                    }
+                }
+
                 request_clip = {
                     "name": feature["properties"]["id"] + ": automated download",
                     "products": products,
-                    "tools": [clip]
+                    "tools": [clip, reproject]
                 }
 
                 date_time_obj = dt.datetime.strptime("_".join(product.split("_")[:2]), '%Y%m%d_%H%M%S')
