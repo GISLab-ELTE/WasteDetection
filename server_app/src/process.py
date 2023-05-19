@@ -58,7 +58,10 @@ class Process(object):
         self.api.data_file = Model.convert_multipolygons_to_polygons(self.api.data_file)
 
         if self.satellite_type.lower() == "Sentinel-2".lower():
-            self.api.data_file = Model.transform_coordinates_to_epsg_3857(self.api.data_file)
+            self.api.data_file = Model.transform_dict_of_coordinates_to_crs(
+                data_file=self.api.data_file,
+                crs_to="epsg:3857"
+            )
 
     def mainloop(self, run_startup: bool, run_sleep: bool) -> None:
         """

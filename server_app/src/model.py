@@ -601,19 +601,23 @@ class Model(object):
         return new_data_file
 
     @staticmethod
-    def transform_coordinates(coords: List[List[int]], input_crs: str, output_crs: str) -> List[List[int]]:
+    def transform_list_of_coordinates_to_crs(
+        coords: List[List[int]], crs_from: str, crs_to: str
+    ) -> List[List[int]]:
         """
         Transforms coordinates from one CRS to another.
 
         :param coords: list of coordinates: [[x1, y1], [x2, y2], ...]
-        :param input_crs: original CRS of coordinates
-        :param output_crs: wanted CRS of coordinates
+        :param crs_from: projection of input data
+        :param crs_to: projection of output data
         :return: list of transformed coordinates
         """
 
         transformed_coords = copy.deepcopy(coords)
 
-        transformer = pyproj.Transformer.from_crs(crs_from=input_crs, crs_to=output_crs, always_xy=True)
+        transformer = pyproj.Transformer.from_crs(
+            crs_from=crs_from, crs_to=crs_to, always_xy=True
+        )
 
         for i in range(len(coords)):
             x, y = coords[i]
@@ -624,29 +628,32 @@ class Model(object):
         return transformed_coords
 
     @staticmethod
-    def transform_coordinates_to_epsg_3857(data_file: Dict) -> Dict:
+    def transform_dict_of_coordinates_to_crs(data_file: Dict, crs_to: str) -> Dict:
         """
-        Transforms all coordinates from given CRS to EPSG:3857.
+        Transforms all coordinates from their CRS to wanted CRS.
 
-        :param data_file: dictionary containing the AOIs in GeoJSON format
+        :param data_file: dictionary containing the geometries in GeoJSON format
+        :param crs_to: projection of output data
         :return: transformed version of data_file
         """
 
         transformed_data_file = copy.deepcopy(data_file)
         for feature in transformed_data_file["features"]:
-
-            input_crs = "epsg:4326"
-            output_crs = "epsg:3857"
+            crs_from = "epsg:4326"
+            if "crs" in transformed_data_file.keys():
+                crs_from = transformed_data_file["crs"]["properties"]["name"]
 
             coordinates = feature["geometry"]["coordinates"][0]
 
-            transformed_coords = Model.transform_coordinates(coordinates, input_crs, output_crs)
+            transformed_coords = Model.transform_list_of_coordinates_to_crs(
+                coordinates, crs_from, crs_to
+            )
 
             feature["geometry"]["coordinates"] = [transformed_coords]
 
         transformed_data_file["crs"] = dict()
         transformed_data_file["crs"]["properties"] = dict()
-        transformed_data_file["crs"]["properties"]["name"] = "urn:ogc:def:crs:EPSG::3857"
+        transformed_data_file["crs"]["properties"]["name"] = crs_to
 
         return transformed_data_file
 
