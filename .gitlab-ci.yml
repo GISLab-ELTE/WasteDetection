@@ -21,9 +21,12 @@ lint:
   cache:
     paths:
       - .cache/pip
+      - venv/
   before_script:
     - cat /etc/os-release
     - python3 -V
+    - python3 -m venv venv
+    - source venv/bin/activate
     - pip3 install black
   script:
     - black . --check --verbose
