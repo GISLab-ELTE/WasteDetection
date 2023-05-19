@@ -8,9 +8,16 @@ include:
   - template: Jobs/Dependency-Scanning.gitlab-ci.yml
   - template: Jobs/Secret-Detection.gitlab-ci.yml
 
+stages:
+  - lint
+  - build
+  - test
+  - deploy
+
 # Lint
 lint:
   image: python:3.8
+  stage: lint
   cache:
     paths:
       - .cache/pip
