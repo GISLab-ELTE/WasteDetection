@@ -42,7 +42,6 @@ class Process(object):
         self.model = Model(self.config_file)
 
         self.api = None
-        self.processed_today = False
         self.pixel_size = None
 
         self.estimations = dict()
@@ -158,8 +157,6 @@ class Process(object):
 
         print("{} Process finished...".format(Process.timestamp()))
 
-        print("{} Awaiting execution of next process...".format(Process.timestamp()))
-
     def create_estimations(self) -> None:
         """
         Executes the estimations on new images.
@@ -171,12 +168,18 @@ class Process(object):
         sentinel_path = self.config_file["result_dir_sentinel-2"]
         planet_path = self.config_file["result_dir_planetscope"]
         satellite_type = self.config_file["satellite_type"]
-        work_dir = sentinel_path if satellite_type.lower() == "Sentinel-2".lower() else planet_path
+        work_dir = (
+            sentinel_path
+            if satellite_type.lower() == "Sentinel-2".lower()
+            else planet_path
+        )
 
         for feature_id in downloaded_images.keys():
             for date in downloaded_images[feature_id].keys():
-
-                if feature_id in self.estimations.keys() and date in self.estimations[feature_id].keys():
+                if (
+                    feature_id in self.estimations.keys()
+                    and date in self.estimations[feature_id].keys()
+                ):
                     continue
 
                 path = downloaded_images[feature_id][date]
@@ -194,29 +197,41 @@ class Process(object):
 
                 indices_path = self.model.save_bands_indices(path, "all", "all")
 
-                classified, heatmap = self.model.create_classification_and_heatmap_with_random_forest(
+                (
+                    classified,
+                    heatmap,
+                ) = self.model.create_classification_and_heatmap_with_random_forest(
                     indices_path, self.clf
                 )
 
-                masked_classified, masked_heatmap = self.model.create_masked_classification_and_heatmap(
+                (
+                    masked_classified,
+                    masked_heatmap,
+                ) = self.model.create_masked_classification_and_heatmap(
                     indices_path, classified, heatmap
                 )
 
                 Model.get_waste_geojson(
                     input_file=masked_classified,
-                    output_file="/".join([work_dir, feature_id, date, "classified.geojson"]),
-                    search_value=100
+                    output_file="/".join(
+                        [work_dir, feature_id, date, "classified.geojson"]
+                    ),
+                    search_value=100,
                 )
 
                 heatmap_types = [("low", 1), ("medium", 2), ("high", 3)]
                 for heatmap_type, value in heatmap_types:
                     Model.get_waste_geojson(
                         input_file=masked_heatmap,
-                        output_file="/".join([work_dir, feature_id, date, heatmap_type + ".geojson"]),
-                        search_value=value
+                        output_file="/".join(
+                            [work_dir, feature_id, date, heatmap_type + ".geojson"]
+                        ),
+                        search_value=value,
                     )
 
-                estimation = self.model.estimate_garbage_area(masked_classified, "classified")
+                estimation = self.model.estimate_garbage_area(
+                    masked_classified, "classified"
+                )
 
                 if feature_id not in self.estimations.keys():
                     self.estimations[feature_id] = dict()
@@ -230,7 +245,9 @@ class Process(object):
         observation_span_in_days = int(self.config_file["observation_span_in_days"])
 
         for key, value in geojson_files.items():
-            narrowed_geojson_files[key] = OrderedDict(list(value.items())[-observation_span_in_days:])
+            narrowed_geojson_files[key] = OrderedDict(
+                list(value.items())[-observation_span_in_days:]
+            )
 
         with open(self.config_file["geojson_files_path"], "w") as file:
             json.dump(narrowed_geojson_files, file, indent=4)
@@ -244,11 +261,16 @@ class Process(object):
 
         reset_time = self.config_file["download_start_time"]
         reset_time_obj = dt.datetime.strptime(reset_time, "%H:%M:%S")
-        hour, minute, second = reset_time_obj.hour, reset_time_obj.minute, reset_time_obj.second
+        hour, minute, second = (
+            reset_time_obj.hour,
+            reset_time_obj.minute,
+            reset_time_obj.second,
+        )
 
         today = dt.datetime.today()
-        tomorrow = today.replace(day=today.day, hour=hour, minute=minute,
-                                 second=second, microsecond=0) + dt.timedelta(days=1)
+        tomorrow = today.replace(
+            day=today.day, hour=hour, minute=minute, second=second, microsecond=0
+        ) + dt.timedelta(days=1)
 
         delta_t = tomorrow - today
         secs = delta_t.total_seconds()
@@ -285,11 +307,19 @@ class Process(object):
             print("Mean of the previous {} acquired days: {}".format(days - 1, mean))
 
             if difference > 0:
-                print("{}% more polluted area than the estimated mean.".format(difference))
+                print(
+                    "{}% more polluted area than the estimated mean.".format(difference)
+                )
             elif difference < 0:
-                print("{}% less polluted area than the estimated mean.".format(-1 * difference))
+                print(
+                    "{}% less polluted area than the estimated mean.".format(
+                        -1 * difference
+                    )
+                )
             else:
-                print("Area of polluted area is exactly the same as the estimated mean.")
+                print(
+                    "Area of polluted area is exactly the same as the estimated mean."
+                )
 
         print()
 
@@ -309,8 +339,10 @@ class Process(object):
         if satellite_type.lower() == "Sentinel-2".lower():
             images = Process.find_files(sentinel_path, "response.tiff")
         elif satellite_type.lower() == "PlanetScope".lower():
-            images = Process.find_files(planet_path, "*AnalyticMS_SR_clip_reproject.tif")
-
+            images = Process.find_files(
+                planet_path, "*AnalyticMS_SR_clip_reproject.tif"
+            )
+        print(images)
         return images
 
     def print_acquisition_dates(self, observation_max_span: int) -> None:
@@ -325,7 +357,9 @@ class Process(object):
 
         for feature_id in downloaded_images.keys():
             print("{}:".format(feature_id))
-            for date in list(downloaded_images[feature_id].keys())[-observation_max_span:]:
+            for date in list(downloaded_images[feature_id].keys())[
+                -observation_max_span:
+            ]:
                 print(date)
             print()
 
@@ -391,7 +425,9 @@ class Process(object):
         return geojson_files
 
     @staticmethod
-    def find_files(dir_path: str, file_name_postfix: str, only_one: bool = True) -> OrderedDict:
+    def find_files(
+        dir_path: str, file_name_postfix: str, only_one: bool = True
+    ) -> OrderedDict:
         """
         Returns the paths of files in the given directory.
 
@@ -418,7 +454,9 @@ class Process(object):
             else:
                 if date not in images[feature_id].keys():
                     images[feature_id][date] = list()
-                images[feature_id][date].append("/".join([dir_path] + rel_path.split("/")))
+                images[feature_id][date].append(
+                    "/".join([dir_path] + rel_path.split("/"))
+                )
 
         return images
 
