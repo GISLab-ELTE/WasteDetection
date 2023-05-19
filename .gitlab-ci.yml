@@ -36,7 +36,9 @@ lint:prettier:
   image: node:18-bullseye
   stage: lint
   script:
+    - cd web_app/app/
     - npm ci
+    - cd ../..
     - npx prettier --check .
   cache:
     key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
