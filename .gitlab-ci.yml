@@ -2,10 +2,24 @@ variables:
   DS_EXCLUDED_ANALYZERS: gemnasium-python
   IMAGE_NAME_BASE: "$CI_REGISTRY_IMAGE/base"
   IMAGE_NAME_SERVER: "$CI_REGISTRY_IMAGE/server_app"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 include:
   - template: Jobs/Dependency-Scanning.gitlab-ci.yml
   - template: Jobs/Secret-Detection.gitlab-ci.yml
+
+# Lint
+lint:
+  image: python:3.8
+  cache:
+    paths:
+      - .cache/pip
+  before_script:
+    - cat /etc/os-release
+    - python3 -V
+    - pip3 install black
+  script:
+    - black . --check --verbose
 
 # Model
 model-unittest:
