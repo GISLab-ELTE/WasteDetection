@@ -24,6 +24,7 @@ lint:
   before_script:
     - cat /etc/os-release
     - python3 -V
+    - python3 -m pip3 install --upgrade pip
     - pip3 install black
   script:
     - black . --check --verbose
