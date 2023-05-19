@@ -528,12 +528,8 @@ class Model(object):
         srs_wkt = ds.GetProjection()
         srs_converter = osr.SpatialReference()
         srs_converter.ImportFromWkt(srs_wkt)
-        srs_for_pyproj = srs_converter.ExportToProj4()
 
         ds = None
-
-        input_crs = srs_for_pyproj
-        output_crs = "EPSG:3857"
 
         features = list()
         polygon_id = 1
@@ -542,9 +538,6 @@ class Model(object):
             bbox.append(bbox[0])
 
             coords = list(map(list, bbox))
-
-            # new_coords = Model.transform_coordinates(coords, input_crs, output_crs)
-            # bbox_transformed = list(map(tuple, new_coords))
 
             bbox_transformed = list(map(tuple, coords))
 

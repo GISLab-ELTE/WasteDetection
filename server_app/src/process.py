@@ -59,8 +59,7 @@ class Process(object):
 
         if self.satellite_type.lower() == "Sentinel-2".lower():
             self.api.data_file = Model.transform_dict_of_coordinates_to_crs(
-                data_file=self.api.data_file,
-                crs_to="epsg:3857"
+                data_file=self.api.data_file, crs_to="epsg:3857"
             )
 
     def mainloop(self, run_startup: bool, run_sleep: bool) -> None:
