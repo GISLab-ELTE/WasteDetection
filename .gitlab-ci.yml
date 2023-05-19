@@ -15,7 +15,7 @@ stages:
   - deploy
 
 # Lint
-lint:
+lint:black:
   image: python:3.8
   stage: lint
   cache:
@@ -31,6 +31,18 @@ lint:
     - pip3 install black
   script:
     - black . --check --verbose
+
+lint:prettier:
+  image: node:18-bullseye
+  stage: lint
+  script:
+    - cd web_app/app/
+    - npm ci
+    - npx prettier --check .
+  cache:
+    key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
+    paths:
+      - web_app/app/node_modules/
 
 # Model
 model-unittest:
