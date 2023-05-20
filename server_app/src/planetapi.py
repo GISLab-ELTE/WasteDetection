@@ -291,7 +291,12 @@ class PlanetAPI(BaseAPI):
         results_names = [r["name"] for r in results]
 
         data_folder = "/".join(
-            [self.config_file["download_dir_planetscope"], str(feature_id), str(date)]
+            [
+                self.config_file["workspace_root_dir"],
+                self.config_file["download_dir_planetscope"],
+                str(feature_id),
+                str(date),
+            ]
         )
 
         results_paths = [

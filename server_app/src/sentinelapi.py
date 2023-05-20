@@ -122,6 +122,7 @@ class SentinelAPI(BaseAPI):
             for timestamp in reversed(unique_acquisitions):
                 data_folder = "/".join(
                     [
+                        self.config_file["workspace_root_dir"],
                         self.config_file["download_dir_sentinel-2"],
                         str(feature["properties"]["id"]),
                         dt.datetime.strftime(timestamp, "%Y-%m-%d"),
