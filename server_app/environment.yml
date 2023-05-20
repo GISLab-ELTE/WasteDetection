@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - black=23.3.0
   - gdal=3.3.2
   - geojson=2.5.0
   - geopandas=0.12.1
