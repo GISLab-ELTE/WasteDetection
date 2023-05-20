@@ -87,7 +87,7 @@ webapp-deploy:
   dependencies:
     - webapp-build
   before_script:
-    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )"
     - mkdir -p ~/.ssh
     - eval $(ssh-agent -s)
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
@@ -105,9 +105,9 @@ webapp-deploy:
         - .gitlab-ci.yml
 
 .docker-login: &docker-login
-    - docker version
-    # Login to GitLab Container Registry
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  - docker version
+  # Login to GitLab Container Registry
+  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
 baseimage:
   stage: build
