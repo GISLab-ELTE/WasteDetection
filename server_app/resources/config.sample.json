@@ -1,10 +1,12 @@
 {
+  "workspace_root_dir": "",
   "download_dir_planetscope": "",
   "download_dir_sentinel-2": "",
   "result_dir_planetscope": "",
   "result_dir_sentinel-2": "",
   "estimations_file_path": "",
   "geojson_files_path" : "",
+  "satellite_images_path": "",
   "planet_api_key": "",
   "sentinel_sh_client_id": "",
   "sentinel_instance_id": "",

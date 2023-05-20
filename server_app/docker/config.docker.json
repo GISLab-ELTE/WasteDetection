@@ -1,12 +1,14 @@
 {
-  "download_dir_planetscope": "/mnt/output/satellite_images/automatic/planetscope",
-  "download_dir_sentinel-2": "/mnt/output/satellite_images/automatic/sentinel-2",
-  "result_dir_planetscope": "/mnt/output/webapp_results/automatic/planetscope",
-  "result_dir_sentinel-2": "/mnt/output/webapp_results/automatic/sentinel-2",
-  "estimations_file_path": "/mnt/output/webapp_results/automatic/estimations.json",
-  "geojson_files_path" : "/mnt/output/webapp_results/automatic/geojson_files.json",
+  "workspace_root_dir": "/mnt/output/",
+  "download_dir_planetscope": "satellite_images/automatic/planetscope",
+  "download_dir_sentinel-2": "satellite_images/automatic/sentinel-2",
+  "result_dir_planetscope": "webapp_results/automatic/planetscope",
+  "result_dir_sentinel-2": "webapp_results/automatic/sentinel-2",
+  "estimations_file_path": "webapp_results/automatic/estimations.json",
+  "geojson_files_path" : "webapp_results/automatic/geojson_files.json",
+  "satellite_images_path": "satellite_images/automatic/satellite_images.json",
   "planet_api_key": "***",
-  "sentinel_sh_client_id": "44626c18-bbcb-499d-8f38-14554b0d1e06",
-  "sentinel_instance_id": "35e3c432-b20d-4ab8-8a37-cc56561afcb4",
-  "sentinel_sh_client_secret": "jG}4LaE&}Yzd4o~^4RE8F[uD>9[yfkBS&FD@PS47"
+  "sentinel_sh_client_id": "***",
+  "sentinel_instance_id": "***",
+  "sentinel_sh_client_secret": "***"
 }
