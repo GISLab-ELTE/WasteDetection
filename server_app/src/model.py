@@ -441,6 +441,21 @@ class Model(object):
             return masked_classification_path, masked_heatmap_path
 
     @staticmethod
+    def get_min_max_value_of_band(input_path: str, band_number: int) -> Tuple[int, int]:
+        """
+        Calculates the minimum and maximum values of a band.
+
+        :param input_path: path of image
+        :param band_number: serial number of band
+        :return: minimum and maximum values
+        """
+
+        with rasterio.open(input_path, "r") as img:
+            band = img.read(band_number)
+            min_value, max_value = np.nanmin(band), np.nanmax(band)
+            return int(min_value), int(max_value)
+
+    @staticmethod
     def get_coords_of_pixel(i: int, j: int, gt: Tuple[int, ...]) -> Tuple[float, float]:
         """
         Calculates the geographical coordinate of the pixel in row "i" and column "j",
