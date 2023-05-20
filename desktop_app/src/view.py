@@ -155,9 +155,9 @@ class View(ttk.Window):
         self.title("Waste monitoring")
         self.resizable(width=False, height=False)
         self.geometry(SIZE)
-        self.attributes('-topmost', True)
+        self.attributes("-topmost", True)
         self.update()
-        self.attributes('-topmost', False)
+        self.attributes("-topmost", False)
         self.place_window_center()
         self.mainloop()
 
@@ -198,11 +198,19 @@ class View(ttk.Window):
         """
 
         selected_indices = self.get_curselection_indices_listbox()
-        selected_values = [self._opened_files_lb.get(index) for index in selected_indices]
+        selected_values = [
+            self._opened_files_lb.get(index) for index in selected_indices
+        ]
         return selected_values
 
-    def show_image_on_canvas(self, canvas_name: str, img_or_array: str, image_type: str, satellite_rgb: List[int],
-                             color_map: ListedColormap = cm.get_cmap("viridis")) -> None:
+    def show_image_on_canvas(
+        self,
+        canvas_name: str,
+        img_or_array: str,
+        image_type: str,
+        satellite_rgb: List[int],
+        color_map: ListedColormap = cm.get_cmap("viridis"),
+    ) -> None:
         """
         Displays image on the specified canvas with the given color map.
 
@@ -218,11 +226,13 @@ class View(ttk.Window):
         if canvas_name.lower() not in ["left", "right"]:
             raise CanvasNameException(canvas_name.lower())
 
-        canvas = self._left_canvas if canvas_name.lower() == "left" else self._right_canvas
+        canvas = (
+            self._left_canvas if canvas_name.lower() == "left" else self._right_canvas
+        )
 
         canvas.open_image(img_or_array, image_type.lower(), satellite_rgb, color_map)
 
-    def clear_canvas(self,  canvas_name: str) -> None:
+    def clear_canvas(self, canvas_name: str) -> None:
         """
         Clears the specified canvas.
 
@@ -266,15 +276,21 @@ class View(ttk.Window):
         # initialize action controls
         self._action_lf = ttk.Labelframe(master=self)
         self._process_menu = ttk.Menu(master=self._action_lf)
-        self._process_btn = ttk.Menubutton(master=self._action_lf, menu=self._process_menu)
+        self._process_btn = ttk.Menubutton(
+            master=self._action_lf, menu=self._process_menu
+        )
         self._add_files_btn = ttk.Button(master=self._action_lf)
         self._delete_files_btn = ttk.Button(master=self._action_lf)
 
         # initialize opened files controls
         self._opened_files_lf = ttk.Labelframe(master=self)
         self._opened_files_lb = tk.Listbox(master=self._opened_files_lf)
-        self._opened_files_sb_x = AutoScrollbar(master=self._opened_files_lf, orient="horizontal")
-        self._opened_files_sb_y = AutoScrollbar(master=self._opened_files_lf, orient="vertical")
+        self._opened_files_sb_x = AutoScrollbar(
+            master=self._opened_files_lf, orient="horizontal"
+        )
+        self._opened_files_sb_y = AutoScrollbar(
+            master=self._opened_files_lf, orient="vertical"
+        )
 
         # initialize processing controls
         self._start_process_lf = ttk.Labelframe(master=self)
@@ -342,8 +358,12 @@ class View(ttk.Window):
             yscrollcommand=self._opened_files_sb_y.set,
             xscrollcommand=self._opened_files_sb_x.set,
         )
-        self._opened_files_sb_x.configure(orient=HORIZONTAL, command=self._opened_files_lb.xview)
-        self._opened_files_sb_y.configure(orient=VERTICAL, command=self._opened_files_lb.yview)
+        self._opened_files_sb_x.configure(
+            orient=HORIZONTAL, command=self._opened_files_lb.xview
+        )
+        self._opened_files_sb_y.configure(
+            orient=VERTICAL, command=self._opened_files_lb.yview
+        )
 
         self._opened_files_lf.rowconfigure(0, weight=1)
         self._opened_files_lf.columnconfigure(0, weight=1)
@@ -360,12 +380,22 @@ class View(ttk.Window):
         self._estimate_area_btn.configure(text="Estimate polluted areas")
 
         self._heatmap_frame.configure(None)
-        self._heatmap_checkbutton.configure(text="Show Heatmap", variable=self._vars["heatmap_toggle"])
-        self._high_checkbutton.configure(text="High probability", variable=self._vars["heatmap_high"])
-        self._medium_checkbutton.configure(text="Medium probability", variable=self._vars["heatmap_medium"])
-        self._low_checkbutton.configure(text="Low probability", variable=self._vars["heatmap_low"])
+        self._heatmap_checkbutton.configure(
+            text="Show Heatmap", variable=self._vars["heatmap_toggle"]
+        )
+        self._high_checkbutton.configure(
+            text="High probability", variable=self._vars["heatmap_high"]
+        )
+        self._medium_checkbutton.configure(
+            text="Medium probability", variable=self._vars["heatmap_medium"]
+        )
+        self._low_checkbutton.configure(
+            text="Low probability", variable=self._vars["heatmap_low"]
+        )
 
-        self._image = ImageTk.PhotoImage(Image.open("desktop_app/resources/icon.png").resize((128, 128)))
+        self._image = ImageTk.PhotoImage(
+            Image.open("desktop_app/resources/icon.png").resize((128, 128))
+        )
         self._img_label.configure(image=self._image)
 
         self._stats_lf.columnconfigure(0, weight=5)
@@ -455,7 +485,9 @@ class View(ttk.Window):
         self._estimate_area_btn.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
         self._img_label.grid(row=0, column=2, rowspan=2, sticky="e", padx=5, pady=5)
 
-        self._heatmap_frame.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=5, pady=5)
+        self._heatmap_frame.grid(
+            row=0, column=0, rowspan=2, sticky="nsew", padx=5, pady=5
+        )
         self._heatmap_checkbutton.pack(side=TOP, expand=YES, padx=5, pady=5, fill=BOTH)
         self._high_checkbutton.pack(side=TOP, expand=YES, padx=40, pady=5, fill=X)
         self._medium_checkbutton.pack(side=TOP, expand=YES, padx=40, pady=5, fill=X)
@@ -497,9 +529,16 @@ class View(ttk.Window):
         :return: None
         """
 
-        self._process_menu.add_radiobutton(label="Hot-spot detection", value=1,
-                                           variable=self._vars["process_menu"])
-        self._process_menu.add_radiobutton(label="Floating waste detection", value=2,
-                                           variable=self._vars["process_menu"])
-        self._process_menu.add_radiobutton(label="Washed up waste detection", value=3,
-                                           variable=self._vars["process_menu"])
+        self._process_menu.add_radiobutton(
+            label="Hot-spot detection", value=1, variable=self._vars["process_menu"]
+        )
+        self._process_menu.add_radiobutton(
+            label="Floating waste detection",
+            value=2,
+            variable=self._vars["process_menu"],
+        )
+        self._process_menu.add_radiobutton(
+            label="Washed up waste detection",
+            value=3,
+            variable=self._vars["process_menu"],
+        )
