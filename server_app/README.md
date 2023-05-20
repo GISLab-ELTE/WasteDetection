@@ -19,12 +19,14 @@
 
 Meaning of the parameters in `config.sample.json` file:
 
-- `download_dir_planetscope`: Download destination of PlanetScope images.
-- `download_dir_sentinel-2`: Download destination of Sentinel-2 images.
-- `result_dir_planetscope`: Output directory of result GeoJSON files created from PlanetScope images.
-- `result_dir_sentinel-2`: Output directory of result GeoJSON files created from Sentinel-2 images.
-- `estimations_file_path`: Path of the file that will contain the estimation of the polluted areas' extension.
-- `geojson_files_path`: Path of the dynamically produced JSON file that stores the location of the result GeoJSONs. 
+- `workspace_root_dir`: Root directory of workspace.
+- `download_dir_planetscope`: Download destination of PlanetScope images. Relative to `workspace_root_dir`.
+- `download_dir_sentinel-2`: Download destination of Sentinel-2 images. Relative to `workspace_root_dir`.
+- `result_dir_planetscope`: Output directory of result GeoJSON files created from PlanetScope images. Relative to `workspace_root_dir`.
+- `result_dir_sentinel-2`: Output directory of result GeoJSON files created from Sentinel-2 images. Relative to `workspace_root_dir`.
+- `estimations_file_path`: Path of the file that will contain the estimation of the polluted areas' extension. Relative to `workspace_root_dir`.
+- `geojson_files_path`: Path of the dynamically produced JSON file that stores the location of the result GeoJSONs. Relative to `workspace_root_dir`.
+- `satellite_images_path`: Path of the dynamically produced JSON file that stores the location of the downloaded satellite images. Relative to `workspace_root_dir`.
 - `planet_api_key`: Planet Account API key.
 - `sentinel_sh_client_id`: Account OAuth client ID in SentinelHub.
 - `sentinel_instance_id`: Account User ID in SentinelHub.
