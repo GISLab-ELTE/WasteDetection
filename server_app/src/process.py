@@ -587,5 +587,5 @@ class Process(object):
 
         :return: System date and time in string format.
         """
-        
+
         return dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
