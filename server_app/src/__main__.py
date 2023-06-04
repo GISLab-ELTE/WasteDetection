@@ -1,3 +1,4 @@
+import logging
 import argparse
 
 from process import Process
@@ -31,10 +32,23 @@ def parse_args() -> argparse.Namespace:
     return parsed_args
 
 
+def setup_logging() -> None:
+    """
+    Configures logging style.
+
+    """
+
+    logging.basicConfig(
+        format=f"%a(asctime)s %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+
 if __name__ == "__main__":
     args = parse_args()
 
-    print("Automatic waste detection")
+    setup_logging()
+
+    print("AUTOMATIC WASTE DETECTION")
 
     process = Process()
     process.mainloop(args.startup, args.sleep)

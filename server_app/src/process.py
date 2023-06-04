@@ -4,6 +4,7 @@ import json
 import pickle
 import fnmatch
 import geojson
+import logging
 import jsonmerge
 
 import numpy as np
@@ -69,8 +70,9 @@ class Process(object):
         :return: None
         """
 
-        print("{} Setting up the account...".format(Process.timestamp()))
+        logging.info("Started setting up the account.")
         self.api.login()
+        logging.info("Finished setting up the account.")
 
         if run_startup:
             self.startup()
@@ -90,27 +92,27 @@ class Process(object):
         :return: None
         """
 
-        print("{} Startup process started...".format(Process.timestamp()))
+        logging.info("Startup process started.")
 
         yesterday_str = Process.get_sys_date_str(difference=-1)
 
         time_interval = self.config_file["first_sentinel-2_date"], yesterday_str
         observation_max_span = int(self.config_file["observation_span_in_days"])
 
-        print("{} Searching for earlier images...".format(Process.timestamp()))
+        logging.info("Searching for earlier images.")
         self.api.search(time_interval, observation_max_span)
 
-        print("{} Placing orders for earlier images...".format(Process.timestamp()))
+        logging.info("Placing orders for earlier images.")
         self.api.order()
 
-        print("{} Started downloading earlier images...".format(Process.timestamp()))
+        logging.info("Started downloading earlier images.")
         self.api.download()
-        print("{} Finished downloading earlier images...".format(Process.timestamp()))
+        logging.info("Finished downloading earlier images.")
 
-        print("\nALERT\nAcquisition dates:\n")
+        logging.warn("\nALERT\nAcquisition dates:\n")
         self.print_acquisition_dates(observation_max_span)
 
-        print("{} Startup process ended...".format(Process.timestamp()))
+        logging.info("Startup process ended.")
 
     def process(self) -> None:
         """
@@ -125,15 +127,15 @@ class Process(object):
 
         time_interval = sys_date_yesterday, sys_date_today
 
-        print("{} Process started...".format(Process.timestamp()))
+        logging.info("Main process started.")
 
-        print("{} Searching for new images...".format(Process.timestamp()))
+        logging.info("Searching for new images.")
         self.api.search(time_interval, max_num_of_results)
 
-        print("{} Placing orders for available images...".format(Process.timestamp()))
+        logging.info("Placing orders for available images.")
         self.api.order()
 
-        print("{} Started downloading images...".format(Process.timestamp()))
+        logging.info("Started downloading images.")
 
         success = False
         while not success:
@@ -144,20 +146,20 @@ class Process(object):
             else:
                 success = True
 
-        print("{} Finished downloading images...".format(Process.timestamp()))
+        logging.info("Finished downloading images.")
 
-        print("\nALERT\nAcquisition dates:\n")
+        logging.warn("\nALERT\nAcquisition dates:\n")
         self.print_acquisition_dates(max_num_of_results)
 
-        print("{} Estimating extent of polluted areas...".format(Process.timestamp()))
+        logging.info("Estimating extent of polluted areas.")
         self.create_estimations()
-        print("{} Finished estimation...".format(Process.timestamp()))
+        logging.info("Finished estimation.")
 
-        print("{} Analyzing acquired data...".format(Process.timestamp()))
+        logging.info("Analyzing acquired data.")
         self.analyze_estimations()
-        print("{} Finished analyzing data...".format(Process.timestamp()))
+        logging.info("Finished analyzing data.")
 
-        print("{} Process finished...".format(Process.timestamp()))
+        logging.info("Main process finished.")
 
     def create_estimations(self) -> None:
         """
@@ -382,28 +384,26 @@ class Process(object):
             latest_estimation = estimations[0]
 
             if mean == 0:
-                print("There is not enough data to analyze!")
+                logging.error("There is not enough data to analyze!")
                 continue
 
             difference = round((latest_estimation / mean - 1.0) * 100, 2)
 
-            print("\n{}".format(feature_id))
-            print("Latest acquisition date: {}".format(dates_to_use[0]))
-            print("Latest estimation: {}".format(latest_estimation))
-            print("Mean of the previous {} acquired days: {}".format(days - 1, mean))
+            logging.info(feature_id)
+            logging.info(f"Latest acquisition date: {dates_to_use[0]}")
+            logging.info(f"Latest estimation: {latest_estimation}")
+            logging.info(f"Mean of the previous {days - 1} acquired days: {mean}")
 
             if difference > 0:
-                print(
-                    "{}% more polluted area than the estimated mean.".format(difference)
+                logging.info(
+                    f"{difference}% more polluted area than the estimated mean."
                 )
             elif difference < 0:
-                print(
-                    "{}% less polluted area than the estimated mean.".format(
-                        -1 * difference
-                    )
+                logging.info(
+                    f"{-1 * difference}% less polluted area than the estimated mean."
                 )
             else:
-                print(
+                logging.info(
                     "Area of polluted area is exactly the same as the estimated mean."
                 )
 
@@ -579,13 +579,3 @@ class Process(object):
 
         date_str = dt.datetime.strftime(date_obj, format_str)
         return date_str
-
-    @staticmethod
-    def timestamp() -> str:
-        """
-        Returns the system date and time: e.g. 2000-06-26 13:36:00.
-
-        :return: System date and time in string format.
-        """
-
-        return dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
