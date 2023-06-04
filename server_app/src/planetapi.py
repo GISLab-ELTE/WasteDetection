@@ -1,4 +1,5 @@
 import os
+import copy
 import json
 import time
 import pathlib
@@ -93,15 +94,18 @@ class PlanetAPI(BaseAPI):
                 self.item_type, geometry_filter, date_range_filter, cloud_cover_filter
             )
 
+            feature_id = feature["properties"]["id"]
             time_difference = dt.timedelta(hours=12)
             image_ids = PlanetAPI.get_image_ids(geojson)
             unique_image_ids = PlanetAPI.get_unique_image_ids(
                 image_ids, time_difference
             )
 
-            self.search_results[feature["properties"]["id"]] = unique_image_ids[
-                :max_result_limit
-            ]
+            self.search_results[feature_id] = unique_image_ids[:max_result_limit]
+
+            self.search_results[feature_id] = self.filter_out_already_downloaded_images(
+                feature_id, self.search_results[feature_id]
+            )
 
     def order(self) -> None:
         """
@@ -221,6 +225,33 @@ class PlanetAPI(BaseAPI):
         geojson = search_result.json()
 
         return geojson
+
+    def filter_out_already_downloaded_images(
+        self, feature_id: str, image_ids: List[str]
+    ) -> List[str]:
+        """
+        Filters out image ids that already exist locally.
+
+        :param feature_id: The id property of a polygon (GeoJSON).
+        :param image_ids: List of image ids.
+        :return: Image ids that don't exist locally.
+        """
+
+        work_dir = "/".join(
+            [
+                self.config_file["workspace_root_dir"],
+                self.config_file["download_dir_planetscope"],
+                feature_id,
+            ]
+        )
+        filtered_image_ids = copy.deepcopy(image_ids)
+
+        for _, dirnames, _ in os.walk(work_dir):
+            for dirname in dirnames:
+                if dirname in image_ids:
+                    filtered_image_ids.remove(dirname)
+
+        return filtered_image_ids
 
     def place_order(self, request: Dict) -> str:
         """
