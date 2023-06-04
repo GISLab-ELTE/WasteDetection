@@ -26,8 +26,8 @@ class PlanetAPI(BaseAPI):
         """
         Constructor of PlanetAPI class.
 
-        :param config_file: dictionary containing the settings
-        :param data_file: dictionary containing the AOIs (GeoJSON)
+        :param config_file: Dictionary containing the settings.
+        :param data_file: Dictionary containing the AOIs (GeoJSON).
         """
 
         super(PlanetAPI, self).__init__(config_file, data_file)
@@ -63,8 +63,8 @@ class PlanetAPI(BaseAPI):
         """
         Searches the available images within the given time interval.
 
-        :param time_interval: acquisition time interval of images
-        :param max_result_limit: maximum number of results
+        :param time_interval: Acquisition time interval of images.
+        :param max_result_limit: Maximum number of results.
         :return: None
         """
 
@@ -152,7 +152,7 @@ class PlanetAPI(BaseAPI):
         """
         Downloads the available images.
 
-        :param num_loops: maximum number of iterations when waiting for order to be activated
+        :param num_loops: Maximum number of iterations when waiting for order to be activated.
         :return: None
         """
 
@@ -203,11 +203,11 @@ class PlanetAPI(BaseAPI):
         """
         Starts the search for images based on the set filters.
 
-        :param item_type: item type of Planet satellite
-        :param geometry_filter: filter for AOI
-        :param date_range_filter: filter for acquisition date
-        :param cloud_cover_filter: filter for cloud coverage
-        :return: dictionary containing the search results
+        :param item_type: Item type of Planet satellite.
+        :param geometry_filter: Filter for AOI.
+        :param date_range_filter: Filter for acquisition date.
+        :param cloud_cover_filter: Filter for cloud coverage.
+        :return: Dictionary containing the search results.
         """
 
         combined_filter = {
@@ -257,8 +257,8 @@ class PlanetAPI(BaseAPI):
         """
         Places the order with set parameters.
 
-        :param request: dictionary containing the order request parameters
-        :return: the URL of the placed order
+        :param request: Dictionary containing the order request parameters.
+        :return: The URL of the placed order.
         """
 
         response = requests.post(
@@ -282,8 +282,8 @@ class PlanetAPI(BaseAPI):
         """
         Returns the id and state of an order based on the given URL.
 
-        :param order_url: the URL of an order
-        :return: id and state of an order
+        :param order_url: The URL of an order.
+        :return: Id and state of an order.
         """
 
         r = requests.get(order_url, auth=self.auth)
@@ -302,11 +302,11 @@ class PlanetAPI(BaseAPI):
         """
         Downloads an order after it was processed.
 
-        :param feature_id: the id property of a polygon (GeoJSON)
-        :param date: date of acquisition
-        :param order_url: the URL of an order
-        :param overwrite: redownload image if True
-        :return:
+        :param feature_id: The id property of a polygon (GeoJSON).
+        :param date: Date of acquisition.
+        :param order_url: The URL of an order.
+        :param overwrite: Redownload image if True.
+        :return: True if download succeeded, False if not.
         """
 
         r = requests.get(order_url, auth=self.auth)
@@ -352,8 +352,8 @@ class PlanetAPI(BaseAPI):
         """
         Filters out image ids from search result.
 
-        :param geojson: dictionary containing the search results
-        :return: image ids from the given search result.
+        :param geojson: Dictionary containing the search results.
+        :return: Image ids from the given search result.
         """
 
         image_ids = [feature["id"] for feature in geojson["features"]]
@@ -366,9 +366,9 @@ class PlanetAPI(BaseAPI):
         """
         Returns image ids filtered out by the given time difference.
 
-        :param image_ids: list of image ids
-        :param time_difference: time difference between two acquisition dates
-        :return: list of image ids based on the time difference filter
+        :param image_ids: List of image ids.
+        :param time_difference: Time difference between two acquisition dates.
+        :return: List of image ids based on the time difference filter.
         """
 
         all_timestamps = list()

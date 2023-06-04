@@ -12,8 +12,8 @@ class BaseAPI(ABC):
         """
         Constructor of BaseApi class.
 
-        :param config_file: dictionary containing the settings parameters
-        :param data_file: dictionary containing the AOIs in GeoJSON format
+        :param config_file: Dictionary containing the settings parameters.
+        :param data_file: Dictionary containing the AOIs in GeoJSON format.
         :return: None
         """
 
@@ -35,8 +35,8 @@ class BaseAPI(ABC):
         """
         Searches the available images.
 
-        :param time_interval: acquisition time interval of images
-        :param max_result_limit: maximum number of results
+        :param time_interval: Acquisition time interval of images.
+        :param max_result_limit: Maximum number of results.
         :return: None
         """
 

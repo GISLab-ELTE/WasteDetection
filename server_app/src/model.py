@@ -68,9 +68,9 @@ class Model(object):
         """
         Creates classification and garbage heatmap with Random Forest Classifier.
 
-        :param input_path: input path of the image to be processed
-        :param clf: an instance of RandomForestClassifier
-        :return: path of the classified image and the heatmap image
+        :param input_path: Input path of the image to be processed.
+        :param clf: An instance of RandomForestClassifier.
+        :return: Path of the classified image and the heatmap image.
         """
 
         try:
@@ -180,9 +180,9 @@ class Model(object):
         """
         Returns the given satellite's band index.
 
-        :param band: name of satellite band
-        :return: index of given satellite band
-        :raise NameError: if wrong satellite name is given
+        :param band: Name of satellite band.
+        :return: Index of given satellite band.
+        :raise NameError: If wrong satellite name is given.
         """
 
         satellite_name = self.satellite_type.lower()
@@ -199,9 +199,9 @@ class Model(object):
         """
         Returns a list of arrays, containing the band values and/or calculated index values.
 
-        :param input_path: path of the input image
-        :param get: name of band/indices
-        :return: band values and/or index values
+        :param input_path: Path of the input image.
+        :param get: Name of band/indices.
+        :return: Band values and/or index values.
         """
 
         get_list = Model.resolve_bands_indices_string(get)
@@ -256,10 +256,10 @@ class Model(object):
         """
         Saves the specified band values and/or index values to a single- or multi-band tif file.
 
-        :param input_path: path of the input image
-        :param save: name of band/indices
-        :param postfix: postfix of output file name
-        :return: path of the output image
+        :param input_path: Path of the input image.
+        :param save: Name of band/indices.
+        :param postfix: Postfix of output file name.
+        :return: Path of the output image.
         """
 
         list_of_bands_and_indices = self.get_bands_indices(
@@ -284,12 +284,12 @@ class Model(object):
         """
         Estimates the area covered by garbage, based on the pixel size of a picture.
 
-        :param input_path: input path of classified picture
-        :param image_type: "classified" or "heatmap"
-        :return: estimated area if it can be calculated, 0 otherwise
-        :raise NotEnoughBandsException: if the image to be opened does not have only one band
-        :raise CodValueNotPresentException: if the Garbage Class is not present on the image
-        :raise InvalidClassifiedImageException: if not all values could be divided by 100 on the classified image
+        :param input_path: Input path of classified picture.
+        :param image_type: Types -> "classified" or "heatmap".
+        :return: Estimated area if it can be calculated, 0 otherwise.
+        :raise NotEnoughBandsException: If the image to be opened does not have only one band.
+        :raise CodValueNotPresentException: If the Garbage Class is not present on the image.
+        :raise InvalidClassifiedImageException: If not all values could be divided by 100 on the classified image.
         """
 
         try:
@@ -336,10 +336,10 @@ class Model(object):
         Creates the masked classification and masked heatmap based on the input classification and input heatmap.
         Uses morphological transformations (opening and dilation).
 
-        :param original_input_path: input path of source image
-        :param classification_path: path of the classified image
-        :param heatmap_path: path of the heatmap image
-        :return: the paths of the output images
+        :param original_input_path: Input path of source image.
+        :param classification_path: Path of the classified image.
+        :param heatmap_path: Path of the heatmap image.
+        :return: The paths of the output images.
         """
 
         # open inputs
@@ -445,9 +445,9 @@ class Model(object):
         """
         Calculates the minimum and maximum values of a band.
 
-        :param input_path: path of image
-        :param band_number: serial number of band
-        :return: minimum and maximum values
+        :param input_path: Path of an image.
+        :param band_number: Serial number of a band.
+        :return: Minimum and maximum values.
         """
 
         with rasterio.open(input_path, "r") as img:
@@ -461,10 +461,10 @@ class Model(object):
         Calculates the geographical coordinate of the pixel in row "i" and column "j",
         based on the picture's GeoTransform.
 
-        :param i: row index
-        :param j: column index
-        :param gt: GeoTransform of the picture
-        :return: the calculated geographical coordinates: x and y
+        :param i: Row index.
+        :param j: Column index.
+        :param gt: GeoTransform of the picture.
+        :return: The calculated geographical coordinates: x and y.
         """
 
         x_coord = gt[0] + j * gt[1] + i * gt[2]
@@ -479,10 +479,10 @@ class Model(object):
         """
         Calculates the bounding box of a single pixel.
 
-        :param i: row index
-        :param j: column index
-        :param gt: GeoTransform of the picture
-        :return: bounding box of a pixel
+        :param i: Row index.
+        :param j: Column index.
+        :param gt: GeoTransform of the picture.
+        :return: Bounding box of a pixel.
         """
 
         x_size = gt[1]
@@ -502,9 +502,9 @@ class Model(object):
         """
         Calculates all bounding boxes of all pixels.
 
-        :param input_file: path of input file
-        :param value: numerical value of the pixels
-        :return: list of bounding boxes
+        :param input_file: Path of input file.
+        :param value: Numerical value of the pixels.
+        :return: List of bounding boxes.
         """
 
         dataset = gdal.Open(input_file, gdal.GA_ReadOnly)
@@ -531,9 +531,9 @@ class Model(object):
         """
         Unites the adjacent pixels, then creates a GeoJSON file containing the result polygons.
 
-        :param input_file: path of input file
-        :param output_file: path of output file
-        :param search_value: numerical value of the pixels
+        :param input_file: Path of input file.
+        :param output_file: Path of output file.
+        :param search_value: Numerical value of the pixels.
         :return:
         """
 
@@ -593,8 +593,8 @@ class Model(object):
         """
         Converts MultiPolygon shapes to Polygons.
 
-        :param data_file: dictionary containing the AOIs in GeoJSON format
-        :return: converted version of data_file
+        :param data_file: Dictionary containing the AOIs in GeoJSON format.
+        :return: Converted version of data_file.
         """
 
         new_data_file = copy.deepcopy(data_file)
@@ -615,10 +615,10 @@ class Model(object):
         """
         Transforms coordinates from one CRS to another.
 
-        :param coords: list of coordinates: [[x1, y1], [x2, y2], ...]
-        :param crs_from: projection of input data
-        :param crs_to: projection of output data
-        :return: list of transformed coordinates
+        :param coords: List of coordinates: [[x1, y1], [x2, y2], ...].
+        :param crs_from: Projection of input data.
+        :param crs_to: Projection of output data.
+        :return: List of transformed coordinates.
         """
 
         transformed_coords = copy.deepcopy(coords)
@@ -640,9 +640,9 @@ class Model(object):
         """
         Transforms all coordinates from their CRS to wanted CRS.
 
-        :param data_file: dictionary containing the geometries in GeoJSON format
-        :param crs_to: projection of output data
-        :return: transformed version of data_file
+        :param data_file: Dictionary containing the geometries in GeoJSON format.
+        :param crs_to: Projection of output data.
+        :return: Transformed version of data_file.
         """
 
         transformed_data_file = copy.deepcopy(data_file)
@@ -670,8 +670,8 @@ class Model(object):
         """
         Resolves band strings.
 
-        :param string: name of band/indices separated by "-", or "all", "bands", "indices"
-        :return: list containing the band/index values
+        :param string: Name of band/indices separated by "-", or "all", "bands", "indices".
+        :return: List containing the band/index values.
         """
 
         string_list = string.lower().split("-")
@@ -710,10 +710,10 @@ class Model(object):
         """
         Creates the output path of result images.
 
-        :param input_path: path of original image
-        :param postfix: file name postfix for result image
-        :param output_file_extension: the wanted file extension of result image
-        :return: output path
+        :param input_path: Path of original image.
+        :param postfix: File name postfix for result image.
+        :param output_file_extension: The wanted file extension of result image.
+        :return: Output path.
         """
 
         filename, file_extension = os.path.splitext(input_path)
@@ -725,9 +725,9 @@ class Model(object):
         """
         Calculating an index based on given numerator and denominator.
 
-        :param numerator: numerator matrix
-        :param denominator: denominator matrix
-        :return: result matrix, containing the calculated values
+        :param numerator: Numerator matrix.
+        :param denominator: Denominator matrix.
+        :return: Result matrix, containing the calculated values.
         """
 
         # variables
@@ -768,12 +768,12 @@ class Model(object):
         """
         Saves arrays (1 or more) to a georeferenced tif file.
 
-        :param input_path: georeferenced input image
-        :param array: list of arrays to be saved
-        :param shape: shape of the output image
-        :param band_count: number of bands in the output tif file
-        :param output_path: path of the output image
-        :param new_geo_trans: other GeoTransform if it is needed
+        :param input_path: Georeferenced input image.
+        :param array: List of arrays to be saved.
+        :param shape: Shape of the output image.
+        :param band_count: Number of bands in the output tif file.
+        :param output_path: Path of the output image.
+        :param new_geo_trans: Other GeoTransform if it is needed.
         :return: None
         """
 
@@ -819,12 +819,12 @@ class Model(object):
         """
         Morphological transformations: https://docs.opencv.org/4.5.2/d9/d61/tutorial_py_morphological_ops.html
 
-        :param morph_type: type of the morphology: "erosion", "dilation", "opening", "closing"
-        :param path: input path
-        :param output: output path
-        :param matrix: the helper matrix used for the algorithm
-        :param iterations: number of iterations per image
-        :return: matrix representing the result of transformation
+        :param morph_type: Type of the morphology: "erosion", "dilation", "opening", "closing".
+        :param path: Input path.
+        :param output: Output path.
+        :param matrix: The helper matrix used for the algorithm.
+        :param iterations: Number of iterations per image.
+        :return: Matrix representing the result of transformation.
         """
 
         try:

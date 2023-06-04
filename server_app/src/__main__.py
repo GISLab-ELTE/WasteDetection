@@ -7,7 +7,7 @@ def parse_args() -> argparse.Namespace:
     """
     Parse command line arguments.
 
-    :return: parsed arguments
+    :return: Parsed arguments.
     """
 
     parser = argparse.ArgumentParser()
