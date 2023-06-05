@@ -14,14 +14,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-st",
         "--startup",
-        action='store_true',
+        action="store_true",
         default=False,
         help="Run startup process or not.",
     )
     parser.add_argument(
         "-s",
         "--sleep",
-        action='store_true',
+        action="store_true",
         default=False,
         help="Sleep after execution or not.",
     )

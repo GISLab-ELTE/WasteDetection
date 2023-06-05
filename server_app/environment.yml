@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - black=23.3.0
   - gdal=3.3.2
   - geojson=2.5.0
   - geopandas=0.12.1
@@ -17,5 +18,5 @@ dependencies:
   - sentinelhub=3.4.4
   - shapely=1.7.1
   - pip:
-    - jsonmerge==1.9.0
-    - opencv-python-headless==4.5.3.56
+      - jsonmerge==1.9.0
+      - opencv-python-headless==4.5.3.56

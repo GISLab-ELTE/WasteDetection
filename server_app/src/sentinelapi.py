@@ -12,7 +12,7 @@ from sentinelhub import (
     MimeType,
     SentinelHubRequest,
     bbox_to_dimensions,
-    filter_times
+    filter_times,
 )
 
 
@@ -92,7 +92,9 @@ class SentinelAPI(BaseAPI):
         self.requests.clear()
 
         for feature in self.data_file["features"]:
-            bbox_coords = SentinelAPI.get_bbox_of_polygon(feature["geometry"]["coordinates"][0])
+            bbox_coords = SentinelAPI.get_bbox_of_polygon(
+                feature["geometry"]["coordinates"][0]
+            )
 
             bbox = BBox(bbox=bbox_coords, crs=CRS.WGS84)
 
@@ -100,8 +102,17 @@ class SentinelAPI(BaseAPI):
                 DataCollection.SENTINEL2_L2A,
                 bbox=bbox,
                 time=time_interval,
-                query={"eo:cloud_cover": {"lte": int(self.config_file["max_cloud_cover"])}},
-                fields={"include": ["id", "properties.datetime", "properties.eo:cloud_cover"], "exclude": []},
+                query={
+                    "eo:cloud_cover": {"lte": int(self.config_file["max_cloud_cover"])}
+                },
+                fields={
+                    "include": [
+                        "id",
+                        "properties.datetime",
+                        "properties.eo:cloud_cover",
+                    ],
+                    "exclude": [],
+                },
             )
 
             time_difference = dt.timedelta(hours=1)
@@ -109,9 +120,13 @@ class SentinelAPI(BaseAPI):
             unique_acquisitions = filter_times(all_timestamps, time_difference)
 
             for timestamp in reversed(unique_acquisitions):
-                data_folder = "/".join([self.config_file["download_dir_sentinel-2"],
-                                        str(feature["properties"]["id"]),
-                                        dt.datetime.strftime(timestamp, "%Y-%m-%d")])
+                data_folder = "/".join(
+                    [
+                        self.config_file["download_dir_sentinel-2"],
+                        str(feature["properties"]["id"]),
+                        dt.datetime.strftime(timestamp, "%Y-%m-%d"),
+                    ]
+                )
 
                 request = SentinelHubRequest(
                     data_folder=data_folder,
@@ -119,10 +134,15 @@ class SentinelAPI(BaseAPI):
                     input_data=[
                         SentinelHubRequest.input_data(
                             data_collection=DataCollection.SENTINEL2_L2A,
-                            time_interval=(timestamp - time_difference, timestamp + time_difference),
+                            time_interval=(
+                                timestamp - time_difference,
+                                timestamp + time_difference,
+                            ),
                         )
                     ],
-                    responses=[SentinelHubRequest.output_response("default", MimeType.TIFF)],
+                    responses=[
+                        SentinelHubRequest.output_response("default", MimeType.TIFF)
+                    ],
                     bbox=bbox,
                     size=bbox_to_dimensions(bbox, resolution=self.resolution),
                     config=self.config,

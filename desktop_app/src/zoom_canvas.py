@@ -59,10 +59,19 @@ class ZoomCanvas(ttk.Frame):
         :return: True or False
         """
 
-        return (tag_id in self._canvas.find_all()) and tag_id not in self._img_layer_ids and tag_id != self._fix_point
+        return (
+            (tag_id in self._canvas.find_all())
+            and tag_id not in self._img_layer_ids
+            and tag_id != self._fix_point
+        )
 
-    def open_image(self, input_path: str, image_type: str, satellite_rgb: List[int],
-                   color_map: ListedColormap = cm.get_cmap("viridis")) -> None:
+    def open_image(
+        self,
+        input_path: str,
+        image_type: str,
+        satellite_rgb: List[int],
+        color_map: ListedColormap = cm.get_cmap("viridis"),
+    ) -> None:
         """
         Loads an image with the given color map for later use.
 
@@ -94,13 +103,17 @@ class ZoomCanvas(ttk.Frame):
                 cols = dataset.RasterXSize
 
                 if rows * cols > MAX_PIXEL_COUNT:
-                    raise TooLargeImageException(rows * cols, MAX_PIXEL_COUNT, input_path)
+                    raise TooLargeImageException(
+                        rows * cols, MAX_PIXEL_COUNT, input_path
+                    )
 
                 if dataset.RasterCount < 3:
                     raise NotEnoughBandsException(dataset.RasterCount, 3, input_path)
 
                 if dataset.RasterCount < max(satellite_rgb):
-                    raise NotEnoughBandsException(dataset.RasterCount, max(satellite_rgb), input_path)
+                    raise NotEnoughBandsException(
+                        dataset.RasterCount, max(satellite_rgb), input_path
+                    )
 
                 band1 = dataset.GetRasterBand(satellite_rgb[2])  # Blue channel
                 band2 = dataset.GetRasterBand(satellite_rgb[1])  # Green channel
@@ -116,13 +129,25 @@ class ZoomCanvas(ttk.Frame):
                 green_mean, green_std = green.mean(), green.std() * n
                 red_mean, red_std = red.mean(), red.std() * n
 
-                blue_min, blue_max = math.floor(max(blue_mean - blue_std, blue.min())),  math.ceil(min(blue_mean + blue_std, blue.max()))
-                green_min, green_max = math.floor(max(green_mean - green_std, green.min())),  math.ceil(min(green_mean + green_std, green.max()))
-                red_min, red_max = math.floor(max(red_mean - red_std, red.min())),  math.ceil(min(red_mean + red_std, red.max()))
+                blue_min, blue_max = math.floor(
+                    max(blue_mean - blue_std, blue.min())
+                ), math.ceil(min(blue_mean + blue_std, blue.max()))
+                green_min, green_max = math.floor(
+                    max(green_mean - green_std, green.min())
+                ), math.ceil(min(green_mean + green_std, green.max()))
+                red_min, red_max = math.floor(
+                    max(red_mean - red_std, red.min())
+                ), math.ceil(min(red_mean + red_std, red.max()))
 
-                blue_n = ((blue.astype(np.float64) - blue_min) * (255 / blue_max)).astype(np.uint8)
-                green_n = ((green.astype(np.float64) - green_min) * (255 / green_max)).astype(np.uint8)
-                red_n = ((red.astype(np.float64) - red_min) * (255 / red_max)).astype(np.uint8)
+                blue_n = (
+                    (blue.astype(np.float64) - blue_min) * (255 / blue_max)
+                ).astype(np.uint8)
+                green_n = (
+                    (green.astype(np.float64) - green_min) * (255 / green_max)
+                ).astype(np.uint8)
+                red_n = ((red.astype(np.float64) - red_min) * (255 / red_max)).astype(
+                    np.uint8
+                )
 
                 dataset = np.dstack((red_n, green_n, blue_n))
 
@@ -138,7 +163,9 @@ class ZoomCanvas(ttk.Frame):
                         raise NotEnoughBandsException(dataset.count, 1, input_path)
 
                     if dataset.width * dataset.height > MAX_PIXEL_COUNT:
-                        raise TooLargeImageException(dataset.width * dataset.height, MAX_PIXEL_COUNT, input_path)
+                        raise TooLargeImageException(
+                            dataset.width * dataset.height, MAX_PIXEL_COUNT, input_path
+                        )
 
                     dataset = dataset.read(1)
 
@@ -150,7 +177,7 @@ class ZoomCanvas(ttk.Frame):
                     if np.nanmax(dataset) != 0:
                         dataset /= np.nanmax(dataset)
 
-                    image_array = np.uint8(color_map(dataset)*255)
+                    image_array = np.uint8(color_map(dataset) * 255)
                     self._image_layers.append(Image.fromarray(image_array))
             except NotEnoughBandsException:
                 raise
@@ -161,9 +188,13 @@ class ZoomCanvas(ttk.Frame):
 
         self._show_image()
 
-    def open_classification_layer(self, dataset: np.ndarray, color_map: ListedColormap = cm.get_cmap("viridis")):
+    def open_classification_layer(
+        self, dataset: np.ndarray, color_map: ListedColormap = cm.get_cmap("viridis")
+    ):
         if dataset.shape[0] * dataset.shape[1] > MAX_PIXEL_COUNT:
-                        raise TooLargeImageException(dataset.width * dataset.height, MAX_PIXEL_COUNT)
+            raise TooLargeImageException(
+                dataset.width * dataset.height, MAX_PIXEL_COUNT
+            )
 
         unique_values = np.unique(dataset)
 
@@ -173,7 +204,7 @@ class ZoomCanvas(ttk.Frame):
         if np.nanmax(dataset) != 0:
             dataset /= np.nanmax(dataset)
 
-        image_array = np.uint8(color_map(dataset)*255)
+        image_array = np.uint8(color_map(dataset) * 255)
         self._image_layers.append(Image.fromarray(image_array))
         self._show_image()
 
@@ -191,7 +222,6 @@ class ZoomCanvas(ttk.Frame):
         self._canvas.imagetks.clear()  # delete previous image from the canvas
         self._image_layers.clear()
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
-            
 
     def hide_shape(self, tag_id: int) -> None:
         """
@@ -241,7 +271,7 @@ class ZoomCanvas(ttk.Frame):
 
     def draw_pixel_on_last_layer(self, event, color_hex: str):
         color_hex = color_hex.lstrip("#")
-        color_rgb = tuple(int(color_hex[i:i+2], 16) for i in (0, 2, 4))
+        color_rgb = tuple(int(color_hex[i : i + 2], 16) for i in (0, 2, 4))
 
         x, y = self.get_event_coordinates_on_image(event)
         x, y = (int(x), int(y))
@@ -254,7 +284,7 @@ class ZoomCanvas(ttk.Frame):
         x, y = self.get_event_coordinates_on_image(event)
         x, y = (int(x), int(y))
         last_layer = self._image_layers[-1]
-        last_layer.putpixel((x, y), (0,0,0,0))
+        last_layer.putpixel((x, y), (0, 0, 0, 0))
         self._redraw_layer(-1)
 
     def get_coords_of_point(self, tag_id: int) -> Tuple[float, float]:
@@ -285,7 +315,9 @@ class ZoomCanvas(ttk.Frame):
         for tag_id in tag_ids:
             self._canvas.delete(tag_id)
 
-    def place_polygon_on_canvas(self, coords: List[Tuple[float, float]], color: str) -> int:
+    def place_polygon_on_canvas(
+        self, coords: List[Tuple[float, float]], color: str
+    ) -> int:
         """
         Draws a polygon on the canvas.
 
@@ -295,7 +327,9 @@ class ZoomCanvas(ttk.Frame):
         """
 
         reshape_coords = [j for i in coords for j in i]
-        tag_id = self._canvas.create_polygon(reshape_coords, outline="black", fill=color, state="normal")
+        tag_id = self._canvas.create_polygon(
+            reshape_coords, outline="black", fill=color, state="normal"
+        )
         self._polygons.append(tag_id)
         return tag_id
 
@@ -428,12 +462,16 @@ class ZoomCanvas(ttk.Frame):
         for layer in self._image_layers:
             width, height = layer.size
             self._new_size = int(self._img_scale * width), int(self._img_scale * height)
-            
+
             imagetk = ImageTk.PhotoImage(layer.resize(self._new_size))
 
-            img_id = self._canvas.create_image(self._canvas.coords([self._fix_point]), anchor="nw", image=imagetk)
+            img_id = self._canvas.create_image(
+                self._canvas.coords([self._fix_point]), anchor="nw", image=imagetk
+            )
             self._img_layer_ids.append(img_id)
-            self._canvas.imagetks.append(imagetk)  # keep an extra reference to prevent garbage-collection
+            self._canvas.imagetks.append(
+                imagetk
+            )  # keep an extra reference to prevent garbage-collection
 
         # lower the layers in reverse order, so they stack according to their order in the list
         for img_id in reversed(self._img_layer_ids):
@@ -444,12 +482,13 @@ class ZoomCanvas(ttk.Frame):
     def _redraw_layer(self, layer_pos_id) -> None:
         layer = self._image_layers[layer_pos_id]
         layer_id = self._img_layer_ids[layer_pos_id]
-        
-        imagetk = ImageTk.PhotoImage(layer.resize(self._new_size))
-        
-        self._canvas.itemconfig(layer_id, image=imagetk)
-        self._canvas.imagetks[layer_pos_id] = imagetk # keep an extra reference to prevent garbage-collection
 
+        imagetk = ImageTk.PhotoImage(layer.resize(self._new_size))
+
+        self._canvas.itemconfig(layer_id, image=imagetk)
+        self._canvas.imagetks[
+            layer_pos_id
+        ] = imagetk  # keep an extra reference to prevent garbage-collection
 
     def _initialize_components(self) -> None:
         """
@@ -473,7 +512,7 @@ class ZoomCanvas(ttk.Frame):
         self._canvas.configure(
             highlightthickness=0,
             xscrollcommand=self._horizontal_sb.set,
-            yscrollcommand=self._vertical_sb.set
+            yscrollcommand=self._vertical_sb.set,
         )
 
         self._vertical_sb.configure(command=self._canvas.yview)
@@ -506,6 +545,6 @@ class ZoomCanvas(ttk.Frame):
         self._img_scale = 1.0
         self._delta = 0.9
 
-        self._fix_point = self._canvas.create_text(0, 0, anchor='nw', text="", fill="white")
-
-    
+        self._fix_point = self._canvas.create_text(
+            0, 0, anchor="nw", text="", fill="white"
+        )

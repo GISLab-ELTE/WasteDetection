@@ -4,7 +4,7 @@ Automated waste detection and change analysis based on multispectral satellite i
 
 # Desktop Application
 
-This application is designed primarily to facilitate the work of waste collection organisations. The aim was to implement waste detection methods that could be used in practice and make the work of organisations faster and more efficient. The solution developed is compatible with any satellite imagery with at least four bands, which must include the *Blue*, *Green*, *Red*, *Near Infrared* bands.
+This application is designed primarily to facilitate the work of waste collection organisations. The aim was to implement waste detection methods that could be used in practice and make the work of organisations faster and more efficient. The solution developed is compatible with any satellite imagery with at least four bands, which must include the _Blue_, _Green_, _Red_, _Near Infrared_ bands.
 
 ![Desktop Application](desktop_app/screenshot.png)
 
@@ -33,10 +33,10 @@ The goal of our research is to develop an accurate classification method for pla
 - **Date**: It can be changed using the swipe. You can select from the last five most recent days when the cloud cover over the areas was 0%.
 
 - **Colors**:
-    - **Classified**: Orange. All pixels that were classified as plastic waste.
-    - **Heatmap High**: Red. Pixels that were classified as plastic waste with a confidence of 90% or higher.
-    - **Heatmap Medium**: Yellow. Pixels that were classified as plastic waste with a confidence between 80% and 90%.
-    - **Heatmap Low**: Green. Pixels that were classified as plastic waste with a confidence below 80%.
+  - **Classified**: Orange. All pixels that were classified as plastic waste.
+  - **Heatmap High**: Red. Pixels that were classified as plastic waste with a confidence of 90% or higher.
+  - **Heatmap Medium**: Yellow. Pixels that were classified as plastic waste with a confidence between 80% and 90%.
+  - **Heatmap Low**: Green. Pixels that were classified as plastic waste with a confidence below 80%.
 
 # Publications
 
