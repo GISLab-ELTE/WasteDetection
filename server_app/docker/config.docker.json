@@ -5,7 +5,7 @@
   "result_dir_planetscope": "webapp_results/automatic/planetscope",
   "result_dir_sentinel-2": "webapp_results/automatic/sentinel-2",
   "estimations_file_path": "webapp_results/automatic/estimations.json",
-  "geojson_files_path" : "webapp_results/automatic/geojson_files.json",
+  "geojson_files_path": "webapp_results/automatic/geojson_files.json",
   "satellite_images_path": "satellite_images/automatic/satellite_images.json",
   "planet_api_key": "***",
   "sentinel_sh_client_id": "***",
