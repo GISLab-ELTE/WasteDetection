@@ -258,7 +258,9 @@ class Process(object):
             result_dir = self.join_path("workspace_root_dir", "result_dir_sentinel-2")
             image_files_abs = Process.find_files_absolute(download_dir, "response.tiff")
             image_files_rel = Process.find_files_relative(
-                download_dir, "response.tiff", relative_to=os.path.dirname(satellite_images_path)
+                download_dir,
+                "response.tiff",
+                relative_to=os.path.dirname(satellite_images_path),
             )
         elif self.satellite_type == "planetscope":
             download_dir = self.join_path(

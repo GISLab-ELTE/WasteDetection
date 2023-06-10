@@ -233,7 +233,7 @@ class PlanetAPI(BaseAPI):
         Filters out image ids that already exist locally.
 
         :param feature_id: The id property of a polygon (GeoJSON).
-        :param image_ids: List of image ids.
+        :param image_ids: List of product ids.
         :return: Image ids that don't exist locally.
         """
 
@@ -246,10 +246,22 @@ class PlanetAPI(BaseAPI):
         )
         filtered_image_ids = copy.deepcopy(image_ids)
 
+        dates = [
+            dt.datetime.strftime(
+                dt.datetime.strptime(
+                    "_".join(product.split("_")[:2]),
+                    "%Y%m%d_%H%M%S",
+                ),
+                "%Y-%m-%d",
+            )
+            for product in image_ids
+        ]
+
         for _, dirnames, _ in os.walk(work_dir):
             for dirname in dirnames:
-                if dirname in image_ids:
-                    filtered_image_ids.remove(dirname)
+                if dirname in dates:
+                    index = dates.index(dirname)
+                    filtered_image_ids.remove(image_ids[index])
 
         return filtered_image_ids
 
