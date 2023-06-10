@@ -109,7 +109,7 @@ class Process(object):
         self.api.download()
         logging.info("Finished downloading earlier images.")
 
-        logging.warn("\nALERT\nAcquisition dates:\n")
+        logging.warning("\nALERT\nAcquisition dates:\n")
         self.print_acquisition_dates(observation_max_span)
 
         logging.info("Startup process ended.")
@@ -148,7 +148,7 @@ class Process(object):
 
         logging.info("Finished downloading images.")
 
-        logging.warn("\nALERT\nAcquisition dates:\n")
+        logging.warning("\nALERT\nAcquisition dates:\n")
         self.print_acquisition_dates(max_num_of_results)
 
         logging.info("Estimating extent of polluted areas.")
@@ -258,7 +258,7 @@ class Process(object):
             result_dir = self.join_path("workspace_root_dir", "result_dir_sentinel-2")
             image_files_abs = Process.find_files_absolute(download_dir, "response.tiff")
             image_files_rel = Process.find_files_relative(
-                download_dir, "response.tiff", relative_to=satellite_images_path
+                download_dir, "response.tiff", relative_to=os.path.dirname(satellite_images_path)
             )
         elif self.satellite_type == "planetscope":
             download_dir = self.join_path(
@@ -271,11 +271,11 @@ class Process(object):
             image_files_rel = Process.find_files_relative(
                 download_dir,
                 "*AnalyticMS_SR_clip_reproject.tif",
-                relative_to=satellite_images_path,
+                relative_to=os.path.dirname(satellite_images_path),
             )
 
         geojson_files_rel = Process.find_files_relative(
-            result_dir, "*.geojson", relative_to=geojson_files_path
+            result_dir, "*.geojson", relative_to=os.path.dirname(geojson_files_path)
         )
 
         image_dict = OrderedDict()
@@ -532,9 +532,6 @@ class Process(object):
         :param relative_to: Results will be relative to this directory.
         :return: List of relative paths.
         """
-
-        if os.path.isfile(relative_to):
-            relative_to = os.path.dirname(relative_to)
 
         files = Process.find_files_absolute(root_dir, pattern)
         files = [
