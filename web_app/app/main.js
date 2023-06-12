@@ -319,6 +319,8 @@ const fetchGeojsonPaths = async function () {
       }
     }
   }
+
+  swipe.max = Object.keys(aoisWithDates[Object.keys(aoisWithDates)[0]]).length - 1;
 };
 
 // Events
