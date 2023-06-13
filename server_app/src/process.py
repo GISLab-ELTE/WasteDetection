@@ -177,12 +177,15 @@ class Process(object):
                 if feature_id in self.estimations.keys() and date in self.estimations[feature_id].keys():
                     continue
 
-                path = downloaded_images[feature_id][date]
-                dir_name = os.path.dirname(path)
+                output_dir_path = "/".join([work_dir, feature_id, date])
                 masked_heatmap_postfix = self.config_file["masked_heatmap_postfix"]
 
                 processed = False
-                for file in os.listdir(dir_name):
+                
+                if not os.path.exists(output_dir_path):
+                    os.makedirs(output_dir_path)
+
+                for file in os.listdir(output_dir_path):
                     if fnmatch.fnmatch(file, f"*{masked_heatmap_postfix}*"):
                         processed = True
                         break
@@ -190,7 +193,8 @@ class Process(object):
                 if processed:
                     continue
 
-                indices_path = self.model.save_bands_indices(path, "all", "all")
+                input_file_path = downloaded_images[feature_id][date]
+                indices_path = self.model.save_bands_indices(input_file_path, output_dir_path, "all", "all")
 
                 classified, heatmap = self.model.create_classification_and_heatmap_with_random_forest(
                     indices_path, self.clf
