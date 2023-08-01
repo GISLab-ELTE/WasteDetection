@@ -28,12 +28,7 @@ MAX_CLASS_VALUE_COUNT = 10000000
 LOW_PROB_VALUE = 1
 MEDIUM_PROB_VALUE = 2
 HIGH_PROB_VALUE = 3
-HEATMAP_COLORS = {
-    0: "#000000",
-    1: "#1fff00",
-    2: "#fff300",
-    3: "#ff0000"
-}
+HEATMAP_COLORS = {0: "#000000", 1: "#1fff00", 2: "#fff300", 3: "#ff0000"}
 
 
 class Model(object):
@@ -209,7 +204,9 @@ class Model(object):
 
         return self._classification_layer_data[image_name]
 
-    def set_classification_pixel_of_layer(self, image_name: str, coordinates: Tuple[int, int], mc_id: int) -> None:
+    def set_classification_pixel_of_layer(
+        self, image_name: str, coordinates: Tuple[int, int], mc_id: int
+    ) -> None:
         """
         sets a classification pixel of the given layer
 
@@ -224,7 +221,9 @@ class Model(object):
     def delete_classification_data(self, image_name: str) -> None:
         self._classification_layer_data.pop(image_name)
 
-    def save_new_mc(self, training_file: str, mc_id: int, mc_name: str, mc_color: str) -> None:
+    def save_new_mc(
+        self, training_file: str, mc_id: int, mc_name: str, mc_color: str
+    ) -> None:
         """
         Saves a new training class with the given file name, id, name and color.
 
@@ -269,7 +268,9 @@ class Model(object):
                     self._tag_ids[training_file][mc_id][2].remove(tag_id)
                     return
 
-    def save_tag_id(self, training_file: str, mc_id: int, mc_name: str, color: str, tag_id: int) -> None:
+    def save_tag_id(
+        self, training_file: str, mc_id: int, mc_name: str, color: str, tag_id: int
+    ) -> None:
         """
         Saves the tag id of a new shape in the training class.
 
@@ -286,8 +287,14 @@ class Model(object):
 
         self._tag_ids[training_file][mc_id][2].append(tag_id)
 
-    def save_tag_id_coords(self, training_file: str, mc_id: int, mc_name: str,
-                           coords: List[List[float]], bbox_coords: List[Tuple[int, ...]]) -> None:
+    def save_tag_id_coords(
+        self,
+        training_file: str,
+        mc_id: int,
+        mc_name: str,
+        coords: List[List[float]],
+        bbox_coords: List[Tuple[int, ...]],
+    ) -> None:
         """
         Saves the coordinates of polygons and their bounding boxes of the specified training class.
 
@@ -342,9 +349,9 @@ class Model(object):
 
         tag_id_coords = self._tag_id_coords
         enough_data = list()
-        for (training_file, mc_data) in tag_id_coords.items():
+        for training_file, mc_data in tag_id_coords.items():
             usable_mc_ids = []
-            for (mc_id, polygon_data) in mc_data.items():
+            for mc_id, polygon_data in mc_data.items():
                 mc_name, coords, bbox_coords = polygon_data
                 if coords:
                     if training_file not in usable_training_data.keys():
@@ -361,7 +368,9 @@ class Model(object):
 
         return usable_training_data, enough_data
 
-    def add_polygon_values_to_image(self, training_file: str, usable_training_data: Dict[str, Dict]) -> np.ndarray:
+    def add_polygon_values_to_image(
+        self, training_file: str, usable_training_data: Dict[str, Dict]
+    ) -> np.ndarray:
         """
         Creates a numpy array that adds the polygons to the image layer.
         :param training_file: the training file that needs to be updated.
@@ -371,7 +380,7 @@ class Model(object):
 
         labeled_layer = self._classification_layer_data[training_file].copy()
         polygons = usable_training_data[training_file]
-        for (mc_id, polygon_data) in polygons.items():
+        for mc_id, polygon_data in polygons.items():
             mc_name, coords, bbox_coords = polygon_data
             for i in range(len(coords)):
                 indices = Model._get_coords_inside_polygon(coords[i], bbox_coords[i])
@@ -380,7 +389,9 @@ class Model(object):
 
         return labeled_layer
 
-    def create_training_df(self, usable_training_data: Dict[str, Dict]) -> Tuple[pd.DataFrame, Dict[str, np.ndarray]]:
+    def create_training_df(
+        self, usable_training_data: Dict[str, Dict]
+    ) -> Tuple[pd.DataFrame, Dict[str, np.ndarray]]:
         """
         Creates a training DataFrame from the filtered training data.
 
@@ -400,19 +411,26 @@ class Model(object):
         classified_layers = self._classification_layer_data
 
         for training_file, labeled_layer in classified_layers.items():
-            bands_and_indices = self._get_bands_indices(self._persistence.settings["SATELLITE_TYPE"], training_file,
-                                                        training_labels)
+            bands_and_indices = self._get_bands_indices(
+                self._persistence.settings["SATELLITE_TYPE"],
+                training_file,
+                training_labels,
+            )
             bands_and_indices = np.asarray(bands_and_indices)
             if training_file in usable_training_data:
-                labeled_layer = self.add_polygon_values_to_image(training_file, usable_training_data)
+                labeled_layer = self.add_polygon_values_to_image(
+                    training_file, usable_training_data
+                )
 
             classified_xs, classified_ys = np.nonzero(labeled_layer)
             classified_pixels = labeled_layer[classified_xs, classified_ys].flatten()
             list_of_columns = [
                 np.full(fill_value="", shape=classified_pixels.shape),
-                classified_pixels.astype(int)
+                classified_pixels.astype(int),
             ]
-            classified_bands_and_indices = bands_and_indices[:, classified_xs, classified_ys]
+            classified_bands_and_indices = bands_and_indices[
+                :, classified_xs, classified_ys
+            ]
             for i in range(classified_bands_and_indices.shape[0]):
                 list_of_columns.append(classified_bands_and_indices[i])
 
@@ -432,11 +450,11 @@ class Model(object):
         """
         Saves the classification images with their metadata next to the image source.
         The classified image will have the "_classified" suffix associated with it.
-        
+
         :param labeled_images: A dictionary containing the label data of each image.
         """
 
-        for (image_path, image_data) in labeled_images.items():
+        for image_path, image_data in labeled_images.items():
             mc_id_mc_name_pairs = {}
             for tag_data in self.tag_ids[image_path].items():
                 mc_id, (mc_name, color, tags) = tag_data
@@ -450,12 +468,17 @@ class Model(object):
                 shape=image_data.shape,
                 band_count=1,
                 output_path=labeled_image_path,
-                metadata=mc_id_mc_name_pairs)
+                metadata=mc_id_mc_name_pairs,
+            )
 
     @staticmethod
     def estimate_garbage_area(
-            input_path: str, image_type: str, garbage_c_id: int,
-            low_medium_high: Tuple[bool, bool, bool] = None, pixel_sizes: Tuple[int, int] = None) -> Union[float, None]:
+        input_path: str,
+        image_type: str,
+        garbage_c_id: int,
+        low_medium_high: Tuple[bool, bool, bool] = None,
+        pixel_sizes: Tuple[int, int] = None,
+    ) -> Union[float, None]:
         """
         Estimates the area covered by garbage, based on the pixel size of a picture.
 
@@ -492,7 +515,9 @@ class Model(object):
 
             if image_type.lower() == "classified":
                 if garbage_c_id * 100 not in unique_values:
-                    raise CodValueNotPresentException("garbage", garbage_c_id * 100, input_path)
+                    raise CodValueNotPresentException(
+                        "garbage", garbage_c_id * 100, input_path
+                    )
 
                 cond_list = [value % 100 == 0 for value in unique_values]
 
@@ -506,9 +531,11 @@ class Model(object):
             elif image_type.lower() == "heatmap":
                 for i in range(rows):
                     for j in range(cols):
-                        if (low_medium_high[0] and band[i, j] == LOW_PROB_VALUE) or \
-                                (low_medium_high[1] and band[i, j] == MEDIUM_PROB_VALUE) or \
-                                (low_medium_high[2] and band[i, j] == HIGH_PROB_VALUE):
+                        if (
+                            (low_medium_high[0] and band[i, j] == LOW_PROB_VALUE)
+                            or (low_medium_high[1] and band[i, j] == MEDIUM_PROB_VALUE)
+                            or (low_medium_high[2] and band[i, j] == HIGH_PROB_VALUE)
+                        ):
                             area += pixel_size_x * pixel_size_y
 
             return area
@@ -523,7 +550,9 @@ class Model(object):
         finally:
             del dataset
 
-    def create_and_save_random_forest(self, training_data_path: str, output_path: str) -> None:
+    def create_and_save_random_forest(
+        self, training_data_path: str, output_path: str
+    ) -> None:
         """
         Trains and saves a Random Forest classifier.
 
@@ -536,8 +565,12 @@ class Model(object):
         labels = Model._resolve_bands_indices_string(training_labels)
         labels = [value.upper() for value in labels]
 
-        clf = Model._create_random_forest(training_data_path, labels, ["COD"],
-                                          int(self._persistence.settings["TRAINING_ESTIMATORS"]))
+        clf = Model._create_random_forest(
+            training_data_path,
+            labels,
+            ["COD"],
+            int(self._persistence.settings["TRAINING_ESTIMATORS"]),
+        )
 
         pickle.dump(clf, open(output_path, "wb"))
 
@@ -571,7 +604,9 @@ class Model(object):
             labels.append("apwi")
         return "-".join(labels)
 
-    def get_classification_color_map(self, input_path: str, transparent_background: bool = False) -> ListedColormap:
+    def get_classification_color_map(
+        self, input_path: str, transparent_background: bool = False
+    ) -> ListedColormap:
         """
         Creates a color map based on the values in the classified image.
 
@@ -611,7 +646,9 @@ class Model(object):
             color_map = ListedColormap(color_list)
             return color_map
 
-    def get_classification_color_map_from_layer(self, input_array: np.ndarray, transparent_background: bool = False) -> ListedColormap:
+    def get_classification_color_map_from_layer(
+        self, input_array: np.ndarray, transparent_background: bool = False
+    ) -> ListedColormap:
         """
         Creates a color map based on the values in the classified image.
 
@@ -697,39 +734,65 @@ class Model(object):
             high = int(self._persistence.settings["HEATMAP_HIGH_PROB"]) / 100
             clf = self._hotspot_rf if hotspot else self._floating_rf
 
-            classification, heatmap = Model.create_classification_and_heatmap_with_random_forest(
+            (
+                classification,
+                heatmap,
+            ) = Model.create_classification_and_heatmap_with_random_forest(
                 input_path=tmp_file,
                 clf=clf,
                 low_medium_high_values=(low, medium, high),
                 garbage_c_id=int(self._persistence.settings["GARBAGE_MC_ID"]) * 100,
                 working_dir=self._persistence.settings["WORKING_DIR"],
-                classification_postfix=self._persistence.settings["HOTSPOT_CLASSIFIED_POSTFIX"],
+                classification_postfix=self._persistence.settings[
+                    "HOTSPOT_CLASSIFIED_POSTFIX"
+                ],
                 heatmap_postfix=self._persistence.settings["HOTSPOT_HEATMAP_POSTFIX"],
-                file_extension=self._persistence.settings["FILE_EXTENSION"]
+                file_extension=self._persistence.settings["FILE_EXTENSION"],
             )
 
             if classification and heatmap:
                 if hotspot:
-                    if not ((file, classification, heatmap) in self._result_files_hotspot):
-                        self._result_files_hotspot.append((file, classification, heatmap))
+                    if not (
+                        (file, classification, heatmap) in self._result_files_hotspot
+                    ):
+                        self._result_files_hotspot.append(
+                            (file, classification, heatmap)
+                        )
                 else:
-                    masked_classification, masked_heatmap = Model.create_masked_classification_and_heatmap(
+                    (
+                        masked_classification,
+                        masked_heatmap,
+                    ) = Model.create_masked_classification_and_heatmap(
                         original_input_path=tmp_file,
                         classification_path=classification,
                         heatmap_path=heatmap,
-                        garbage_c_id=int(self._persistence.settings["GARBAGE_MC_ID"]) * 100,
+                        garbage_c_id=int(self._persistence.settings["GARBAGE_MC_ID"])
+                        * 100,
                         water_c_id=int(self._persistence.settings["WATER_MC_ID"]) * 100,
-                        matrix=(int(self._persistence.settings["MORPHOLOGY_MATRIX_SIZE"]),
-                                int(self._persistence.settings["MORPHOLOGY_MATRIX_SIZE"])),
-                        iterations=int(self._persistence.settings["MORPHOLOGY_ITERATIONS"]),
+                        matrix=(
+                            int(self._persistence.settings["MORPHOLOGY_MATRIX_SIZE"]),
+                            int(self._persistence.settings["MORPHOLOGY_MATRIX_SIZE"]),
+                        ),
+                        iterations=int(
+                            self._persistence.settings["MORPHOLOGY_ITERATIONS"]
+                        ),
                         working_dir=self._persistence.settings["WORKING_DIR"],
-                        classification_postfix=self._persistence.settings["FLOATING_MASKED_CLASSIFIED_POSTFIX"],
-                        heatmap_postfix=self._persistence.settings["FLOATING_MASKED_HEATMAP_POSTFIX"],
-                        file_extension=self._persistence.settings["FILE_EXTENSION"]
+                        classification_postfix=self._persistence.settings[
+                            "FLOATING_MASKED_CLASSIFIED_POSTFIX"
+                        ],
+                        heatmap_postfix=self._persistence.settings[
+                            "FLOATING_MASKED_HEATMAP_POSTFIX"
+                        ],
+                        file_extension=self._persistence.settings["FILE_EXTENSION"],
                     )
 
-                    if not ((file, masked_classification, masked_heatmap) in self._result_files_floating):
-                        self._result_files_floating.append((file, masked_classification, masked_heatmap))
+                    if not (
+                        (file, masked_classification, masked_heatmap)
+                        in self._result_files_floating
+                    ):
+                        self._result_files_floating.append(
+                            (file, masked_classification, masked_heatmap)
+                        )
             else:
                 were_wrong_labels = True
 
@@ -757,20 +820,25 @@ class Model(object):
                     were_wrong_pictures = True
                     continue
 
-                difference, coords_information = self._get_pi_difference(self._persistence.settings["SATELLITE_TYPE"],
-                                                                         file_1, file_2)
+                difference, coords_information = self._get_pi_difference(
+                    self._persistence.settings["SATELLITE_TYPE"], file_1, file_2
+                )
 
                 if not (difference is None) and not (coords_information is None):
                     before, after = self._get_pi_difference_heatmap(difference)
 
-                    before_path = Model._output_path([file_1, file_2],
-                                                     self._persistence.settings["WORKING_DIR"],
-                                                     "_" + self._persistence.settings["WASHED_UP_BEFORE_POSTFIX"],
-                                                     self._persistence.settings["FILE_EXTENSION"])
-                    after_path = Model._output_path([file_1, file_2],
-                                                    self._persistence.settings["WORKING_DIR"],
-                                                    "_" + self._persistence.settings["WASHED_UP_AFTER_POSTFIX"],
-                                                    self._persistence.settings["FILE_EXTENSION"])
+                    before_path = Model._output_path(
+                        [file_1, file_2],
+                        self._persistence.settings["WORKING_DIR"],
+                        "_" + self._persistence.settings["WASHED_UP_BEFORE_POSTFIX"],
+                        self._persistence.settings["FILE_EXTENSION"],
+                    )
+                    after_path = Model._output_path(
+                        [file_1, file_2],
+                        self._persistence.settings["WORKING_DIR"],
+                        "_" + self._persistence.settings["WASHED_UP_AFTER_POSTFIX"],
+                        self._persistence.settings["FILE_EXTENSION"],
+                    )
 
                     Model._save_tif(
                         input_path=file_1,
@@ -778,7 +846,7 @@ class Model(object):
                         shape=before.shape,
                         band_count=1,
                         output_path=before_path,
-                        new_geo_trans=coords_information[0]
+                        new_geo_trans=coords_information[0],
                     )
 
                     Model._save_tif(
@@ -787,11 +855,16 @@ class Model(object):
                         shape=after.shape,
                         band_count=1,
                         output_path=after_path,
-                        new_geo_trans=coords_information[0]
+                        new_geo_trans=coords_information[0],
                     )
 
-                    if not ((file_1, file_2, before_path, after_path) in self._result_files_washed_up):
-                        self._result_files_washed_up.append((file_1, file_2, before_path, after_path))
+                    if not (
+                        (file_1, file_2, before_path, after_path)
+                        in self._result_files_washed_up
+                    ):
+                        self._result_files_washed_up.append(
+                            (file_1, file_2, before_path, after_path)
+                        )
                 else:
                     were_wrong_labels = True
 
@@ -819,7 +892,9 @@ class Model(object):
         else:
             raise NameError("Wrong satellite or band name!")
 
-    def _get_bands_indices(self, satellite_type: str, input_path: str, get: str) -> List[np.ndarray]:
+    def _get_bands_indices(
+        self, satellite_type: str, input_path: str, get: str
+    ) -> List[np.ndarray]:
         """
         Returns a list of arrays, containing the band values and/or calculated index values.
 
@@ -834,10 +909,18 @@ class Model(object):
         with rasterio.open(input_path, "r") as img:
             # read bands
             try:
-                blue_ind = Model._get_satellite_band(self._persistence.settings, satellite_type, "Blue")
-                green_ind = Model._get_satellite_band(self._persistence.settings, satellite_type, "Green")
-                red_ind = Model._get_satellite_band(self._persistence.settings, satellite_type, "Red")
-                nir_ind = Model._get_satellite_band(self._persistence.settings, satellite_type, "NIR")
+                blue_ind = Model._get_satellite_band(
+                    self._persistence.settings, satellite_type, "Blue"
+                )
+                green_ind = Model._get_satellite_band(
+                    self._persistence.settings, satellite_type, "Green"
+                )
+                red_ind = Model._get_satellite_band(
+                    self._persistence.settings, satellite_type, "Red"
+                )
+                nir_ind = Model._get_satellite_band(
+                    self._persistence.settings, satellite_type, "NIR"
+                )
 
                 blue = (img.read(blue_ind)).astype(dtype="float32")
                 green = (img.read(green_ind)).astype(dtype="float32")
@@ -845,13 +928,22 @@ class Model(object):
                 nir = (img.read(nir_ind)).astype(dtype="float32")
             except Exception as exc:
                 raise NotEnoughBandsException(
-                    img.count, max([blue_ind, green_ind, red_ind, nir_ind]), input_path) from None
+                    img.count, max([blue_ind, green_ind, red_ind, nir_ind]), input_path
+                ) from None
 
-            return Model._calculate_indices(get_list, {"blue": blue, "green": green, "red": red, "nir": nir})
+            return Model._calculate_indices(
+                get_list, {"blue": blue, "green": green, "red": red, "nir": nir}
+            )
 
     def _save_bands_indices(
-            self, satellite_type: str, input_path: str, save: str,
-            working_dir: str, postfix: str, file_extension: str) -> str:
+        self,
+        satellite_type: str,
+        input_path: str,
+        save: str,
+        working_dir: str,
+        postfix: str,
+        file_extension: str,
+    ) -> str:
         """
         Saves the specified band values and/or index values to a single- or multi-band tif file.
 
@@ -871,7 +963,9 @@ class Model(object):
         )
 
         bands = len(list_of_bands_and_indices)
-        output_path = Model._output_path([input_path], working_dir, postfix, file_extension)
+        output_path = Model._output_path(
+            [input_path], working_dir, postfix, file_extension
+        )
 
         Model._save_tif(
             input_path=input_path,
@@ -883,8 +977,9 @@ class Model(object):
 
         return output_path
 
-    def _get_pi_difference(self, satellite_type: str, input_path_1: str,
-                           input_path_2: str) -> Union[Tuple[np.ndarray, Tuple], Tuple[None, None]]:
+    def _get_pi_difference(
+        self, satellite_type: str, input_path_1: str, input_path_2: str
+    ) -> Union[Tuple[np.ndarray, Tuple], Tuple[None, None]]:
         """
         Calculates the PI difference of two different shaped images.
 
@@ -894,8 +989,12 @@ class Model(object):
         :return: matrix containing the difference values, coordinate information for later use
         """
 
-        intersection_matrix, coords_information = Model._get_empty_intersection_matrix_and_start_coords(
-                                                                                            input_path_1, input_path_2)
+        (
+            intersection_matrix,
+            coords_information,
+        ) = Model._get_empty_intersection_matrix_and_start_coords(
+            input_path_1, input_path_2
+        )
 
         if not (intersection_matrix is None) and not (coords_information is None):
             start_coords, input_1_start, input_2_start = coords_information
@@ -913,15 +1012,21 @@ class Model(object):
                     row_1, col_1 = input_1_start[0] + i, input_1_start[1] + j
                     row_2, col_2 = input_2_start[0] + i, input_2_start[1] + j
                     if img_1_size >= img_2_size:
-                        intersection_matrix[i, j] = input_1_pi[row_1, col_1] - input_2_pi[row_2, col_2]
+                        intersection_matrix[i, j] = (
+                            input_1_pi[row_1, col_1] - input_2_pi[row_2, col_2]
+                        )
                     else:
-                        intersection_matrix[i, j] = input_1_pi[row_2, col_2] - input_2_pi[row_1, col_1]
+                        intersection_matrix[i, j] = (
+                            input_1_pi[row_2, col_2] - input_2_pi[row_1, col_1]
+                        )
 
             return intersection_matrix, coords_information
 
         return None, None
 
-    def _get_pi_difference_heatmap(self, difference_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def _get_pi_difference_heatmap(
+        self, difference_matrix: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Creates heatmaps for Washed up waste detection method.
 
@@ -929,20 +1034,20 @@ class Model(object):
         :return: before and after heatmap
         """
 
-        heatmap_pos = np.zeros(
-            shape=difference_matrix.shape,
-            dtype=int
-        )
+        heatmap_pos = np.zeros(shape=difference_matrix.shape, dtype=int)
 
-        heatmap_neg = np.zeros(
-            shape=difference_matrix.shape,
-            dtype=int
-        )
+        heatmap_neg = np.zeros(shape=difference_matrix.shape, dtype=int)
 
         unique_values = np.unique(difference_matrix)
-        if (len(unique_values) == 1 and 0 in unique_values)\
-                or (len(unique_values) == 1 and float("NaN") in unique_values)\
-                or (len(unique_values) == 2 and 0 in unique_values and float("NaN") in unique_values):
+        if (
+            (len(unique_values) == 1 and 0 in unique_values)
+            or (len(unique_values) == 1 and float("NaN") in unique_values)
+            or (
+                len(unique_values) == 2
+                and 0 in unique_values
+                and float("NaN") in unique_values
+            )
+        ):
             return heatmap_pos, heatmap_neg
 
         if not np.all(np.isnan(difference_matrix)):
@@ -967,31 +1072,51 @@ class Model(object):
 
             for i in range(rows):
                 for j in range(cols):
-                    N_EQUAL_PARTS = int(self._persistence.settings["WASHED_UP_HEATMAP_SECTIONS"])
+                    N_EQUAL_PARTS = int(
+                        self._persistence.settings["WASHED_UP_HEATMAP_SECTIONS"]
+                    )
 
                     value_pos = mean_difference_pos[i, j]
                     equal_part_pos = max_pos / N_EQUAL_PARTS
                     if value_pos >= equal_part_pos * (N_EQUAL_PARTS - 1):
                         heatmap_pos[i, j] = HIGH_PROB_VALUE
-                    elif equal_part_pos * (N_EQUAL_PARTS - 2) <= value_pos < equal_part_pos * (N_EQUAL_PARTS - 1):
+                    elif (
+                        equal_part_pos * (N_EQUAL_PARTS - 2)
+                        <= value_pos
+                        < equal_part_pos * (N_EQUAL_PARTS - 1)
+                    ):
                         heatmap_pos[i, j] = MEDIUM_PROB_VALUE
-                    elif equal_part_pos * (N_EQUAL_PARTS - 3) <= value_pos < equal_part_pos * (N_EQUAL_PARTS - 2):
+                    elif (
+                        equal_part_pos * (N_EQUAL_PARTS - 3)
+                        <= value_pos
+                        < equal_part_pos * (N_EQUAL_PARTS - 2)
+                    ):
                         heatmap_pos[i, j] = LOW_PROB_VALUE
 
                     value_neg = mean_difference_neg[i, j]
                     equal_part_neg = max_neg / N_EQUAL_PARTS
                     if value_neg >= equal_part_neg * (N_EQUAL_PARTS - 1):
                         heatmap_neg[i, j] = HIGH_PROB_VALUE
-                    elif equal_part_neg * (N_EQUAL_PARTS - 2) <= value_neg < equal_part_neg * (N_EQUAL_PARTS - 1):
+                    elif (
+                        equal_part_neg * (N_EQUAL_PARTS - 2)
+                        <= value_neg
+                        < equal_part_neg * (N_EQUAL_PARTS - 1)
+                    ):
                         heatmap_neg[i, j] = MEDIUM_PROB_VALUE
-                    elif equal_part_neg * (N_EQUAL_PARTS - 3) <= value_neg < equal_part_neg * (N_EQUAL_PARTS - 2):
+                    elif (
+                        equal_part_neg * (N_EQUAL_PARTS - 3)
+                        <= value_neg
+                        < equal_part_neg * (N_EQUAL_PARTS - 2)
+                    ):
                         heatmap_neg[i, j] = LOW_PROB_VALUE
 
         return heatmap_pos, heatmap_neg
 
     # Static public methods
     @staticmethod
-    def create_garbage_bbox_geojson(input_path: str, file: TextIO, searched_value: List[int]) -> None:
+    def create_garbage_bbox_geojson(
+        input_path: str, file: TextIO, searched_value: List[int]
+    ) -> None:
         """
         Creates the GeoJSON file containing the bounding boxes of garbage areas.
 
@@ -1001,7 +1126,9 @@ class Model(object):
         :return: None
         """
 
-        bbox_coords = Model._get_bbox_coordinates_of_same_areas(input_path, searched_value)
+        bbox_coords = Model._get_bbox_coordinates_of_same_areas(
+            input_path, searched_value
+        )
 
         if bbox_coords is not None:
             features = list()
@@ -1010,7 +1137,11 @@ class Model(object):
             for bbox in bbox_coords:
                 bbox.append(bbox[0])
                 polygon = geojson.Polygon([bbox])
-                features.append(geojson.Feature(geometry=polygon, properties={"id": str(polygon_id)}))
+                features.append(
+                    geojson.Feature(
+                        geometry=polygon, properties={"id": str(polygon_id)}
+                    )
+                )
                 polygon_id += 1
 
             feature_collection = geojson.FeatureCollection(features)
@@ -1019,10 +1150,18 @@ class Model(object):
 
     @staticmethod
     def create_masked_classification_and_heatmap(
-            original_input_path: str, classification_path: str, heatmap_path: str,
-            garbage_c_id: int, water_c_id: int, matrix: Tuple[int, int],
-            iterations: int, working_dir: str, classification_postfix: str,
-            heatmap_postfix: str, file_extension: str) -> Tuple[str, str]:
+        original_input_path: str,
+        classification_path: str,
+        heatmap_path: str,
+        garbage_c_id: int,
+        water_c_id: int,
+        matrix: Tuple[int, int],
+        iterations: int,
+        working_dir: str,
+        classification_postfix: str,
+        heatmap_postfix: str,
+        file_extension: str,
+    ) -> Tuple[str, str]:
         """
         Creates the masked classification and masked heatmap based on the input classification and input heatmap.
         Uses morphological transformations (opening and dilation).
@@ -1042,9 +1181,9 @@ class Model(object):
         """
 
         # open inputs
-        with rasterio.open(classification_path, "r") as classification_matrix, \
-             rasterio.open(heatmap_path, "r") as heatmap_matrix:
-
+        with rasterio.open(
+            classification_path, "r"
+        ) as classification_matrix, rasterio.open(heatmap_path, "r") as heatmap_matrix:
             # create matrices
             classification_matrix = classification_matrix.read(1)
             heatmap_matrix = heatmap_matrix.read(1)
@@ -1055,18 +1194,34 @@ class Model(object):
             rows, cols = classification_matrix.shape
 
             # output paths
-            morphology_path = Model._output_path([original_input_path], working_dir, "morphology", file_extension)
-            opening_path = Model._output_path([original_input_path], working_dir, "morphology_opening", file_extension)
-            dilation_path = Model._output_path([original_input_path], working_dir, "morphology_opening_dilation",
-                                               file_extension)
-            masked_classification_path = Model._output_path([original_input_path], working_dir, classification_postfix,
-                                                            file_extension)
-            masked_heatmap_path = Model._output_path([original_input_path], working_dir, heatmap_postfix,
-                                                     file_extension)
+            morphology_path = Model._output_path(
+                [original_input_path], working_dir, "morphology", file_extension
+            )
+            opening_path = Model._output_path(
+                [original_input_path], working_dir, "morphology_opening", file_extension
+            )
+            dilation_path = Model._output_path(
+                [original_input_path],
+                working_dir,
+                "morphology_opening_dilation",
+                file_extension,
+            )
+            masked_classification_path = Model._output_path(
+                [original_input_path],
+                working_dir,
+                classification_postfix,
+                file_extension,
+            )
+            masked_heatmap_path = Model._output_path(
+                [original_input_path], working_dir, heatmap_postfix, file_extension
+            )
 
             for i in range(rows):
                 for j in range(cols):
-                    if classification_matrix[i, j] == garbage_c_id or classification_matrix[i, j] == water_c_id:
+                    if (
+                        classification_matrix[i, j] == garbage_c_id
+                        or classification_matrix[i, j] == water_c_id
+                    ):
                         morphology_matrix[i, j] = 1
                     else:
                         morphology_matrix[i, j] = 0
@@ -1079,16 +1234,22 @@ class Model(object):
                 output_path=morphology_path,
             )
 
-            opening = Model._morphology("opening", morphology_path, opening_path, matrix=matrix)
+            opening = Model._morphology(
+                "opening", morphology_path, opening_path, matrix=matrix
+            )
 
             if opening is not None:
-                dilation = Model._morphology("dilation", opening_path, dilation_path, iterations=iterations)
+                dilation = Model._morphology(
+                    "dilation", opening_path, dilation_path, iterations=iterations
+                )
 
                 if dilation is not None:
                     for i in range(rows):
                         for j in range(cols):
                             if dilation[i, j] == 1:
-                                masked_classification[i, j] = classification_matrix[i, j]
+                                masked_classification[i, j] = classification_matrix[
+                                    i, j
+                                ]
                                 masked_heatmap[i, j] = heatmap_matrix[i, j]
                             else:
                                 masked_classification[i, j] = 0
@@ -1120,7 +1281,9 @@ class Model(object):
             return masked_classification_path, masked_heatmap_path
 
     @staticmethod
-    def get_heatmap_color_map(input_path: str, low_medium_high: List[str]) -> ListedColormap:
+    def get_heatmap_color_map(
+        input_path: str, low_medium_high: List[str]
+    ) -> ListedColormap:
         """
         Creates a color map based on the values in the heatmap image.
 
@@ -1140,9 +1303,11 @@ class Model(object):
 
             color_list = list()
             for value in unique_values:
-                if (value == 1 and "low" in low_medium_high) or \
-                   (value == 2 and "medium" in low_medium_high) or \
-                   (value == 3 and "high" in low_medium_high):
+                if (
+                    (value == 1 and "low" in low_medium_high)
+                    or (value == 2 and "medium" in low_medium_high)
+                    or (value == 3 and "high" in low_medium_high)
+                ):
                     color = HEATMAP_COLORS[value]
                 else:
                     color = HEATMAP_COLORS[0]
@@ -1159,8 +1324,11 @@ class Model(object):
     # Static protected methods
     @staticmethod
     def _create_random_forest(
-            training_data_path: str, column_names: List[str], label_names: List[str],
-            estimators: int) -> RandomForestClassifier:
+        training_data_path: str,
+        column_names: List[str],
+        label_names: List[str],
+        estimators: int,
+    ) -> RandomForestClassifier:
         """
         Trains the RandomForestClassifier based on the training data.
 
@@ -1172,7 +1340,7 @@ class Model(object):
         """
 
         # read training data
-        df = pd.read_csv(training_data_path, sep=';')
+        df = pd.read_csv(training_data_path, sep=";")
 
         # narrow training data
         data = df[column_names]
@@ -1187,7 +1355,9 @@ class Model(object):
         return clf
 
     @staticmethod
-    def _calculate_indices(get_list: List[str], bands: Dict[str, np.ndarray]) -> List[np.ndarray]:
+    def _calculate_indices(
+        get_list: List[str], bands: Dict[str, np.ndarray]
+    ) -> List[np.ndarray]:
         # calculate indices
         # PI = NIR / (NIR + RED)
         # NDWI = (GREEN - NIR) / (GREEN + NIR)
@@ -1214,19 +1384,27 @@ class Model(object):
                 pi = Model._calculate_index(numerator=nir, denominator=nir + red)
                 list_of_bands_and_indices.append(pi)
             elif item == "ndwi":
-                ndwi = Model._calculate_index(numerator=green - nir, denominator=green + nir)
+                ndwi = Model._calculate_index(
+                    numerator=green - nir, denominator=green + nir
+                )
                 list_of_bands_and_indices.append(ndwi)
             elif item == "ndvi":
-                ndvi = Model._calculate_index(numerator=nir - red, denominator=nir + red)
+                ndvi = Model._calculate_index(
+                    numerator=nir - red, denominator=nir + red
+                )
                 list_of_bands_and_indices.append(ndvi)
             elif item == "rndvi":
-                rndvi = Model._calculate_index(numerator=red - nir, denominator=red + nir)
+                rndvi = Model._calculate_index(
+                    numerator=red - nir, denominator=red + nir
+                )
                 list_of_bands_and_indices.append(rndvi)
             elif item == "sr":
                 sr = Model._calculate_index(numerator=nir, denominator=red)
                 list_of_bands_and_indices.append(sr)
             elif item == "apwi":
-                apwi = Model._calculate_index(numerator=blue, denominator=1 - (red + green + nir) / 3)
+                apwi = Model._calculate_index(
+                    numerator=blue, denominator=1 - (red + green + nir) / 3
+                )
                 list_of_bands_and_indices.append(apwi)
 
         return list_of_bands_and_indices
@@ -1239,19 +1417,23 @@ class Model(object):
         :return: A dataframe that has noisy data added to it.
         """
 
-        data_copy = data.copy()[["BLUE", "GREEN", "RED", "NIR", "PI", "NDWI", "NDVI", "RNDVI", "SR"]]
-        noise = (np.random.normal(0, .1, data_copy.shape) * 1000).astype(int)
+        data_copy = data.copy()[
+            ["BLUE", "GREEN", "RED", "NIR", "PI", "NDWI", "NDVI", "RNDVI", "SR"]
+        ]
+        noise = (np.random.normal(0, 0.1, data_copy.shape) * 1000).astype(int)
         data_copy = data_copy + noise
         bands = {
             "blue": np.expand_dims(data_copy["BLUE"].to_numpy(), axis=0),
-            "green": np.expand_dims(data_copy["GREEN"].to_numpy(), axis = 0),
-            "red": np.expand_dims(data_copy["RED"].to_numpy(), axis = 0),
-            "nir": np.expand_dims(data_copy["NIR"].to_numpy(), axis = 0)
+            "green": np.expand_dims(data_copy["GREEN"].to_numpy(), axis=0),
+            "red": np.expand_dims(data_copy["RED"].to_numpy(), axis=0),
+            "nir": np.expand_dims(data_copy["NIR"].to_numpy(), axis=0),
         }
 
         requested_indices = [col.lower() for col in data_copy.columns]
-        labels = [data["SURFACE"].to_numpy(),data["COD"].to_numpy()]
-        indices = [id.flatten() for id in Model._calculate_indices(requested_indices, bands)]
+        labels = [data["SURFACE"].to_numpy(), data["COD"].to_numpy()]
+        indices = [
+            id.flatten() for id in Model._calculate_indices(requested_indices, bands)
+        ]
         labels_indices = [pd.Series(col) for col in labels + indices]
 
         data_noisy = pd.DataFrame(labels_indices).T
@@ -1261,7 +1443,9 @@ class Model(object):
         return data_noisy
 
     @staticmethod
-    def _get_coords_inside_polygon(polygon_coords: List[float], bbox_coords: Tuple[int, ...]) -> List[Tuple[int, int]]:
+    def _get_coords_inside_polygon(
+        polygon_coords: List[float], bbox_coords: Tuple[int, ...]
+    ) -> List[Tuple[int, int]]:
         """
         Calculates the coordinates inside a given polygon.
 
@@ -1286,7 +1470,12 @@ class Model(object):
         return coords
 
     @staticmethod
-    def _output_path(input_paths: List[str], working_dir: str, postfix: str, output_file_extension: str) -> str:
+    def _output_path(
+        input_paths: List[str],
+        working_dir: str,
+        postfix: str,
+        output_file_extension: str,
+    ) -> str:
         """
         Returns generated output path from given parameters.
 
@@ -1305,14 +1494,26 @@ class Model(object):
             for path in input_paths:
                 file_name = "".join(path.split(".")[:-1]).split("/")[-1]
                 file_names.append(file_name)
-            output_path = working_dir + "/" + "_".join(file_names) + postfix + "." + output_file_extension
+            output_path = (
+                working_dir
+                + "/"
+                + "_".join(file_names)
+                + postfix
+                + "."
+                + output_file_extension
+            )
         return output_path
 
     @staticmethod
     def _save_tif(
-            input_path: str, array: List[np.ndarray], shape: Tuple[int, int],
-            band_count: int, output_path: str, new_geo_trans: Tuple[float, float] = None,
-            metadata: Dict[str, str] = None) -> None:
+        input_path: str,
+        array: List[np.ndarray],
+        shape: Tuple[int, int],
+        band_count: int,
+        output_path: str,
+        new_geo_trans: Tuple[float, float] = None,
+        metadata: Dict[str, str] = None,
+    ) -> None:
         """
         Saves arrays (1 or more) to a georeferenced tif file.
 
@@ -1341,7 +1542,9 @@ class Model(object):
                 geotrans[3] = new_geo_trans[1]
                 geotrans = tuple(geotrans)
 
-            dataset = driver.Create(output_path, x_pixels, y_pixels, band_count, gdal.GDT_Float32)
+            dataset = driver.Create(
+                output_path, x_pixels, y_pixels, band_count, gdal.GDT_Float32
+            )
             dataset.SetGeoTransform(geotrans)
             dataset.SetProjection(projection)
 
@@ -1385,17 +1588,25 @@ class Model(object):
         invalid_mask = nan_mask | (numerator_zero_mask & denominator_zero_mask)
         valid_mask = np.logical_not(invalid_mask)
 
-        valid_denominator_non_zero_mask = valid_mask & np.logical_not(denominator_zero_mask)
+        valid_denominator_non_zero_mask = valid_mask & np.logical_not(
+            denominator_zero_mask
+        )
         valid_denominator_zero_mask = valid_mask & denominator_zero_mask
 
-        numerator_positive_denominator_zero_mask = valid_denominator_zero_mask & (numerator > 0)
-        numerator_negative_denominator_zero_mask = valid_denominator_zero_mask & (numerator < 0)
+        numerator_positive_denominator_zero_mask = valid_denominator_zero_mask & (
+            numerator > 0
+        )
+        numerator_negative_denominator_zero_mask = valid_denominator_zero_mask & (
+            numerator < 0
+        )
 
         index[invalid_mask] = float("NaN")
         index[numerator_positive_denominator_zero_mask] = numerator_nan_max
         index[numerator_negative_denominator_zero_mask] = numerator_nan_min
-        index[valid_denominator_non_zero_mask] = \
-            numerator[valid_denominator_non_zero_mask] / denominator[valid_denominator_non_zero_mask]
+        index[valid_denominator_non_zero_mask] = (
+            numerator[valid_denominator_non_zero_mask]
+            / denominator[valid_denominator_non_zero_mask]
+        )
 
         # return index values
         return index
@@ -1412,7 +1623,18 @@ class Model(object):
         string_list = string.lower().split("-")
 
         if "all" in string_list:
-            return ["blue", "green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr", "apwi"]
+            return [
+                "blue",
+                "green",
+                "red",
+                "nir",
+                "pi",
+                "ndwi",
+                "ndvi",
+                "rndvi",
+                "sr",
+                "apwi",
+            ]
         elif "all_no_blue" in string_list:
             return ["green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr"]
         elif "bands" in string_list:
@@ -1445,7 +1667,9 @@ class Model(object):
         return bands_indices
 
     @staticmethod
-    def _get_coords_of_pixel(i: int, j: int, gt: Tuple[int, ...]) -> Tuple[float, float]:
+    def _get_coords_of_pixel(
+        i: int, j: int, gt: Tuple[int, ...]
+    ) -> Tuple[float, float]:
         """
         Calculates the geographical coordinate of the pixel in row "i" and column "j",
         based on the picture's GeoTransform.
@@ -1491,7 +1715,8 @@ class Model(object):
 
     @staticmethod
     def _get_empty_intersection_matrix_and_start_coords(
-            input_path_1: str, input_path_2: str) -> Union[Tuple[np.ndarray, Tuple], Tuple[None, None]]:
+        input_path_1: str, input_path_2: str
+    ) -> Union[Tuple[np.ndarray, Tuple], Tuple[None, None]]:
         """
         Calculates the intersection of two different sized matrices.
 
@@ -1516,13 +1741,18 @@ class Model(object):
             new_rows, new_cols = 0, 0
 
             if intersection:
-                larger_rows, larger_cols = np.unravel_index(intersection, larger_img.shape)
+                larger_rows, larger_cols = np.unravel_index(
+                    intersection, larger_img.shape
+                )
                 larger_start_index = (larger_rows[0], larger_cols[0])
 
                 start_coord = larger_img[larger_start_index]
 
                 smaller_start_index = np.where(smaller_img == start_coord)
-                smaller_start_index = smaller_start_index[0][0], smaller_start_index[1][0]
+                smaller_start_index = (
+                    smaller_start_index[0][0],
+                    smaller_start_index[1][0],
+                )
 
                 i, j = larger_start_index
                 k, l = smaller_start_index
@@ -1542,7 +1772,11 @@ class Model(object):
                     dtype="float32",
                 )
 
-                coords_information = (start_coord, larger_start_index, smaller_start_index)
+                coords_information = (
+                    start_coord,
+                    larger_start_index,
+                    smaller_start_index,
+                )
 
                 return intersection_matrix, coords_information
 
@@ -1550,9 +1784,15 @@ class Model(object):
 
     @staticmethod
     def create_classification_and_heatmap_with_random_forest(
-            input_path: str, clf: RandomForestClassifier, low_medium_high_values: Tuple[float, ...],
-            garbage_c_id: int, working_dir: str, classification_postfix: str,
-            heatmap_postfix: str, file_extension: str) -> Tuple[str, str]:
+        input_path: str,
+        clf: RandomForestClassifier,
+        low_medium_high_values: Tuple[float, ...],
+        garbage_c_id: int,
+        working_dir: str,
+        classification_postfix: str,
+        heatmap_postfix: str,
+        file_extension: str,
+    ) -> Tuple[str, str]:
         """
         Creates classification and garbage heatmap with Random Forest Classifier.
 
@@ -1588,12 +1828,19 @@ class Model(object):
             array = np.reshape(array, [rows * cols, bands])
 
             # array to data frame
-            array_df = pd.DataFrame(array, dtype='float32')
+            array_df = pd.DataFrame(array, dtype="float32")
 
-            split_size = ceil(array_df.shape[0] / ceil((array_df.shape[0] * MAX_CLASS_COUNT) / MAX_CLASS_VALUE_COUNT))
-            split_count = ceil((array_df.shape[0] * MAX_CLASS_COUNT) / MAX_CLASS_VALUE_COUNT)
+            split_size = ceil(
+                array_df.shape[0]
+                / ceil((array_df.shape[0] * MAX_CLASS_COUNT) / MAX_CLASS_VALUE_COUNT)
+            )
+            split_count = ceil(
+                (array_df.shape[0] * MAX_CLASS_COUNT) / MAX_CLASS_VALUE_COUNT
+            )
             for c in range(split_count):
-                new_array_df = array_df[c * split_size:(c + 1) * split_size].dropna(axis="index")
+                new_array_df = array_df[c * split_size : (c + 1) * split_size].dropna(
+                    axis="index"
+                )
                 pred_proba = clf.predict_proba(new_array_df)
 
                 counter = 0
@@ -1610,9 +1857,17 @@ class Model(object):
                     if classes[max_ind] == garbage_c_id:
                         if max_value >= low_medium_high_values[2]:
                             heatmap[i] = HIGH_PROB_VALUE
-                        elif low_medium_high_values[1] <= max_value < low_medium_high_values[2]:
+                        elif (
+                            low_medium_high_values[1]
+                            <= max_value
+                            < low_medium_high_values[2]
+                        ):
                             heatmap[i] = MEDIUM_PROB_VALUE
-                        elif low_medium_high_values[0] <= max_value < low_medium_high_values[1]:
+                        elif (
+                            low_medium_high_values[0]
+                            <= max_value
+                            < low_medium_high_values[1]
+                        ):
                             heatmap[i] = LOW_PROB_VALUE
 
                     classification[i] = classes[max_ind]
@@ -1621,8 +1876,12 @@ class Model(object):
 
             classification = classification.reshape((rows, cols))
             heatmap = heatmap.reshape((rows, cols))
-            classification_output_path = Model._output_path([input_path], working_dir, classification_postfix, file_extension)
-            heatmap_output_path = Model._output_path([input_path], working_dir, heatmap_postfix, file_extension)
+            classification_output_path = Model._output_path(
+                [input_path], working_dir, classification_postfix, file_extension
+            )
+            heatmap_output_path = Model._output_path(
+                [input_path], working_dir, heatmap_postfix, file_extension
+            )
 
             # save classification
             Model._save_tif(
@@ -1650,8 +1909,13 @@ class Model(object):
             del ds
 
     @staticmethod
-    def _morphology(morph_type: str, path: str, output: str,
-                    matrix: Tuple[int, int] = (3, 3), iterations: int = 1) -> Union[np.ndarray, None]:
+    def _morphology(
+        morph_type: str,
+        path: str,
+        output: str,
+        matrix: Tuple[int, int] = (3, 3),
+        iterations: int = 1,
+    ) -> Union[np.ndarray, None]:
         """
         Morphological transformations: https://docs.opencv.org/4.5.2/d9/d61/tutorial_py_morphological_ops.html
 
@@ -1719,7 +1983,9 @@ class Model(object):
         return 0 <= col < shape[1]
 
     @staticmethod
-    def _is_search_value(matrix: np.ndarray, row: int, col: int, search_value: List[int]) -> bool:
+    def _is_search_value(
+        matrix: np.ndarray, row: int, col: int, search_value: List[int]
+    ) -> bool:
         """
         Checks whether the value of the given pixel is the expected value or not.
         Source: https://playandlearntocode.com/article/flood-fill-algorithm-in-python
@@ -1743,8 +2009,9 @@ class Model(object):
             return False
 
     @staticmethod
-    def _iterative_flood_fill(matrix: np.ndarray, row: int, col: int,
-                              search_value: List[int]) -> Union[List[Tuple[int, int]], None]:
+    def _iterative_flood_fill(
+        matrix: np.ndarray, row: int, col: int, search_value: List[int]
+    ) -> Union[List[Tuple[int, int]], None]:
         """
         Iterative version of Flood fill algorithm.
         Returns the indices of a region containing the expected value.
@@ -1796,7 +2063,9 @@ class Model(object):
         return region
 
     @staticmethod
-    def _find_regions(matrix: np.ndarray, search_value: List[int]) -> List[List[Tuple[int, int]]]:
+    def _find_regions(
+        matrix: np.ndarray, search_value: List[int]
+    ) -> List[List[Tuple[int, int]]]:
         """
         Calculates all the separate regions containing the expected value.
 
@@ -1818,7 +2087,9 @@ class Model(object):
         return all_regions
 
     @staticmethod
-    def _get_bbox_indices_of_region(region: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+    def _get_bbox_indices_of_region(
+        region: List[Tuple[int, int]]
+    ) -> List[Tuple[int, int]]:
         """
         Calculates the indices of the bounding box of the given region.
 
@@ -1834,12 +2105,19 @@ class Model(object):
         min_col = min(col_indices)
         max_col = max(col_indices)
 
-        bbox = [(min_row, min_col), (min_row, max_col), (max_row, max_col), (max_row, min_col)]
+        bbox = [
+            (min_row, min_col),
+            (min_row, max_col),
+            (max_row, max_col),
+            (max_row, min_col),
+        ]
 
         return bbox
 
     @staticmethod
-    def _get_bbox_indices_of_all_regions(all_regions: List[List[Tuple[int, int]]]) -> List[List[Tuple[int, int]]]:
+    def _get_bbox_indices_of_all_regions(
+        all_regions: List[List[Tuple[int, int]]]
+    ) -> List[List[Tuple[int, int]]]:
         """
         Returns the indices of the bounding boxes of all the given regions.
 
@@ -1856,8 +2134,9 @@ class Model(object):
         return bboxes
 
     @staticmethod
-    def _get_bbox_coordinates_of_same_areas(input_path: str,
-                                            search_value: List[int]) -> Union[List[List[Tuple[int, ...]]], None]:
+    def _get_bbox_coordinates_of_same_areas(
+        input_path: str, search_value: List[int]
+    ) -> Union[List[List[Tuple[int, ...]]], None]:
         """
         Calculates the coordinates of bounding boxes of the same areas.
 
@@ -1889,7 +2168,9 @@ class Model(object):
 
                 coords.append(upper_left)
                 coords.append((upper_right[0] + pixel_size_x, upper_right[1]))
-                coords.append((bottom_right[0] + pixel_size_x, bottom_right[1] - pixel_size_y))
+                coords.append(
+                    (bottom_right[0] + pixel_size_x, bottom_right[1] - pixel_size_y)
+                )
                 coords.append((bottom_left[0], bottom_left[1] - pixel_size_y))
 
                 bbox_coords.append(coords)

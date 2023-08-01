@@ -1,19 +1,19 @@
 # Server application for continuous waste detection
 
 ## Running the application in Docker Container
+
 1. **Build image:** `docker build -t server_app .`
 2. **Run container:** `docker run -it --name server_app_container --mount type=bind,source="$(pwd)"/docker/config.docker.json,target=/mnt/config.docker.json,readonly --mount type=bind,source={YOUR OUTPUT DIRECTORY},target=/mnt/output server_app [startup] [sleep]`
-    - `startup`: Starts a startup process before the main loop.
-    - `sleep`: Sleeps after execution until the previously set local time.
+   - `startup`: Starts a startup process before the main loop.
+   - `sleep`: Sleeps after execution until the previously set local time.
 
 ## Running the application
 
 1. **Create the virtual environment:** `conda env create -f environment.yml`. The name of the new environment will be `WasteDetectionServerApp`.
 2. **Activate environment:** `conda activate WasteDetectionServerApp`.
 3. **Run the application:** `python __main__.py (-st) (-s)` There are two flags that can be used optionally:
-    - `-st`: Starts a startup process before the main loop.
-    - `-s`: Sleeps after execution until the previously set local time.
-   
+   - `-st`: Starts a startup process before the main loop.
+   - `-s`: Sleeps after execution until the previously set local time.
 
 ## Configuration
 
@@ -24,7 +24,7 @@ Meaning of the parameters in `config.sample.json` file:
 - `result_dir_planetscope`: Output directory of result GeoJSON files created from PlanetScope images.
 - `result_dir_sentinel-2`: Output directory of result GeoJSON files created from Sentinel-2 images.
 - `estimations_file_path`: Path of the file that will contain the estimation of the polluted areas' extension.
-- `geojson_files_path`: Path of the dynamically produced JSON file that stores the location of the result GeoJSONs. 
+- `geojson_files_path`: Path of the dynamically produced JSON file that stores the location of the result GeoJSONs.
 - `planet_api_key`: Planet Account API key.
 - `sentinel_sh_client_id`: Account OAuth client ID in SentinelHub.
 - `sentinel_instance_id`: Account User ID in SentinelHub.

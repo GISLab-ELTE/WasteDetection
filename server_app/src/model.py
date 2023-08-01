@@ -48,7 +48,9 @@ class Model(object):
         self.high_prob_value = int(self.config_file["high_prob_value"])
         self.classification_postfix = self.config_file["classification_postfix"]
         self.heatmap_postfix = self.config_file["heatmap_postfix"]
-        self.masked_classification_postfix = self.config_file["masked_classification_postfix"]
+        self.masked_classification_postfix = self.config_file[
+            "masked_classification_postfix"
+        ]
         self.masked_heatmap_postfix = self.config_file["masked_heatmap_postfix"]
         self.file_extension = self.config_file["file_extension"]
 
@@ -60,9 +62,9 @@ class Model(object):
         elif self.satellite_type.lower() == "Sentinel-2".lower():
             self.pixel_size_x = self.pixel_size_y = 10
 
-    def create_classification_and_heatmap_with_random_forest(self,
-                                                             input_path: str,
-                                                             clf: RandomForestClassifier) -> Tuple[str, str]:
+    def create_classification_and_heatmap_with_random_forest(
+        self, input_path: str, clf: RandomForestClassifier
+    ) -> Tuple[str, str]:
         """
         Creates classification and garbage heatmap with Random Forest Classifier.
 
@@ -94,13 +96,22 @@ class Model(object):
             # array to data frame
             array_df = pd.DataFrame(array, dtype="float32")
 
-            split_size = ceil(array_df.shape[0] /
-                              ceil((array_df.shape[0] * self.max_class_count) / self.max_class_value_count))
+            split_size = ceil(
+                array_df.shape[0]
+                / ceil(
+                    (array_df.shape[0] * self.max_class_count)
+                    / self.max_class_value_count
+                )
+            )
 
-            split_count = ceil((array_df.shape[0] * self.max_class_count) / self.max_class_value_count)
+            split_count = ceil(
+                (array_df.shape[0] * self.max_class_count) / self.max_class_value_count
+            )
 
             for c in range(split_count):
-                new_array_df = array_df[c * split_size:(c + 1) * split_size].dropna(axis="index")
+                new_array_df = array_df[c * split_size : (c + 1) * split_size].dropna(
+                    axis="index"
+                )
                 pred_proba = clf.predict_proba(new_array_df)
                 counter = 0
                 for i in range(c * split_size, (c + 1) * split_size):
@@ -116,9 +127,17 @@ class Model(object):
                     if classes[max_ind] == self.garbage_c_id * 100:
                         if max_value >= self.high_prob_percent / 100:
                             heatmap[i] = self.high_prob_value
-                        elif self.medium_prob_percent / 100 <= max_value < self.high_prob_percent / 100:
+                        elif (
+                            self.medium_prob_percent / 100
+                            <= max_value
+                            < self.high_prob_percent / 100
+                        ):
                             heatmap[i] = self.medium_prob_value
-                        elif self.low_prob_percent / 100 <= max_value < self.medium_prob_percent / 100:
+                        elif (
+                            self.low_prob_percent / 100
+                            <= max_value
+                            < self.medium_prob_percent / 100
+                        ):
                             heatmap[i] = self.low_prob_value
 
                     classification[i] = classes[max_ind]
@@ -128,8 +147,12 @@ class Model(object):
             classification = classification.reshape((rows, cols))
             heatmap = heatmap.reshape((rows, cols))
 
-            classification_output_path = Model.output_path(input_path, self.classification_postfix, self.file_extension)
-            heatmap_output_path = Model.output_path(input_path, self.heatmap_postfix, self.file_extension)
+            classification_output_path = Model.output_path(
+                input_path, self.classification_postfix, self.file_extension
+            )
+            heatmap_output_path = Model.output_path(
+                input_path, self.heatmap_postfix, self.file_extension
+            )
 
             # save classification
             Model.save_tif(
@@ -209,13 +232,19 @@ class Model(object):
                     pi = Model.calculate_index(numerator=nir, denominator=nir + red)
                     list_of_bands_and_indices.append(pi)
                 elif item == "ndwi":
-                    ndwi = Model.calculate_index(numerator=green - nir, denominator=green + nir)
+                    ndwi = Model.calculate_index(
+                        numerator=green - nir, denominator=green + nir
+                    )
                     list_of_bands_and_indices.append(ndwi)
                 elif item == "ndvi":
-                    ndvi = Model.calculate_index(numerator=nir - red, denominator=nir + red)
+                    ndvi = Model.calculate_index(
+                        numerator=nir - red, denominator=nir + red
+                    )
                     list_of_bands_and_indices.append(ndvi)
                 elif item == "rndvi":
-                    rndvi = Model.calculate_index(numerator=red - nir, denominator=red + nir)
+                    rndvi = Model.calculate_index(
+                        numerator=red - nir, denominator=red + nir
+                    )
                     list_of_bands_and_indices.append(rndvi)
                 elif item == "sr":
                     sr = Model.calculate_index(numerator=nir, denominator=red)
@@ -252,8 +281,7 @@ class Model(object):
 
         return output_path
 
-    def estimate_garbage_area(
-            self, input_path: str, image_type: str) -> float:
+    def estimate_garbage_area(self, input_path: str, image_type: str) -> float:
         """
         Estimates the area covered by garbage, based on the pixel size of a picture.
 
@@ -291,17 +319,20 @@ class Model(object):
             elif image_type.lower() == "heatmap":
                 for i in range(rows):
                     for j in range(cols):
-                        if band[i, j] == self.low_prob_value or \
-                           band[i, j] == self.medium_prob_value or \
-                           band[i, j] == self.high_prob_value:
+                        if (
+                            band[i, j] == self.low_prob_value
+                            or band[i, j] == self.medium_prob_value
+                            or band[i, j] == self.high_prob_value
+                        ):
                             area += self.pixel_size_x * self.pixel_size_y
 
             return area
         finally:
             del dataset
 
-    def create_masked_classification_and_heatmap(self, original_input_path: str, classification_path: str,
-                                                 heatmap_path: str) -> Tuple[str, str]:
+    def create_masked_classification_and_heatmap(
+        self, original_input_path: str, classification_path: str, heatmap_path: str
+    ) -> Tuple[str, str]:
         """
         Creates the masked classification and masked heatmap based on the input classification and input heatmap.
         Uses morphological transformations (opening and dilation).
@@ -313,9 +344,9 @@ class Model(object):
         """
 
         # open inputs
-        with rasterio.open(classification_path, "r") as classification_matrix, \
-             rasterio.open(heatmap_path, "r") as heatmap_matrix:
-
+        with rasterio.open(
+            classification_path, "r"
+        ) as classification_matrix, rasterio.open(heatmap_path, "r") as heatmap_matrix:
             # create matrices
             classification_matrix = classification_matrix.read(1)
             heatmap_matrix = heatmap_matrix.read(1)
@@ -326,18 +357,30 @@ class Model(object):
             rows, cols = classification_matrix.shape
 
             # output paths
-            morphology_path = self.output_path(original_input_path, "morphology", self.file_extension)
-            opening_path = self.output_path(original_input_path, "morphology_opening", self.file_extension)
-            dilation_path = self.output_path(original_input_path, "morphology_opening_dilation", self.file_extension)
-            masked_classification_path = self.output_path(original_input_path, self.masked_classification_postfix,
-                                                          self.file_extension)
-            masked_heatmap_path = self.output_path(original_input_path, self.masked_heatmap_postfix,
-                                                   self.file_extension)
+            morphology_path = self.output_path(
+                original_input_path, "morphology", self.file_extension
+            )
+            opening_path = self.output_path(
+                original_input_path, "morphology_opening", self.file_extension
+            )
+            dilation_path = self.output_path(
+                original_input_path, "morphology_opening_dilation", self.file_extension
+            )
+            masked_classification_path = self.output_path(
+                original_input_path,
+                self.masked_classification_postfix,
+                self.file_extension,
+            )
+            masked_heatmap_path = self.output_path(
+                original_input_path, self.masked_heatmap_postfix, self.file_extension
+            )
 
             for i in range(rows):
                 for j in range(cols):
-                    if classification_matrix[i, j] == self.garbage_c_id * 100 or \
-                       classification_matrix[i, j] == self.water_c_id * 100:
+                    if (
+                        classification_matrix[i, j] == self.garbage_c_id * 100
+                        or classification_matrix[i, j] == self.water_c_id * 100
+                    ):
                         morphology_matrix[i, j] = 1
                     else:
                         morphology_matrix[i, j] = 0
@@ -351,15 +394,23 @@ class Model(object):
             )
 
             matrix = self.morphology_matrix_size, self.morphology_matrix_size
-            opening = Model.morphology("opening", morphology_path, opening_path, matrix=matrix)
+            opening = Model.morphology(
+                "opening", morphology_path, opening_path, matrix=matrix
+            )
             if opening is not None:
-                dilation = Model.morphology("dilation", opening_path,
-                                            dilation_path, iterations=self.morphology_iterations)
+                dilation = Model.morphology(
+                    "dilation",
+                    opening_path,
+                    dilation_path,
+                    iterations=self.morphology_iterations,
+                )
                 if dilation is not None:
                     for i in range(rows):
                         for j in range(cols):
                             if dilation[i, j] == 1:
-                                masked_classification[i, j] = classification_matrix[i, j]
+                                masked_classification[i, j] = classification_matrix[
+                                    i, j
+                                ]
                                 masked_heatmap[i, j] = heatmap_matrix[i, j]
                             else:
                                 masked_classification[i, j] = 0
@@ -408,7 +459,9 @@ class Model(object):
         return x_coord, y_coord
 
     @staticmethod
-    def get_bbox_of_pixel(i: int, j: int, gt: Tuple[int, ...]) -> List[Tuple[float, float]]:
+    def get_bbox_of_pixel(
+        i: int, j: int, gt: Tuple[int, ...]
+    ) -> List[Tuple[float, float]]:
         """
         Calculates the bounding box of a single pixel.
 
@@ -497,7 +550,9 @@ class Model(object):
 
             polygon = geojson.Polygon([bbox_transformed])
 
-            features.append(geojson.Feature(geometry=polygon, properties={"id": str(polygon_id)}))
+            features.append(
+                geojson.Feature(geometry=polygon, properties={"id": str(polygon_id)})
+            )
 
             polygon_id += 1
 
@@ -511,7 +566,10 @@ class Model(object):
         if polygons:
             boundary = gpd.GeoSeries(unary_union(polygons))
             boundary = boundary.__geo_interface__
-            boundary["crs"] = {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::3857"}}
+            boundary["crs"] = {
+                "type": "name",
+                "properties": {"name": "urn:ogc:def:crs:EPSG::3857"},
+            }
         else:
             boundary = {"type": "FeatureCollection", "features": []}
 
@@ -536,12 +594,16 @@ class Model(object):
         for feature in new_data_file["features"]:
             if feature["geometry"]["type"] == "MultiPolygon":
                 feature["geometry"]["type"] = "Polygon"
-                feature["geometry"]["coordinates"] = feature["geometry"]["coordinates"][0]
+                feature["geometry"]["coordinates"] = feature["geometry"]["coordinates"][
+                    0
+                ]
 
         return new_data_file
 
     @staticmethod
-    def transform_coordinates(coords: List[List[int]], input_crs: str, output_crs: str) -> List[List[int]]:
+    def transform_coordinates(
+        coords: List[List[int]], input_crs: str, output_crs: str
+    ) -> List[List[int]]:
         """
         Transforms coordinates from one CRS to another.
 
@@ -553,7 +615,9 @@ class Model(object):
 
         transformed_coords = copy.deepcopy(coords)
 
-        transformer = pyproj.Transformer.from_crs(crs_from=input_crs, crs_to=output_crs, always_xy=True)
+        transformer = pyproj.Transformer.from_crs(
+            crs_from=input_crs, crs_to=output_crs, always_xy=True
+        )
 
         for i in range(len(coords)):
             x, y = coords[i]
@@ -572,20 +636,27 @@ class Model(object):
         :return: transformed version of data_file
         """
 
-        if "crs" in data_file.keys() and data_file["crs"]["properties"]["name"] != "urn:ogc:def:crs:OGC:1.3:CRS84":
+        if (
+            "crs" in data_file.keys()
+            and data_file["crs"]["properties"]["name"]
+            != "urn:ogc:def:crs:OGC:1.3:CRS84"
+        ):
             transformed_data_file = copy.deepcopy(data_file)
             for feature in transformed_data_file["features"]:
-
                 input_crs = transformed_data_file["crs"]["properties"]["name"]
                 output_crs = "epsg:4326"
 
                 coordinates = feature["geometry"]["coordinates"][0]
 
-                transformed_coords = Model.transform_coordinates(coordinates, input_crs, output_crs)
+                transformed_coords = Model.transform_coordinates(
+                    coordinates, input_crs, output_crs
+                )
 
                 feature["geometry"]["coordinates"] = [transformed_coords]
 
-            transformed_data_file["crs"]["properties"]["name"] = "urn:ogc:def:crs:OGC:1.3:CRS84"
+            transformed_data_file["crs"]["properties"][
+                "name"
+            ] = "urn:ogc:def:crs:OGC:1.3:CRS84"
 
             return transformed_data_file
         else:
@@ -684,8 +755,13 @@ class Model(object):
 
     @staticmethod
     def save_tif(
-            input_path: str, array: List[np.ndarray], shape: Tuple[int, int],
-            band_count: int, output_path: str, new_geo_trans: Tuple[float, float] = None) -> None:
+        input_path: str,
+        array: List[np.ndarray],
+        shape: Tuple[int, int],
+        band_count: int,
+        output_path: str,
+        new_geo_trans: Tuple[float, float] = None,
+    ) -> None:
         """
         Saves arrays (1 or more) to a georeferenced tif file.
 
@@ -713,7 +789,9 @@ class Model(object):
                 geotrans[3] = new_geo_trans[1]
                 geotrans = tuple(geotrans)
 
-            dataset = driver.Create(output_path, x_pixels, y_pixels, band_count, gdal.GDT_Float32)
+            dataset = driver.Create(
+                output_path, x_pixels, y_pixels, band_count, gdal.GDT_Float32
+            )
             dataset.SetGeoTransform(geotrans)
             dataset.SetProjection(projection)
 
@@ -728,8 +806,13 @@ class Model(object):
             del img_gdal
 
     @staticmethod
-    def morphology(morph_type: str, path: str, output: str,
-                   matrix: Tuple[int, int] = (3, 3), iterations: int = 1) -> Union[np.ndarray, None]:
+    def morphology(
+        morph_type: str,
+        path: str,
+        output: str,
+        matrix: Tuple[int, int] = (3, 3),
+        iterations: int = 1,
+    ) -> Union[np.ndarray, None]:
         """
         Morphological transformations: https://docs.opencv.org/4.5.2/d9/d61/tutorial_py_morphological_ops.html
 

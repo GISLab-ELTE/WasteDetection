@@ -11,8 +11,10 @@ CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/src/config.json"
 
 class TestAddFiles(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
-    
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
+
     def test_add_new_file(self) -> None:
         file_name = "NewFile1"
 
@@ -40,7 +42,9 @@ class TestAddFiles(unittest.TestCase, model.Model):
 
 class TestDeleteFiles(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_delete_file(self):
         self._opened_files += ["NewFile1", "NewFile2", "NewFile0", "NewFile4"]
@@ -66,7 +70,9 @@ class TestDeleteFiles(unittest.TestCase, model.Model):
 
 class TestSaveTrainingInputFile(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_save_file(self):
         path = "D:/Desktop/test.tif"
@@ -90,7 +96,9 @@ class TestSaveTrainingInputFile(unittest.TestCase, model.Model):
 
 class TestSavePointOnCanvas(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_save_point(self):
         tag_id = 42
@@ -103,7 +111,9 @@ class TestSavePointOnCanvas(unittest.TestCase, model.Model):
 
 class TestSaveNewMc(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_save_class(self):
         training_file = "D:/Desktop/test.tif"
@@ -144,16 +154,26 @@ class TestSaveNewMc(unittest.TestCase, model.Model):
         self.save_new_mc(training_file_2, mc_id_2, mc_name_2, color_2)
         self.save_new_mc(training_file_3, mc_id_3, mc_name_3, color_3)
 
-        self.assertTrue(all(file in self._tag_ids.keys() for file
-                            in [training_file_1, training_file_2, training_file_3]))
+        self.assertTrue(
+            all(
+                file in self._tag_ids.keys()
+                for file in [training_file_1, training_file_2, training_file_3]
+            )
+        )
 
         self.assertTrue(mc_id_1 in self._tag_ids[training_file_1].keys())
         self.assertTrue(mc_id_2 in self._tag_ids[training_file_2].keys())
         self.assertTrue(mc_id_3 in self._tag_ids[training_file_3].keys())
 
-        self.assertTrue(self._tag_ids[training_file_1][mc_id_1] == [mc_name_1, color_1, []])
-        self.assertTrue(self._tag_ids[training_file_2][mc_id_2] == [mc_name_2, color_2, []])
-        self.assertTrue(self._tag_ids[training_file_3][mc_id_3] == [mc_name_3, color_3, []])
+        self.assertTrue(
+            self._tag_ids[training_file_1][mc_id_1] == [mc_name_1, color_1, []]
+        )
+        self.assertTrue(
+            self._tag_ids[training_file_2][mc_id_2] == [mc_name_2, color_2, []]
+        )
+        self.assertTrue(
+            self._tag_ids[training_file_3][mc_id_3] == [mc_name_3, color_3, []]
+        )
 
         self.assertEqual(len(self._tag_ids.keys()), 3)
         self.assertEqual(len(self._tag_ids[training_file_1].keys()), 1)
@@ -168,7 +188,9 @@ class TestSaveNewMc(unittest.TestCase, model.Model):
 
 class TestDeleteMc(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_delete_class(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -213,7 +235,9 @@ class TestDeleteMc(unittest.TestCase, model.Model):
 
 class TestDeleteTagId(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_delete_tag_ids(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -246,7 +270,9 @@ class TestDeleteTagId(unittest.TestCase, model.Model):
 
 class TestSaveTagId(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_save_tag_ids(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -265,7 +291,9 @@ class TestSaveTagId(unittest.TestCase, model.Model):
 
 class TestSaveTagIdCoords(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_save_tag_id_coord(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -274,7 +302,9 @@ class TestSaveTagIdCoords(unittest.TestCase, model.Model):
         coords = [[(1, 2), (1, 3), (4, 2), (6, 9)], [0, 0]]
         bbox_coords = [(1, 2, 3, 4), (0, 0, 0, 0)]
 
-        self.save_tag_id_coords(training_file_1, mc_id_1, mc_name_1, coords, bbox_coords)
+        self.save_tag_id_coords(
+            training_file_1, mc_id_1, mc_name_1, coords, bbox_coords
+        )
 
         self.assertTrue(training_file_1 in self._tag_id_coords.keys())
         self.assertTrue(mc_id_1 in self._tag_id_coords[training_file_1].keys())
@@ -286,7 +316,9 @@ class TestSaveTagIdCoords(unittest.TestCase, model.Model):
 
 class TestDeletePoints(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_delete_points(self):
         for i in range(42):
@@ -300,7 +332,9 @@ class TestDeletePoints(unittest.TestCase, model.Model):
 
 class TestPlacePolygonOnCanvas(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_not_enough_points(self):
         self.save_point_on_canvas(33)
@@ -323,7 +357,9 @@ class TestPlacePolygonOnCanvas(unittest.TestCase, model.Model):
 
 class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_no_usable_one_file(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -341,7 +377,11 @@ class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
         self.assertEqual(usable_training_data, {})
 
     def test_no_usable_more_files(self):
-        training_files = ["D:/Desktop/test_1.tif", "D:/Desktop/test_2.tif", "D:/Desktop/test_3.tif"]
+        training_files = [
+            "D:/Desktop/test_1.tif",
+            "D:/Desktop/test_2.tif",
+            "D:/Desktop/test_3.tif",
+        ]
         mc_ids = [1, 2, 3]
         test_dict = dict()
 
@@ -349,7 +389,7 @@ class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
             test_dict[training_file] = dict()
 
         for i in range(len(training_files)):
-            for mc_id in mc_ids[:i+1]:
+            for mc_id in mc_ids[: i + 1]:
                 test_dict[training_files[i]][mc_id] = ["name", [], []]
 
         self.assertEqual(len(test_dict.keys()), 3)
@@ -370,7 +410,11 @@ class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
         test_dict[training_file_1] = dict()
         for mc_id in mc_ids:
             if mc_id == 2:
-                test_dict[training_file_1][mc_id] = ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]]
+                test_dict[training_file_1][mc_id] = [
+                    "name",
+                    [[1.1, 2.2, 3.3, 4.4]],
+                    [(1, 2, 3, 4)],
+                ]
             else:
                 test_dict[training_file_1][mc_id] = ["name", [], []]
 
@@ -378,11 +422,17 @@ class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
         usable_training_data, enough_data = self.create_usable_training_data()
 
         self.assertFalse(enough_data)
-        self.assertEqual(usable_training_data,
-                         {training_file_1: {2: ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]]}})
+        self.assertEqual(
+            usable_training_data,
+            {training_file_1: {2: ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]]}},
+        )
 
     def test_one_usable_more_files(self):
-        training_files = ["D:/Desktop/test_1.tif", "D:/Desktop/test_2.tif", "D:/Desktop/test_3.tif"]
+        training_files = [
+            "D:/Desktop/test_1.tif",
+            "D:/Desktop/test_2.tif",
+            "D:/Desktop/test_3.tif",
+        ]
         mc_ids = [1, 2, 3]
         test_dict = dict()
 
@@ -392,9 +442,13 @@ class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
         self.assertEqual(len(test_dict), 3)
 
         for i in range(len(training_files)):
-            for mc_id in mc_ids[:i + 1]:
+            for mc_id in mc_ids[: i + 1]:
                 if i == 2 and mc_id == 3:
-                    test_dict[training_files[i]][mc_id] = ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]]
+                    test_dict[training_files[i]][mc_id] = [
+                        "name",
+                        [[1.1, 2.2, 3.3, 4.4]],
+                        [(1, 2, 3, 4)],
+                    ]
                 else:
                     test_dict[training_files[i]][mc_id] = ["name", [], []]
 
@@ -402,8 +456,10 @@ class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
         usable_training_data, enough_data = self.create_usable_training_data()
 
         self.assertFalse(enough_data)
-        self.assertEqual(usable_training_data,
-                         {training_files[2]: {3: ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]]}})
+        self.assertEqual(
+            usable_training_data,
+            {training_files[2]: {3: ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]]}},
+        )
 
     def test_more_usable_one_file(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -412,16 +468,26 @@ class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
         test_dict[training_file_1] = dict()
 
         for mc_id in mc_ids:
-            test_dict[training_file_1][mc_id] = ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]]
+            test_dict[training_file_1][mc_id] = [
+                "name",
+                [[1.1, 2.2, 3.3, 4.4]],
+                [(1, 2, 3, 4)],
+            ]
 
         self._tag_id_coords = test_dict
         usable_training_data, enough_data = self.create_usable_training_data()
 
         self.assertTrue(enough_data)
-        self.assertEqual(usable_training_data,
-                         {training_file_1: {1: ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]],
-                                            2: ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]],
-                                            3: ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]]}})
+        self.assertEqual(
+            usable_training_data,
+            {
+                training_file_1: {
+                    1: ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]],
+                    2: ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]],
+                    3: ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]],
+                }
+            },
+        )
 
     def test_more_usable_more_files(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -433,7 +499,11 @@ class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
 
         for training_file in [training_file_1, training_file_2]:
             for mc_id in mc_ids:
-                test_dict[training_file][mc_id] = ["name", [[1.1, 2.2, 3.3, 4.4]], [(1, 2, 3, 4)]]
+                test_dict[training_file][mc_id] = [
+                    "name",
+                    [[1.1, 2.2, 3.3, 4.4]],
+                    [(1, 2, 3, 4)],
+                ]
 
         self._tag_id_coords = test_dict
         usable_training_data, enough_data = self.create_usable_training_data()
@@ -444,7 +514,9 @@ class TestCreateUsableTrainingData(unittest.TestCase, model.Model):
 
 class TestGetCoordsInsidePolygon(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_convex_polygon(self):
         polygon_coords = [1.0, 1.0, 2.0, 5.0, 4.0, 3.0, 3.0, 1.0]
@@ -464,8 +536,22 @@ class TestGetCoordsInsidePolygon(unittest.TestCase, model.Model):
 
         result = self._get_coords_inside_polygon(polygon_coords, bbox_coords)
 
-        expected = [(6, 2), (5, 3), (4, 3), (3, 3), (4, 4), (4, 6), (5, 6),
-                    (3, 7), (4, 7), (5, 7), (6, 7), (7, 7), (7, 8), (8, 8)]
+        expected = [
+            (6, 2),
+            (5, 3),
+            (4, 3),
+            (3, 3),
+            (4, 4),
+            (4, 6),
+            (5, 6),
+            (3, 7),
+            (4, 7),
+            (5, 7),
+            (6, 7),
+            (7, 7),
+            (7, 8),
+            (8, 8),
+        ]
 
         self.assertEqual(len(result), len(expected))
         for value in expected:
@@ -474,7 +560,9 @@ class TestGetCoordsInsidePolygon(unittest.TestCase, model.Model):
 
 class TestCalculateIndex(unittest.TestCase, model.Model):
     def setUp(self) -> None:
-        model.Model.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        model.Model.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
         self.shape = (3, 3)
 

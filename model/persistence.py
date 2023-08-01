@@ -87,7 +87,9 @@ class Persistence(object):
             self._settings = Persistence._load_settings(self._config_file)
 
             if self.get_value("DATA_FILE_PATH"):
-                self.data_file = Persistence._load_data_file(self.settings["DATA_FILE_PATH"])
+                self.data_file = Persistence._load_data_file(
+                    self.settings["DATA_FILE_PATH"]
+                )
 
             if self.get_value("CLF_PATH"):
                 self.clf = Persistence._load_clf(self.settings["CLF_PATH"])
@@ -99,13 +101,19 @@ class Persistence(object):
             self.floating_rf_path = self.get_value("FLOATING_RF_PATH")
 
             if self.get_value("MORPHOLOGY_MATRIX_SIZE"):
-                self.morphology_matrix_size = int(self.get_value("MORPHOLOGY_MATRIX_SIZE"))
+                self.morphology_matrix_size = int(
+                    self.get_value("MORPHOLOGY_MATRIX_SIZE")
+                )
 
             if self.get_value("MORPHOLOGY_ITERATIONS"):
-                self.morphology_iterations = int(self.get_value("MORPHOLOGY_ITERATIONS"))
+                self.morphology_iterations = int(
+                    self.get_value("MORPHOLOGY_ITERATIONS")
+                )
 
             if self.get_value("WASHED_UP_HEATMAP_SECTIONS"):
-                self.washed_up_heatmap_sections = int(self.get_value("WASHED_UP_HEATMAP_SECTIONS"))
+                self.washed_up_heatmap_sections = int(
+                    self.get_value("WASHED_UP_HEATMAP_SECTIONS")
+                )
 
             if self.get_value("HEATMAP_HIGH_PROB"):
                 self.heatmap_high_prob = int(self.get_value("HEATMAP_HIGH_PROB"))
@@ -116,12 +124,20 @@ class Persistence(object):
             if self.get_value("HEATMAP_LOW_PROB"):
                 self.heatmap_low_prob = int(self.get_value("HEATMAP_LOW_PROB"))
 
-            self.hotspot_classified_postfix = self.get_value("HOTSPOT_CLASSIFIED_POSTFIX")
+            self.hotspot_classified_postfix = self.get_value(
+                "HOTSPOT_CLASSIFIED_POSTFIX"
+            )
             self.hotspot_heatmap_postfix = self.get_value("HOTSPOT_HEATMAP_POSTFIX")
-            self.floating_classified_postfix = self.get_value("FLOATING_CLASSIFIED_POSTFIX")
+            self.floating_classified_postfix = self.get_value(
+                "FLOATING_CLASSIFIED_POSTFIX"
+            )
             self.floating_heatmap_postfix = self.get_value("FLOATING_HEATMAP_POSTFIX")
-            self.floating_masked_classified_postfix = self.get_value("FLOATING_MASKED_CLASSIFIED_POSTFIX")
-            self.floating_masked_heatmap_postfix = self.get_value("FLOATING_MASKED_HEATMAP_POSTFIX")
+            self.floating_masked_classified_postfix = self.get_value(
+                "FLOATING_MASKED_CLASSIFIED_POSTFIX"
+            )
+            self.floating_masked_heatmap_postfix = self.get_value(
+                "FLOATING_MASKED_HEATMAP_POSTFIX"
+            )
             self.washed_up_before_postfix = self.get_value("WASHED_UP_BEFORE_POSTFIX")
             self.washed_up_after_postfix = self.get_value("WASHED_UP_AFTER_POSTFIX")
 
@@ -218,8 +234,12 @@ class Persistence(object):
         self._settings["HOTSPOT_HEATMAP_POSTFIX"] = self.hotspot_heatmap_postfix
         self._settings["FLOATING_CLASSIFIED_POSTFIX"] = self.floating_classified_postfix
         self._settings["FLOATING_HEATMAP_POSTFIX"] = self.floating_heatmap_postfix
-        self._settings["FLOATING_MASKED_CLASSIFIED_POSTFIX"] = self.floating_masked_classified_postfix
-        self._settings["FLOATING_MASKED_HEATMAP_POSTFIX"] = self.floating_masked_heatmap_postfix
+        self._settings[
+            "FLOATING_MASKED_CLASSIFIED_POSTFIX"
+        ] = self.floating_masked_classified_postfix
+        self._settings[
+            "FLOATING_MASKED_HEATMAP_POSTFIX"
+        ] = self.floating_masked_heatmap_postfix
         self._settings["WASHED_UP_BEFORE_POSTFIX"] = self.washed_up_before_postfix
         self._settings["WASHED_UP_AFTER_POSTFIX"] = self.washed_up_after_postfix
         self._settings["TRAINING_LABEL_BLUE"] = self.training_label_blue
