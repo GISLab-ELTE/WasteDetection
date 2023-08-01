@@ -177,6 +177,9 @@ class SentinelAPI(BaseAPI):
                 print(feature_id)
                 print(acquisition[1].get_filename_list()[0].split("\\")[0])
 
+    def get_downloaded_images(self) -> list(str):
+        pass
+
     @staticmethod
     def get_bbox_of_polygon(polygon_coords: List[List[int]]) -> List[int]:
         """

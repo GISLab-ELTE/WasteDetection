@@ -61,3 +61,11 @@ class BaseAPI(ABC):
         """
 
         pass
+
+    @abstractmethod
+    def get_downloaded_images(self) -> list(str):
+        """
+        Returns a list of the paths of all the downloaded images.
+
+        :return: A list of the paths of all the downloaded images.
+        """

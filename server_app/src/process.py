@@ -44,6 +44,7 @@ class Process(object):
         self.api = None
         self.processed_today = False
         self.pixel_size = None
+        self.classify = False
 
         self.estimations = dict()
 
@@ -116,13 +117,41 @@ class Process(object):
         :return: None
         """
 
+        print("{} Process started...".format(Process.timestamp()))
+
+        if self.classify: 
+            self.execute_classification()
+        else:
+            self.execute_download_pipeline()
+
+        print("{} Process finished...".format(Process.timestamp()))
+        print("{} Awaiting execution of next process...".format(Process.timestamp()))
+
+    def execute_classification(self) -> None:
+        """
+        Executes a classification: Creates and analyzes estimations on new images.
+
+        :return: None
+        """
+        print("{} Estimating extent of polluted areas...".format(Process.timestamp()))
+        self.create_estimations()
+        print("{} Finished estimation...".format(Process.timestamp()))
+
+        print("{} Analyzing acquired data...".format(Process.timestamp()))
+        self.analyze_estimations()
+        print("{} Finished analyzing data...".format(Process.timestamp()))
+
+    def execute_download_pipeline(self) -> None:
+        """
+        Executes the download pipeline: searches, orders and downloads new images.
+
+        :return: None
+        """
         sys_date_today = Process.get_sys_date_str()
         sys_date_yesterday = Process.get_sys_date_str(difference=-1)
         max_num_of_results = 1
 
         time_interval = sys_date_yesterday, sys_date_today
-
-        print("{} Process started...".format(Process.timestamp()))
 
         print("{} Searching for new images...".format(Process.timestamp()))
         self.api.search(time_interval, max_num_of_results)
@@ -146,18 +175,6 @@ class Process(object):
         print("\nALERT\nAcquisition dates:\n")
         self.print_acquisition_dates(max_num_of_results)
 
-        print("{} Estimating extent of polluted areas...".format(Process.timestamp()))
-        self.create_estimations()
-        print("{} Finished estimation...".format(Process.timestamp()))
-
-        print("{} Analyzing acquired data...".format(Process.timestamp()))
-        self.analyze_estimations()
-        print("{} Finished analyzing data...".format(Process.timestamp()))
-
-        print("{} Process finished...".format(Process.timestamp()))
-
-        print("{} Awaiting execution of next process...".format(Process.timestamp()))
-
     def create_estimations(self) -> None:
         """
         Executes the estimations on new images.
@@ -165,7 +182,8 @@ class Process(object):
         :return: None
         """
 
-        downloaded_images = self.get_satellite_images()
+        downloaded_images = self.get_downloaded_images()
+        already_classified_images = self.get_already_classified_images()
         sentinel_path = self.config_file["result_dir_sentinel-2"]
         planet_path = self.config_file["result_dir_planetscope"]
         satellite_type = self.config_file["satellite_type"]
@@ -508,3 +526,16 @@ class Process(object):
         :return: system date and time in string format
         """
         return dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    @staticmethod
+    def get_downloaded_images(download_dir: str) -> set(str):
+        """
+        Returns a list of all the downloaded images.
+
+        :param download_dir: The directory in which images are downloaded.
+        :return: A list of all the downloaded images.
+        """
+
+        
+
+

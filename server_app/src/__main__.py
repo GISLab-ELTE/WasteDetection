@@ -25,6 +25,13 @@ def parse_args() -> argparse.Namespace:
         default=False,
         help="Sleep after execution or not.",
     )
+    parser.add_argument(
+        "-cl",
+        "--classify",
+        action="store_true",
+        default=False,
+        help="Do classification instead of downloading images."
+    )
 
     parsed_args = parser.parse_args()
 
