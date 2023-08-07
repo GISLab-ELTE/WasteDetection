@@ -24,6 +24,9 @@ fi;
 if echo "${ARGS[@]}" | grep -qw "sleep"; then
   PYTHON_ARGS+=("-s")
 fi;
+if echo "${ARGS[@]}" | grep -qw "classify"; then
+  PYTHON_ARGS+=("-cl")
+fi;
 
 cd src
 source /opt/conda/etc/profile.d/conda.sh

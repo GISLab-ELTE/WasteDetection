@@ -43,5 +43,5 @@ if __name__ == "__main__":
 
     print("Automatic waste detection")
 
-    process = Process()
+    process = Process(args.classify)
     process.mainloop(args.startup, args.sleep)

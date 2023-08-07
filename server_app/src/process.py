@@ -24,10 +24,11 @@ class Process(object):
 
     """
 
-    def __init__(self) -> None:
+    def __init__(self, classify: bool) -> None:
         """
         Constructor of Process class.
 
+        :param classify: whether to run classification instead of download or not.
         """
 
         super(Process, self).__init__()
@@ -44,7 +45,7 @@ class Process(object):
         self.api = None
         self.processed_today = False
         self.pixel_size = None
-        self.classify = False
+        self.classify = classify
 
         self.estimations = dict()
 
@@ -182,7 +183,7 @@ class Process(object):
         :return: None
         """
 
-        downloaded_images = self.get_downloaded_images()
+        downloaded_images = self.get_satellite_images()
         already_classified_images = self.get_already_classified_images()
         sentinel_path = self.config_file["result_dir_sentinel-2"]
         planet_path = self.config_file["result_dir_planetscope"]
@@ -196,8 +197,8 @@ class Process(object):
         for feature_id in downloaded_images.keys():
             for date in downloaded_images[feature_id].keys():
                 if (
-                    feature_id in self.estimations.keys()
-                    and date in self.estimations[feature_id].keys()
+                    feature_id in already_classified_images.keys()
+                    and date in already_classified_images[feature_id].keys()
                 ):
                     continue
 
@@ -366,6 +367,26 @@ class Process(object):
 
         return images
 
+    def get_already_classified_images(self) -> OrderedDict:
+        """
+        Returns the paths of the classified images.
+
+        :return: dictionary containing the paths
+        """
+
+        sentinel_path = self.config_file["result_dir_sentinel-2"]
+        planet_path = self.config_file["result_dir_planetscope"]
+        satellite_type = self.config_file["satellite_type"]
+
+        images = None 
+
+        if satellite_type.lower() == "Sentinel-2".lower():
+            images = Process.find_files(sentinel_path, "classified.geojson")
+        elif satellite_type.lower() == "PlanetScope".lower():
+            images = Process.find_files(planet_path, "classified.geojson")
+
+        return images
+
     def print_acquisition_dates(self, observation_max_span: int) -> None:
         """
         Prints the last X dates of the acquisitions to the console.
@@ -526,15 +547,6 @@ class Process(object):
         :return: system date and time in string format
         """
         return dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    @staticmethod
-    def get_downloaded_images(download_dir: str) -> set(str):
-        """
-        Returns a list of all the downloaded images.
-
-        :param download_dir: The directory in which images are downloaded.
-        :return: A list of all the downloaded images.
-        """
 
         
 
