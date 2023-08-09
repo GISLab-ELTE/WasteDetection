@@ -34,6 +34,7 @@ Meaning of the parameters in `config.sample.json` file:
 - `observation_span_in_days`: Number of days to analyze.
 - `max_cloud_cover`: Cloud coverage in percentage.
 - `clf_path`: Path of Random Forest classifier.
+- `clf_if`: The Id of the Random Forest classifier.
 - `classification_postfix`: File name postfix of classified image.
 - `heatmap_postfix`: File name postfix of heatmap image.
 - `masked_classification_postfix`: File name postfix of masked classified image.

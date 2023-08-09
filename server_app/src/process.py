@@ -68,8 +68,9 @@ class Process(object):
         :return: None
         """
 
-        print("{} Setting up the account...".format(Process.timestamp()))
-        self.api.login()
+        if not self.classify:
+            print("{} Setting up the account...".format(Process.timestamp()))
+            self.api.login()
 
         if run_startup:
             self.startup()
@@ -267,14 +268,27 @@ class Process(object):
         geojson_files = self.find_geojson_files(work_dir)
         narrowed_geojson_files = OrderedDict()
         observation_span_in_days = int(self.config_file["observation_span_in_days"])
+        model_id = self.config_file["clf_id"]
 
         for key, value in geojson_files.items():
             narrowed_geojson_files[key] = OrderedDict(
                 list(value.items())[-observation_span_in_days:]
             )
 
-        with open(self.config_file["geojson_files_path"], "w") as file:
-            json.dump(narrowed_geojson_files, file, indent=4)
+        geojson_file_path = self.config_file["geojson_files_path"]
+
+        # to prevent deleting the file's contents before reading, we need to use the "r" flag to read the contents.
+        # This throws an exception when the file does not exist, thus we need to create an empty json file to prevent errors.
+        if (not os.path.exists(geojson_file_path)) or os.stat(geojson_file_path).st_size == 0:            
+            with open(geojson_file_path, "w") as file:
+                json.dump({}, file, indent=4)
+
+        with open(geojson_file_path, "r") as file:
+            geojson_file_content = json.load(file)
+
+        with open(geojson_file_path, "w") as file:            
+            geojson_file_content[model_id] = narrowed_geojson_files
+            json.dump(geojson_file_content, file, indent=4)
 
     def get_seconds_until_next_process(self) -> float:
         """

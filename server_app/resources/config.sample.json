@@ -14,6 +14,7 @@
   "observation_span_in_days": "5",
   "max_cloud_cover": "0",
   "clf_path": "../clf/random_forest_model.sav",
+  "clf_id": "random_forest_model",
   "classification_postfix": "classified",
   "heatmap_postfix": "heatmap",
   "masked_classification_postfix": "masked_classified",
