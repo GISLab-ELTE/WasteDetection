@@ -189,6 +189,7 @@ class Process(object):
         sentinel_path = self.config_file["result_dir_sentinel-2"]
         planet_path = self.config_file["result_dir_planetscope"]
         satellite_type = self.config_file["satellite_type"]
+        model_id = self.config_file["clf_id"]
         work_dir = (
             sentinel_path
             if satellite_type.lower() == "Sentinel-2".lower()
@@ -262,13 +263,23 @@ class Process(object):
                     self.estimations[feature_id] = dict()
                 self.estimations[feature_id][date] = estimation
 
-        with open(self.config_file["estimations_file_path"], "w") as file:
-            json.dump(self.estimations, file, indent=4)
+        estimations_file_path = self.config_file["estimations_file_path"]
+
+        if (not os.path.exists(estimations_file_path)) or os.stat(estimations_file_path).st_size == 0:            
+            with open(estimations_file_path, "w") as file:
+                json.dump({}, file, indent=4)
+
+        with open(estimations_file_path, "r") as file:
+            estimations_file_content = json.load(file)
+
+        with open(estimations_file_path, "w") as file:
+            estimations_file_content[model_id] = self.estimations 
+            json.dump(estimations_file_content, file, indent=4)
 
         geojson_files = self.find_geojson_files(work_dir)
         narrowed_geojson_files = OrderedDict()
         observation_span_in_days = int(self.config_file["observation_span_in_days"])
-        model_id = self.config_file["clf_id"]
+        
 
         for key, value in geojson_files.items():
             narrowed_geojson_files[key] = OrderedDict(
