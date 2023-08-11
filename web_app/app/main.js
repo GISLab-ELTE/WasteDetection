@@ -32,6 +32,7 @@ var satelliteImagesPaths;
 
 // HTML elements
 const selectedAOI = document.getElementById("type");
+const selectedModel = document.getElementById("model");
 const swipe = document.getElementById("swipe");
 
 // Styles for GeoJSON polygons
@@ -226,33 +227,34 @@ const changeDate = function (newDate) {
 
 const setAOILayers = function () {
   const aoi = selectedAOI.value;
+  const model = selectedModel.value;
   const swipeValue = swipe.value;
-  const date = Object.keys(aoisWithDates[aoi])[swipeValue];
+  const date = Object.keys(aoisWithDates[model][aoi])[swipeValue];
   const layers = [];
 
   removeLayersFromMap();
 
-  layerGeoTiff.setSource(
-    new GeoTIFF({
-      sources: [
-        {
-          url: satelliteImagesPaths[aoi][date]["src"],
-          bands: [3, 2, 1],
-          nodata: 0,
-          min: satelliteImagesPaths[aoi][date]["min"],
-          max: satelliteImagesPaths[aoi][date]["max"],
-        },
-      ],
-      transition: 0,
-    })
-  );
-  layers[0] = layerGeoTiff;
+  // layerGeoTiff.setSource(
+  //   new GeoTIFF({
+  //     sources: [
+  //       {
+  //         url: satelliteImagesPaths[aoi][date]["src"],
+  //         bands: [3, 2, 1],
+  //         nodata: 0,
+  //         min: satelliteImagesPaths[aoi][date]["min"],
+  //         max: satelliteImagesPaths[aoi][date]["max"],
+  //       },
+  //     ],
+  //     transition: 0,
+  //   })
+  // );
+  // layers[0] = layerGeoTiff;
 
   for (let i = 0; i < 4; i++) {
-    sourcesAndLayers["sources"][i].setUrl(aoisWithDates[aoi][date][i]);
+    sourcesAndLayers["sources"][i].setUrl(aoisWithDates[model][aoi][date][i]);
     sourcesAndLayers["sources"][i].refresh();
     sourcesAndLayers["layers"][i].setSource(sourcesAndLayers["sources"][i]);
-    layers[i + 1] = sourcesAndLayers["layers"][i];
+    layers[i] = sourcesAndLayers["layers"][i];
   }
 
   geojsonLayerGroup = new LayerGroup({
@@ -266,9 +268,10 @@ const setAOILayers = function () {
 const changeAOI = function () {
   let aoiBbox = null;
   const aoi = selectedAOI.value;
+  const model = selectedModel.value;
   const swipeValue = swipe.value;
 
-  changeDate(Object.keys(aoisWithDates[aoi])[swipeValue]);
+  changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
   setAOILayers();
 
   if (aoi == "Kiskore") {
@@ -311,31 +314,42 @@ const fetchGeojsonPaths = async function () {
   const res = await fetch(base_url + "geojson_files.json");
   aoisWithDates = await res.json();
 
-  for (var out_key of Object.keys(aoisWithDates)) {
-    for (var in_key of Object.keys(aoisWithDates[out_key])) {
-      for (let i = 0; i < 4; i++) {
-        aoisWithDates[out_key][in_key][i] =
-          base_url + aoisWithDates[out_key][in_key][i];
+  for (var model_id of Object.keys(aoisWithDates)){
+    const option = document.createElement("option");
+    option.text = model_id;
+    option.value = model_id;
+
+    selectedModel.add(option);
+    for (var out_key of Object.keys(aoisWithDates[model_id])) {
+      for (var in_key of Object.keys(aoisWithDates[model_id][out_key])) {
+        for (let i = 0; i < 4; i++) {
+          aoisWithDates[model_id][out_key][in_key][i] =
+            base_url + aoisWithDates[model_id][out_key][in_key][i];
+        }
       }
     }
   }
 };
 
+const updateClassification = function() {
+  const aoi = selectedAOI.value;
+  const model = selectedModel.value;
+  const swipeValue = swipe.value;
+  changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
+  setAOILayers(aoi);
+}
+
 // Events
 selectedAOI.onchange = changeAOI;
+selectedModel.onchange = updateClassification;
 
-swipe.addEventListener("input", function () {
-  const aoi = selectedAOI.value;
-  const swipeValue = swipe.value;
-  changeDate(Object.keys(aoisWithDates[aoi])[swipeValue]);
-  setAOILayers(aoi);
-});
+swipe.addEventListener("input", updateClassification);
 
 window.onresize = function () {
   setTimeout(resizeMap, 200);
 };
 
-await fetchSatelliteImagePaths();
+//await fetchSatelliteImagePaths();
 await fetchGeojsonPaths();
 resizeMap();
 changeAOI();
