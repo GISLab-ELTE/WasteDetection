@@ -4,6 +4,7 @@ import json
 import pickle
 import fnmatch
 import geojson
+import logging
 import jsonmerge
 
 import numpy as np
@@ -12,9 +13,9 @@ import datetime as dt
 from model import Model
 from pathlib import Path
 from planetapi import PlanetAPI
-from typing import Dict, Optional
 from collections import OrderedDict
 from sentinelapi import SentinelAPI
+from typing import Dict, List, Optional
 from sklearn.ensemble import RandomForestClassifier
 
 
@@ -42,22 +43,25 @@ class Process(object):
         self.model = Model(self.config_file)
 
         self.api = None
-        self.processed_today = False
         self.pixel_size = None
 
         self.estimations = dict()
 
-        self.satellite_type = self.config_file["satellite_type"]
+        self.satellite_type = self.config_file["satellite_type"].lower()
 
-        if self.satellite_type.lower() == "PlanetScope".lower():
+        if self.satellite_type == "planetscope":
             self.api = PlanetAPI(self.config_file, self.data_file)
             self.pixel_size = 3
-        elif self.satellite_type.lower() == "Sentinel-2".lower():
+        elif self.satellite_type == "sentinel-2":
             self.api = SentinelAPI(self.config_file, self.data_file)
             self.pixel_size = 10
 
         self.api.data_file = Model.convert_multipolygons_to_polygons(self.api.data_file)
-        self.api.data_file = Model.transform_coordinates_to_wgs84(self.api.data_file)
+
+        if self.satellite_type == "sentinel-2":
+            self.api.data_file = Model.transform_dict_of_coordinates_to_crs(
+                data_file=self.api.data_file, crs_to="epsg:3857"
+            )
 
     def mainloop(self, run_startup: bool, run_sleep: bool) -> None:
         """
@@ -66,8 +70,9 @@ class Process(object):
         :return: None
         """
 
-        print("{} Setting up the account...".format(Process.timestamp()))
+        logging.info("Started setting up the account.")
         self.api.login()
+        logging.info("Finished setting up the account.")
 
         if run_startup:
             self.startup()
@@ -87,27 +92,27 @@ class Process(object):
         :return: None
         """
 
-        print("{} Startup process started...".format(Process.timestamp()))
+        logging.info("Startup process started.")
 
         yesterday_str = Process.get_sys_date_str(difference=-1)
 
         time_interval = self.config_file["first_sentinel-2_date"], yesterday_str
         observation_max_span = int(self.config_file["observation_span_in_days"])
 
-        print("{} Searching for earlier images...".format(Process.timestamp()))
+        logging.info("Searching for earlier images.")
         self.api.search(time_interval, observation_max_span)
 
-        print("{} Placing orders for earlier images...".format(Process.timestamp()))
+        logging.info("Placing orders for earlier images.")
         self.api.order()
 
-        print("{} Started downloading earlier images...".format(Process.timestamp()))
+        logging.info("Started downloading earlier images.")
         self.api.download()
-        print("{} Finished downloading earlier images...".format(Process.timestamp()))
+        logging.info("Finished downloading earlier images.")
 
-        print("\nALERT\nAcquisition dates:\n")
+        logging.warning("\nALERT\nAcquisition dates:\n")
         self.print_acquisition_dates(observation_max_span)
 
-        print("{} Startup process ended...".format(Process.timestamp()))
+        logging.info("Startup process ended.")
 
     def process(self) -> None:
         """
@@ -122,15 +127,15 @@ class Process(object):
 
         time_interval = sys_date_yesterday, sys_date_today
 
-        print("{} Process started...".format(Process.timestamp()))
+        logging.info("Main process started.")
 
-        print("{} Searching for new images...".format(Process.timestamp()))
+        logging.info("Searching for new images.")
         self.api.search(time_interval, max_num_of_results)
 
-        print("{} Placing orders for available images...".format(Process.timestamp()))
+        logging.info("Placing orders for available images.")
         self.api.order()
 
-        print("{} Started downloading images...".format(Process.timestamp()))
+        logging.info("Started downloading images.")
 
         success = False
         while not success:
@@ -141,22 +146,20 @@ class Process(object):
             else:
                 success = True
 
-        print("{} Finished downloading images...".format(Process.timestamp()))
+        logging.info("Finished downloading images.")
 
-        print("\nALERT\nAcquisition dates:\n")
+        logging.warning("\nALERT\nAcquisition dates:\n")
         self.print_acquisition_dates(max_num_of_results)
 
-        print("{} Estimating extent of polluted areas...".format(Process.timestamp()))
+        logging.info("Estimating extent of polluted areas.")
         self.create_estimations()
-        print("{} Finished estimation...".format(Process.timestamp()))
+        logging.info("Finished estimation.")
 
-        print("{} Analyzing acquired data...".format(Process.timestamp()))
+        logging.info("Analyzing acquired data.")
         self.analyze_estimations()
-        print("{} Finished analyzing data...".format(Process.timestamp()))
+        logging.info("Finished analyzing data.")
 
-        print("{} Process finished...".format(Process.timestamp()))
-
-        print("{} Awaiting execution of next process...".format(Process.timestamp()))
+        logging.info("Main process finished.")
 
     def create_estimations(self) -> None:
         """
@@ -166,14 +169,9 @@ class Process(object):
         """
 
         downloaded_images = self.get_satellite_images()
-        sentinel_path = self.config_file["result_dir_sentinel-2"]
-        planet_path = self.config_file["result_dir_planetscope"]
-        satellite_type = self.config_file["satellite_type"]
-        work_dir = (
-            sentinel_path
-            if satellite_type.lower() == "Sentinel-2".lower()
-            else planet_path
-        )
+        sentinel_path = self.join_path("workspace_root_dir", "result_dir_sentinel-2")
+        planet_path = self.join_path("workspace_root_dir", "result_dir_planetscope")
+        work_dir = sentinel_path if self.satellite_type == "sentinel-2" else planet_path
 
         for feature_id in downloaded_images.keys():
             for date in downloaded_images[feature_id].keys():
@@ -238,26 +236,117 @@ class Process(object):
                     self.estimations[feature_id] = dict()
                 self.estimations[feature_id][date] = estimation
 
-        with open(self.config_file["estimations_file_path"], "w") as file:
-            json.dump(self.estimations, file, indent=4)
+        self.generate_json_files_for_webapp()
 
-        geojson_files = self.find_geojson_files(work_dir)
-        narrowed_geojson_files = OrderedDict()
-        observation_span_in_days = int(self.config_file["observation_span_in_days"])
+    def generate_json_files_for_webapp(self) -> None:
+        """
+        Generates all the needed JSON files for web_app.
 
-        for key, value in geojson_files.items():
-            narrowed_geojson_files[key] = OrderedDict(
-                list(value.items())[-observation_span_in_days:]
+        """
+
+        geojson_files_path = self.join_path("workspace_root_dir", "geojson_files_path")
+        satellite_images_path = self.join_path(
+            "workspace_root_dir", "satellite_images_path"
+        )
+
+        result_dir, image_files_abs, image_files_rel = None, None, None
+
+        if self.satellite_type == "sentinel-2":
+            download_dir = self.join_path(
+                "workspace_root_dir", "download_dir_sentinel-2"
+            )
+            result_dir = self.join_path("workspace_root_dir", "result_dir_sentinel-2")
+            image_files_abs = Process.find_files_absolute(download_dir, "response.tiff")
+            image_files_rel = Process.find_files_relative(
+                download_dir,
+                "response.tiff",
+                relative_to=os.path.dirname(satellite_images_path),
+            )
+        elif self.satellite_type == "planetscope":
+            download_dir = self.join_path(
+                "workspace_root_dir", "download_dir_planetscope"
+            )
+            result_dir = self.join_path("workspace_root_dir", "result_dir_planetscope")
+            image_files_abs = Process.find_files_absolute(
+                download_dir, "*AnalyticMS_SR_clip_reproject.tif"
+            )
+            image_files_rel = Process.find_files_relative(
+                download_dir,
+                "*AnalyticMS_SR_clip_reproject.tif",
+                relative_to=os.path.dirname(satellite_images_path),
             )
 
-        with open(self.config_file["geojson_files_path"], "w") as file:
-            json.dump(narrowed_geojson_files, file, indent=4)
+        geojson_files_rel = Process.find_files_relative(
+            result_dir, "*.geojson", relative_to=os.path.dirname(geojson_files_path)
+        )
+
+        image_dict = OrderedDict()
+        geojson_dict = OrderedDict()
+
+        for i in range(len(image_files_abs)):
+            rel_path_split = image_files_rel[i].split("/")
+
+            feature_id = rel_path_split[1]
+            date = rel_path_split[2]
+
+            min_value, max_value = self.model.get_min_max_value_of_band(
+                image_files_abs[i], 3
+            )
+
+            if feature_id not in image_dict:
+                image_dict[feature_id] = OrderedDict()
+
+            if date not in image_dict[feature_id]:
+                image_dict[feature_id][date] = OrderedDict()
+
+            image_dict[feature_id][date]["src"] = image_files_rel[i]
+            image_dict[feature_id][date]["min"] = int(min_value)
+            image_dict[feature_id][date]["max"] = int(max_value)
+
+        for file in geojson_files_rel:
+            rel_path_split = file.split("/")
+
+            feature_id = rel_path_split[1]
+            date = rel_path_split[2]
+
+            if feature_id not in geojson_dict:
+                geojson_dict[feature_id] = OrderedDict()
+
+            if date not in geojson_dict[feature_id]:
+                geojson_dict[feature_id][date] = list()
+
+            geojson_dict[feature_id][date].append(file)
+
+        with open(satellite_images_path, "w") as file:
+            json.dump(image_dict, file, indent=4)
+
+        with open(geojson_files_path, "w") as file:
+            json.dump(geojson_dict, file, indent=4)
+
+        with open(
+            self.join_path("workspace_root_dir", "estimations_file_path"), "w"
+        ) as file:
+            json.dump(self.estimations, file, indent=4)
+
+    def join_path(self, key_1: str, key_2: str) -> str:
+        """
+        Joins paths of config file based on their keys.
+
+        :param key_1: Key of first value.
+        :param key_2: Key of second value.
+        :return: The joined path.
+        """
+
+        path = os.path.join(self.config_file[key_1], self.config_file[key_2]).replace(
+            "\\", "/"
+        )
+        return path
 
     def get_seconds_until_next_process(self) -> float:
         """
         Calculates remaining seconds until a new process should be started.
 
-        :return: remaining seconds until next process
+        :return: Remaining seconds until next process.
         """
 
         reset_time = self.config_file["download_start_time"]
@@ -297,58 +386,36 @@ class Process(object):
             latest_estimation = estimations[0]
 
             if mean == 0:
-                print("There is not enough data to analyze!")
+                logging.error("There is not enough data to analyze!")
                 continue
 
             difference = round((latest_estimation / mean - 1.0) * 100, 2)
 
-            print("\n{}".format(feature_id))
-            print("Latest acquisition date: {}".format(dates_to_use[0]))
-            print("Latest estimation: {}".format(latest_estimation))
-            print("Mean of the previous {} acquired days: {}".format(days - 1, mean))
+            logging.info(feature_id)
+            logging.info(f"Latest acquisition date: {dates_to_use[0]}")
+            logging.info(f"Latest estimation: {latest_estimation}")
+            logging.info(f"Mean of the previous {days - 1} acquired days: {mean}")
 
             if difference > 0:
-                print(
-                    "{}% more polluted area than the estimated mean.".format(difference)
+                logging.info(
+                    f"{difference}% more polluted area than the estimated mean."
                 )
             elif difference < 0:
-                print(
-                    "{}% less polluted area than the estimated mean.".format(
-                        -1 * difference
-                    )
+                logging.info(
+                    f"{-1 * difference}% less polluted area than the estimated mean."
                 )
             else:
-                print(
+                logging.info(
                     "Area of polluted area is exactly the same as the estimated mean."
                 )
 
         print()
 
-    def get_satellite_images(self) -> OrderedDict:
-        """
-        Returns the paths of downloaded images.
-
-        :return: dictionary containing the paths
-        """
-
-        sentinel_path = self.config_file["download_dir_sentinel-2"]
-        planet_path = self.config_file["download_dir_planetscope"]
-        satellite_type = self.config_file["satellite_type"]
-
-        images = None
-
-        if satellite_type.lower() == "Sentinel-2".lower():
-            images = Process.find_files(sentinel_path, "response.tiff")
-        elif satellite_type.lower() == "PlanetScope".lower():
-            images = Process.find_files(planet_path, "*AnalyticMS_SR_clip.tif")
-
-        return images
-
     def print_acquisition_dates(self, observation_max_span: int) -> None:
         """
         Prints the last X dates of the acquisitions to the console.
 
-        :param observation_max_span: max number of dates to be printed
+        :param observation_max_span: Max number of dates to be printed.
         :return: None
         """
 
@@ -362,11 +429,46 @@ class Process(object):
                 print(date)
             print()
 
+    def get_satellite_images(self) -> OrderedDict:
+        """
+        Returns the paths of downloaded images.
+
+        :return: Dictionary containing the paths.
+        """
+
+        sentinel_path = self.join_path("workspace_root_dir", "download_dir_sentinel-2")
+        planet_path = self.join_path("workspace_root_dir", "download_dir_planetscope")
+
+        download_dir = (
+            sentinel_path if self.satellite_type == "sentinel-2" else planet_path
+        )
+        pattern = (
+            "response.tiff"
+            if self.satellite_type == "sentinel-2"
+            else "*AnalyticMS_SR_clip_reproject.tif"
+        )
+
+        files = Process.find_files_absolute(download_dir, pattern)
+        images = OrderedDict()
+
+        for file in files:
+            split_str = file.replace(download_dir, "")
+            split_str = list(filter(None, split_str.split("/")))
+            feature_id = split_str[0]
+            date = split_str[1]
+
+            if feature_id not in images:
+                images[feature_id] = OrderedDict()
+
+            images[feature_id][date] = file
+
+        return images
+
     def load_config_file(self) -> Dict:
         """
         Loads config file for later use.
 
-        :return: the loaded config file in Dict form
+        :return: The loaded config file in Dict form.
         """
 
         with open(self.config_sample_name, "r") as file:
@@ -385,7 +487,7 @@ class Process(object):
         """
         Loads the data file (GeoJSON) that contains the AOIs for later use.
 
-        :return: the loaded data file in Dict form
+        :return: The loaded data file in Dict form.
         """
 
         with open(self.config_file["data_file_path"], "r") as file:
@@ -396,78 +498,59 @@ class Process(object):
         """
         Loads the classifier for later use.
 
-        :return: the loaded classifier
+        :return: The loaded classifier.
         """
 
         with open(self.config_file["clf_path"], "rb") as file:
             clf = pickle.load(file)
         return clf
 
-    def find_geojson_files(self, dir_path: str) -> Dict:
+    @staticmethod
+    def find_files_absolute(root_dir: str, pattern: str) -> List[str]:
         """
-        Find relative GeoJSON file paths.
+        Finds the absolute path of files recursively in root_dir that matches the given pattern.
 
-        :param dir_path: root directory of the search
-        :return: dictionary containing the relative paths of files
+        :param root_dir: Root directory of the search.
+        :param pattern: Pattern for filenames.
+        :return: List of absolute paths.
         """
 
-        geojson_files = Process.find_files(dir_path, "*.geojson", only_one=False)
-
-        rel_path_start_dir = os.path.dirname(self.config_file["geojson_files_path"])
-        for outer_key, outer_value in geojson_files.items():
-            for inner_key, inner_value in outer_value.items():
-                for i in range(len(inner_value)):
-                    rel_path = os.path.relpath(inner_value[i], start=rel_path_start_dir)
-                    rel_path = rel_path.replace("\\", "/")
-                    geojson_files[outer_key][inner_key][i] = rel_path
-
-        return geojson_files
+        files = sorted(
+            [
+                os.path.abspath(path).replace("\\", "/")
+                for path in Path(root_dir).rglob(pattern)
+            ]
+        )
+        return files
 
     @staticmethod
-    def find_files(
-        dir_path: str, file_name_postfix: str, only_one: bool = True
-    ) -> OrderedDict:
+    def find_files_relative(root_dir: str, pattern: str, relative_to: str) -> List[str]:
         """
-        Returns the paths of files in the given directory.
+        Finds the path of files recursively in root_dir that matches the given pattern.
+        The results will be relative to given directory.
 
-        :param dir_path: root directory of the search
-        :param file_name_postfix: file name postfix of wanted files
-        :param only_one: only one result or all
-        :return: dictionary containing the absolute paths of files
+        :param root_dir: Root directory of the search.
+        :param pattern: Pattern for filenames.
+        :param relative_to: Results will be relative to this directory.
+        :return: List of relative paths.
         """
 
-        images = OrderedDict()
-
-        for path in sorted(Path(dir_path).rglob(file_name_postfix)):
-            rel_path = str(path.relative_to(dir_path))
-            rel_path = rel_path.replace("\\", "/")
-            split_rel_path = rel_path.split("/")
-            feature_id = split_rel_path[0]
-            date = split_rel_path[1]
-
-            if feature_id not in images.keys():
-                images[feature_id] = OrderedDict()
-
-            if only_one:
-                images[feature_id][date] = "/".join([dir_path] + rel_path.split("/"))
-            else:
-                if date not in images[feature_id].keys():
-                    images[feature_id][date] = list()
-                images[feature_id][date].append(
-                    "/".join([dir_path] + rel_path.split("/"))
-                )
-
-        return images
+        files = Process.find_files_absolute(root_dir, pattern)
+        files = [
+            os.path.relpath(file, start=relative_to).replace("\\", "/")
+            for file in files
+        ]
+        return files
 
     @staticmethod
     def get_sys_date_str(difference: Optional[int] = 0) -> str:
         """
         Returns a date as a string: actual date + difference.
 
-        :param difference:  the difference added to today's date:
+        :param difference:  The difference added to today's date:
                             difference = -1 -> yesterday,
-                            difference =  1  -> tomorrow
-        :return: date as a string
+                            difference =  1  -> tomorrow.
+        :return: Date as a string.
         """
 
         sys_date_obj = dt.date.today()
@@ -488,19 +571,10 @@ class Process(object):
         """
         Returns a date as a string based on the given format.
 
-        :param date_obj: date object
-        :param format_str: output format string
-        :return: string format of date object
+        :param date_obj: Date object.
+        :param format_str: Output format string.
+        :return: String format of date object.
         """
 
         date_str = dt.datetime.strftime(date_obj, format_str)
         return date_str
-
-    @staticmethod
-    def timestamp() -> str:
-        """
-        Returns the system date and time: e.g. 2000-06-26 13:36:00.
-
-        :return: system date and time in string format
-        """
-        return dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
