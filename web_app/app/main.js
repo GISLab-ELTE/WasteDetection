@@ -244,7 +244,7 @@ const setAOILayers = function () {
         },
       ],
       transition: 0,
-    })
+    }),
   );
   layers[0] = layerGeoTiff;
 
