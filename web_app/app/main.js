@@ -234,21 +234,21 @@ const setAOILayers = function () {
 
   removeLayersFromMap();
 
-  // layerGeoTiff.setSource(
-  //   new GeoTIFF({
-  //     sources: [
-  //       {
-  //         url: satelliteImagesPaths[aoi][date]["src"],
-  //         bands: [3, 2, 1],
-  //         nodata: 0,
-  //         min: satelliteImagesPaths[aoi][date]["min"],
-  //         max: satelliteImagesPaths[aoi][date]["max"],
-  //       },
-  //     ],
-  //     transition: 0,
-  //   })
-  // );
-  // layers[0] = layerGeoTiff;
+  layerGeoTiff.setSource(
+    new GeoTIFF({
+      sources: [
+        {
+          url: satelliteImagesPaths[aoi][date]["src"],
+          bands: [3, 2, 1],
+          nodata: 0,
+          min: satelliteImagesPaths[aoi][date]["min"],
+          max: satelliteImagesPaths[aoi][date]["max"],
+        },
+      ],
+      transition: 0,
+    }),
+  );
+  layers[0] = layerGeoTiff;
 
   for (let i = 0; i < 4; i++) {
     sourcesAndLayers["sources"][i].setUrl(aoisWithDates[model][aoi][date][i]);
@@ -329,6 +329,9 @@ const fetchGeojsonPaths = async function () {
       }
     }
   }
+
+  swipe.max =
+    Object.keys(aoisWithDates[Object.keys(aoisWithDates)[0]]).length - 1;
 };
 
 const updateClassification = function() {

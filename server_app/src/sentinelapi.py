@@ -26,8 +26,8 @@ class SentinelAPI(BaseAPI):
         """
         Constructor of SentinelAPI class.
 
-        :param config_file: dictionary containing the settings
-        :param data_file: dictionary containing the AOIs (GeoJSON)
+        :param config_file: Dictionary containing the settings.
+        :param data_file: Dictionary containing the AOIs (GeoJSON).
         """
 
         super(SentinelAPI, self).__init__(config_file, data_file)
@@ -84,8 +84,8 @@ class SentinelAPI(BaseAPI):
         """
         Searches the available images within the given time interval.
 
-        :param time_interval: acquisition time interval of images
-        :param max_result_limit: maximum number of results
+        :param time_interval: Acquisition time interval of images.
+        :param max_result_limit: Maximum number of results.
         :return: None
         """
 
@@ -96,7 +96,7 @@ class SentinelAPI(BaseAPI):
                 feature["geometry"]["coordinates"][0]
             )
 
-            bbox = BBox(bbox=bbox_coords, crs=CRS.WGS84)
+            bbox = BBox(bbox=bbox_coords, crs=CRS.POP_WEB)
 
             search_iterator = self.catalog.search(
                 DataCollection.SENTINEL2_L2A,
@@ -122,6 +122,7 @@ class SentinelAPI(BaseAPI):
             for timestamp in reversed(unique_acquisitions):
                 data_folder = "/".join(
                     [
+                        self.config_file["workspace_root_dir"],
                         self.config_file["download_dir_sentinel-2"],
                         str(feature["properties"]["id"]),
                         dt.datetime.strftime(timestamp, "%Y-%m-%d"),
@@ -184,7 +185,7 @@ class SentinelAPI(BaseAPI):
         (bottom left, upper right coordinates).
 
         :param polygon_coords: List of polygon vertices.
-        :return: the bounding box's bottom left and upper right coordinates
+        :return: The bounding box's bottom left and upper right coordinates.
         """
 
         x_coords, y_coords = map(list, zip(*polygon_coords))
