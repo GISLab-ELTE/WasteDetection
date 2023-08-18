@@ -331,7 +331,7 @@ const fetchGeojsonPaths = async function () {
   }
 
   swipe.max =
-    Object.keys(aoisWithDates[Object.keys(aoisWithDates)[0]]).length - 1;
+    Object.keys(aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]]).length - 1;
 };
 
 const updateClassification = function() {
