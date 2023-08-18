@@ -75,7 +75,7 @@ class Process(object):
         if not self.classify:
             logging.info("Started setting up the account.")
             self.api.login()
-        logging.info("Finished setting up the account.")
+            logging.info("Finished setting up the account.")
 
         if run_startup:
             self.startup()
@@ -124,15 +124,15 @@ class Process(object):
         :return: None
         """
 
-        print("{} Process started...".format(Process.timestamp()))
+        logging.info("Process started...")
 
         if self.classify: 
             self.execute_classification()
         else:
             self.execute_download_pipeline()
 
-        print("{} Process finished...".format(Process.timestamp()))
-        print("{} Awaiting execution of next process...".format(Process.timestamp()))
+        logging.info("Process finished...")
+        logging.info("{} Awaiting execution of next process...")
 
     def execute_classification(self) -> None:
         """
@@ -140,13 +140,13 @@ class Process(object):
 
         :return: None
         """
-        print("{} Estimating extent of polluted areas...".format(Process.timestamp()))
+        logging.info("{} Estimating extent of polluted areas...")
         self.create_estimations()
-        print("{} Finished estimation...".format(Process.timestamp()))
+        logging.info("{} Finished estimation...")
 
-        print("{} Analyzing acquired data...".format(Process.timestamp()))
+        logging.info("{} Analyzing acquired data...")
         self.analyze_estimations()
-        print("{} Finished analyzing data...".format(Process.timestamp()))
+        logging.info("{} Finished analyzing data...")
 
     def execute_download_pipeline(self) -> None:
         """
@@ -190,7 +190,6 @@ class Process(object):
 
         :return: None
         """
-
         downloaded_images = self.get_satellite_images()
         sentinel_path = self.join_path("workspace_root_dir", "result_dir_sentinel-2")
         planet_path = self.join_path("workspace_root_dir", "result_dir_planetscope")
@@ -198,12 +197,6 @@ class Process(object):
 
         for feature_id in downloaded_images.keys():
             for date in downloaded_images[feature_id].keys():
-                if (
-                    feature_id in already_classified_images.keys()
-                    and date in already_classified_images[feature_id].keys()
-                ):
-                    continue
-
                 output_dir_path = "/".join([work_dir, feature_id, date])
                 masked_heatmap_postfix = self.config_file["masked_heatmap_postfix"]
 
@@ -275,6 +268,7 @@ class Process(object):
         satellite_images_path = self.join_path(
             "workspace_root_dir", "satellite_images_path"
         )
+        estimations_file_path = self.join_path("workspace_root_dir", "estimations_file_path")
 
         result_dir, image_files_abs, image_files_rel = None, None, None
 
@@ -347,13 +341,32 @@ class Process(object):
         with open(satellite_images_path, "w") as file:
             json.dump(image_dict, file, indent=4)
 
-        with open(geojson_files_path, "w") as file:
-            json.dump(geojson_dict, file, indent=4)
+        self.add_model_data_to_json_file(geojson_files_path, geojson_dict)
+        self.add_model_data_to_json_file(estimations_file_path, self.estimations)    
 
-        with open(
-            self.join_path("workspace_root_dir", "estimations_file_path"), "w"
-        ) as file:
-            json.dump(self.estimations, file, indent=4)
+    def add_model_data_to_json_file(self, file_path: str, model_data: OrderedDict) -> None:
+        """
+        Adds data related to the model to the given json file.
+        The key of the data will be the id of the classification model.
+        If the file does not exist or is empty, it will be created and/or initialized properly.
+
+        :param file_path: The path of the json file
+        :param model_data: The dictionary that needs to be added to the json file.
+        """
+        clf_id = self.config_file["clf_id"]
+
+        # to prevent deleting the file's contents before reading, we need to use the "r" flag to read the contents.
+        # This throws an exception when the file does not exist, thus we need to create an empty json file to prevent errors.
+        if (not os.path.exists(file_path)) or os.stat(file_path).st_size == 0:            
+            with open(file_path, "w") as file:
+                json.dump({}, file, indent=4)
+
+        with open(file_path, "r") as file:
+            estimations_file_content = json.load(file)
+
+        with open(file_path, "w") as file:
+            estimations_file_content[clf_id] = model_data
+            json.dump(estimations_file_content, file, indent=4)
 
     def join_path(self, key_1: str, key_2: str) -> str:
         """
@@ -455,26 +468,6 @@ class Process(object):
             images = Process.find_files(sentinel_path, "response.tiff")
         elif satellite_type.lower() == "PlanetScope".lower():
             images = Process.find_files(planet_path, "*AnalyticMS_SR_clip.tif")
-
-        return images
-
-    def get_already_classified_images(self) -> OrderedDict:
-        """
-        Returns the paths of the classified images.
-
-        :return: dictionary containing the paths
-        """
-
-        sentinel_path = self.config_file["result_dir_sentinel-2"]
-        planet_path = self.config_file["result_dir_planetscope"]
-        satellite_type = self.config_file["satellite_type"]
-
-        images = None 
-
-        if satellite_type.lower() == "Sentinel-2".lower():
-            images = Process.find_files(sentinel_path, "classified.geojson")
-        elif satellite_type.lower() == "PlanetScope".lower():
-            images = Process.find_files(planet_path, "classified.geojson")
 
         return images
 

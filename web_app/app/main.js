@@ -254,7 +254,7 @@ const setAOILayers = function () {
     sourcesAndLayers["sources"][i].setUrl(aoisWithDates[model][aoi][date][i]);
     sourcesAndLayers["sources"][i].refresh();
     sourcesAndLayers["layers"][i].setSource(sourcesAndLayers["sources"][i]);
-    layers[i] = sourcesAndLayers["layers"][i];
+    layers[i + 1] = sourcesAndLayers["layers"][i];
   }
 
   geojsonLayerGroup = new LayerGroup({
@@ -352,7 +352,7 @@ window.onresize = function () {
   setTimeout(resizeMap, 200);
 };
 
-//await fetchSatelliteImagePaths();
+await fetchSatelliteImagePaths();
 await fetchGeojsonPaths();
 resizeMap();
 changeAOI();
