@@ -458,16 +458,15 @@ class Process(object):
         :return: dictionary containing the paths
         """
 
-        sentinel_path = self.config_file["download_dir_sentinel-2"]
-        planet_path = self.config_file["download_dir_planetscope"]
-        satellite_type = self.config_file["satellite_type"]
+        sentinel_path = self.join_path("workspace_root_dir","download_dir_sentinel-2")
+        planet_path = self.join_path("workspace_root_dir","download_dir_planetscope")
 
         images = None
 
-        if satellite_type.lower() == "Sentinel-2".lower():
+        if self.satellite_type == "sentinel-2":
             images = Process.find_files(sentinel_path, "response.tiff")
-        elif satellite_type.lower() == "PlanetScope".lower():
-            images = Process.find_files(planet_path, "*AnalyticMS_SR_clip.tif")
+        elif self.satellite_type == "planetscope":
+            images = Process.find_files(planet_path, "*AnalyticMS_SR_clip_reproject.tif")
 
         return images
 

@@ -123,8 +123,8 @@ class Model(object):
 
                     max_ind = np.argmax(pred_proba[counter])
                     max_value = pred_proba[counter][max_ind]
-
-                    if classes[max_ind] == self.garbage_c_id * 100:
+                    class_str = str(classes[max_ind])
+                    if class_str == (str(self.garbage_c_id * 100)):
                         if max_value >= self.high_prob_percent / 100:
                             heatmap[i] = self.high_prob_value
                         elif (
