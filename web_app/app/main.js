@@ -269,6 +269,11 @@ const changeAOI = function () {
   let aoiBbox = null;
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
+
+  swipe.value = 0;
+  swipe.max =
+    Object.keys(aoisWithDates[model][aoi]).length - 1;
+
   const swipeValue = swipe.value;
 
   changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
