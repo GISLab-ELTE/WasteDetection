@@ -451,25 +451,6 @@ class Process(object):
 
         print()
 
-    def get_satellite_images(self) -> OrderedDict:
-        """
-        Returns the paths of downloaded images.
-
-        :return: dictionary containing the paths
-        """
-
-        sentinel_path = self.join_path("workspace_root_dir","download_dir_sentinel-2")
-        planet_path = self.join_path("workspace_root_dir","download_dir_planetscope")
-
-        images = None
-
-        if self.satellite_type == "sentinel-2":
-            images = Process.find_files(sentinel_path, "response.tiff")
-        elif self.satellite_type == "planetscope":
-            images = Process.find_files(planet_path, "*AnalyticMS_SR_clip_reproject.tif")
-
-        return images
-
     def print_acquisition_dates(self, observation_max_span: int) -> None:
         """
         Prints the last X dates of the acquisitions to the console.
