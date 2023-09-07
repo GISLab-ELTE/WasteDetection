@@ -176,7 +176,7 @@ class SentinelAPI(BaseAPI):
             for acquisition in self.requests[feature_id]:
                 acquisition[1].save_data()
                 print(feature_id)
-                print(acquisition[1].get_filename_list()[0].split("\\")[0])        
+                print(acquisition[1].get_filename_list()[0].split("\\")[0])
 
     @staticmethod
     def get_bbox_of_polygon(polygon_coords: List[List[int]]) -> List[int]:

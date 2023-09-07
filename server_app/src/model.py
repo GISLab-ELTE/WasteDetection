@@ -252,7 +252,9 @@ class Model(object):
 
             return list_of_bands_and_indices
 
-    def save_bands_indices(self, input_path: str, output_dir_path: str, save: str, postfix: str) -> str:
+    def save_bands_indices(
+        self, input_path: str, output_dir_path: str, save: str, postfix: str
+    ) -> str:
         """
         Saves the specified band values and/or index values to a single- or multi-band tif file.
 
@@ -269,7 +271,11 @@ class Model(object):
         )
 
         bands = len(list_of_bands_and_indices)
-        output_path = Model.output_path("/".join([output_dir_path, os.path.basename(input_path)]), postfix, self.file_extension)
+        output_path = Model.output_path(
+            "/".join([output_dir_path, os.path.basename(input_path)]),
+            postfix,
+            self.file_extension,
+        )
 
         Model.save_tif(
             input_path=input_path,

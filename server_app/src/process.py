@@ -126,7 +126,7 @@ class Process(object):
 
         logging.info("Process started...")
 
-        if self.classify: 
+        if self.classify:
             self.execute_classification()
         else:
             self.execute_download_pipeline()
@@ -201,7 +201,7 @@ class Process(object):
                 masked_heatmap_postfix = self.config_file["masked_heatmap_postfix"]
 
                 processed = False
-                
+
                 if not os.path.exists(output_dir_path):
                     os.makedirs(output_dir_path)
 
@@ -214,7 +214,9 @@ class Process(object):
                     continue
 
                 input_file_path = downloaded_images[feature_id][date]
-                indices_path = self.model.save_bands_indices(input_file_path, output_dir_path, "all", "all")
+                indices_path = self.model.save_bands_indices(
+                    input_file_path, output_dir_path, "all", "all"
+                )
 
                 (
                     classified,
@@ -268,7 +270,9 @@ class Process(object):
         satellite_images_path = self.join_path(
             "workspace_root_dir", "satellite_images_path"
         )
-        estimations_file_path = self.join_path("workspace_root_dir", "estimations_file_path")
+        estimations_file_path = self.join_path(
+            "workspace_root_dir", "estimations_file_path"
+        )
 
         result_dir, image_files_abs, image_files_rel = None, None, None
 
@@ -342,9 +346,11 @@ class Process(object):
             json.dump(image_dict, file, indent=4)
 
         self.add_model_data_to_json_file(geojson_files_path, geojson_dict)
-        self.add_model_data_to_json_file(estimations_file_path, self.estimations)    
+        self.add_model_data_to_json_file(estimations_file_path, self.estimations)
 
-    def add_model_data_to_json_file(self, file_path: str, model_data: OrderedDict) -> None:
+    def add_model_data_to_json_file(
+        self, file_path: str, model_data: OrderedDict
+    ) -> None:
         """
         Adds data related to the model to the given json file.
         The key of the data will be the id of the classification model.
@@ -357,7 +363,7 @@ class Process(object):
 
         # to prevent deleting the file's contents before reading, we need to use the "r" flag to read the contents.
         # This throws an exception when the file does not exist, thus we need to create an empty json file to prevent errors.
-        if (not os.path.exists(file_path)) or os.stat(file_path).st_size == 0:            
+        if (not os.path.exists(file_path)) or os.stat(file_path).st_size == 0:
             with open(file_path, "w") as file:
                 json.dump({}, file, indent=4)
 

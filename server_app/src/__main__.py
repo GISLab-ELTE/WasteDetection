@@ -31,7 +31,7 @@ def parse_args() -> argparse.Namespace:
         "--classify",
         action="store_true",
         default=False,
-        help="Do classification instead of downloading images."
+        help="Do classification instead of downloading images.",
     )
 
     parsed_args = parser.parse_args()
