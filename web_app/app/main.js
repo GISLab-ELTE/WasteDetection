@@ -271,8 +271,7 @@ const changeAOI = function () {
   const model = selectedModel.value;
 
   swipe.value = 0;
-  swipe.max =
-    Object.keys(aoisWithDates[model][aoi]).length - 1;
+  swipe.max = Object.keys(aoisWithDates[model][aoi]).length - 1;
 
   const swipeValue = swipe.value;
 
@@ -319,7 +318,7 @@ const fetchGeojsonPaths = async function () {
   const res = await fetch(base_url + "geojson_files.json");
   aoisWithDates = await res.json();
 
-  for (var model_id of Object.keys(aoisWithDates)){
+  for (var model_id of Object.keys(aoisWithDates)) {
     const option = document.createElement("option");
     option.text = model_id;
     option.value = model_id;
@@ -336,16 +335,18 @@ const fetchGeojsonPaths = async function () {
   }
 
   swipe.max =
-    Object.keys(aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]]).length - 1;
+    Object.keys(
+      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]],
+    ).length - 1;
 };
 
-const updateClassification = function() {
+const updateClassification = function () {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
   const swipeValue = swipe.value;
   changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
   setAOILayers(aoi);
-}
+};
 
 // Events
 selectedAOI.onchange = changeAOI;
