@@ -164,7 +164,7 @@ class Process(object):
             try:
                 self.api.download()
             except Exception as e:
-                logging.error()
+                logging.error(str(e))
                 pass
             else:
                 success = True
