@@ -25,7 +25,9 @@ class Process(object):
 
     """
 
-    def __init__(self, download_init: bool, download_update: bool, classify: bool) -> None:
+    def __init__(
+        self, download_init: bool, download_update: bool, classify: bool
+    ) -> None:
         """
         Constructor of Process class.
 
@@ -79,7 +81,9 @@ class Process(object):
             return
 
         if self.download_init and self.download_update:
-            logging.error("cannot have download-init and download-update at the same time!")
+            logging.error(
+                "cannot have download-init and download-update at the same time!"
+            )
             return
 
         if not self.classify:

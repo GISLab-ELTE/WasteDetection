@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
         "--download-update",
         action="store_true",
         default=False,
-        help="Download new images."
+        help="Download new images.",
     )
 
     parser.add_argument(
