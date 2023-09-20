@@ -67,23 +67,32 @@ class Process(object):
                 data_file=self.api.data_file, crs_to="epsg:3857"
             )
 
-    def mainloop(self, download_init: bool, download_update: bool) -> None:
+    def mainloop(self) -> None:
         """
         The main loop of the application. Starts new process and waits for the next.
 
         :return: None
         """
 
+        if not self.classify and not self.download_init and not self.download_update:
+            logging.error("One of the flags must be specified. See help.")
+            return
+
+        if self.download_init and self.download_update:
+            logging.error("cannot have download-init and download-update at the same time!")
+            return
+
         if not self.classify:
             logging.info("Started setting up the account.")
             self.api.login()
             logging.info("Finished setting up the account.")
+        else:
+            self.execute_classification()
 
-        if download_init:
+        if self.download_init:
             self.startup()
-
-        if downlad:
-            self.process()
+        elif self.download_update:
+            self.execute_download_pipeline()
 
     def startup(self) -> None:
         """
@@ -113,23 +122,6 @@ class Process(object):
         self.print_acquisition_dates(observation_max_span)
 
         logging.info("Startup process ended.")
-
-    def process(self) -> None:
-        """
-        Executes a new process: search, order, download, estimate.
-
-        :return: None
-        """
-
-        logging.info("Process started...")
-
-        if self.classify:
-            self.execute_classification()
-        else:
-            self.execute_download_pipeline()
-
-        logging.info("Process finished...")
-        logging.info("{} Awaiting execution of next process...")
 
     def execute_classification(self) -> None:
         """
