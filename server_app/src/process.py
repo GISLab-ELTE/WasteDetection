@@ -25,7 +25,7 @@ class Process(object):
 
     """
 
-    def __init__(self, classify: bool) -> None:
+    def __init__(self, download_init: bool, download_update: bool, classify: bool) -> None:
         """
         Constructor of Process class.
 
@@ -45,6 +45,8 @@ class Process(object):
 
         self.api = None
         self.pixel_size = None
+        self.download_init = download_init
+        self.download_update = download_update
         self.classify = classify
 
         self.estimations = dict()
@@ -65,7 +67,7 @@ class Process(object):
                 data_file=self.api.data_file, crs_to="epsg:3857"
             )
 
-    def mainloop(self, run_startup: bool, run_sleep: bool) -> None:
+    def mainloop(self, download_init: bool, download_update: bool) -> None:
         """
         The main loop of the application. Starts new process and waits for the next.
 
@@ -77,15 +79,10 @@ class Process(object):
             self.api.login()
             logging.info("Finished setting up the account.")
 
-        if run_startup:
+        if download_init:
             self.startup()
 
-        if run_sleep:
-            while True:
-                self.process()
-                secs = self.get_seconds_until_next_process()
-                time.sleep(secs)
-        else:
+        if downlad:
             self.process()
 
     def startup(self) -> None:
@@ -387,31 +384,6 @@ class Process(object):
             "\\", "/"
         )
         return path
-
-    def get_seconds_until_next_process(self) -> float:
-        """
-        Calculates remaining seconds until a new process should be started.
-
-        :return: Remaining seconds until next process.
-        """
-
-        reset_time = self.config_file["download_start_time"]
-        reset_time_obj = dt.datetime.strptime(reset_time, "%H:%M:%S")
-        hour, minute, second = (
-            reset_time_obj.hour,
-            reset_time_obj.minute,
-            reset_time_obj.second,
-        )
-
-        today = dt.datetime.today()
-        tomorrow = today.replace(
-            day=today.day, hour=hour, minute=minute, second=second, microsecond=0
-        ) + dt.timedelta(days=1)
-
-        delta_t = tomorrow - today
-        secs = delta_t.total_seconds()
-
-        return secs
 
     def analyze_estimations(self) -> None:
         """
