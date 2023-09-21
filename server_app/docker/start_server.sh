@@ -18,11 +18,14 @@ else
   exit 1
 fi;
 
-if echo "${ARGS[@]}" | grep -qw "startup"; then
-  PYTHON_ARGS+=("-st")
+if echo "${ARGS[@]}" | grep -qw "download-init"; then
+  PYTHON_ARGS+=("--download-init")
 fi;
-if echo "${ARGS[@]}" | grep -qw "sleep"; then
-  PYTHON_ARGS+=("-s")
+if echo "${ARGS[@]}" | grep -qw "download-update"; then
+  PYTHON_ARGS+=("--download-update")
+fi;
+if echo "${ARGS[@]}" | grep -qw "classify"; then
+  PYTHON_ARGS+=("--classify")
 fi;
 
 cd src

@@ -13,18 +13,27 @@ def parse_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-st",
-        "--startup",
+        "-u",
+        "--download-update",
         action="store_true",
         default=False,
-        help="Run startup process or not.",
+        help="Download new images.",
     )
+
     parser.add_argument(
-        "-s",
-        "--sleep",
+        "-i",
+        "--download-init",
         action="store_true",
         default=False,
-        help="Sleep after execution or not.",
+        help="Initialize image database: Download all the images on the given time interval.",
+    )
+
+    parser.add_argument(
+        "-cl",
+        "--classify",
+        action="store_true",
+        default=False,
+        help="Execute classification (does not download images).",
     )
 
     parsed_args = parser.parse_args()
@@ -52,5 +61,5 @@ if __name__ == "__main__":
 
     print("AUTOMATIC WASTE DETECTION")
 
-    process = Process()
-    process.mainloop(args.startup, args.sleep)
+    process = Process(args.download_init, args.download_update, args.classify)
+    process.mainloop()

@@ -32,6 +32,7 @@ var satelliteImagesPaths;
 
 // HTML elements
 const selectedAOI = document.getElementById("type");
+const selectedModel = document.getElementById("model");
 const swipe = document.getElementById("swipe");
 
 // Styles for GeoJSON polygons
@@ -226,8 +227,9 @@ const changeDate = function (newDate) {
 
 const setAOILayers = function () {
   const aoi = selectedAOI.value;
+  const model = selectedModel.value;
   const swipeValue = swipe.value;
-  const date = Object.keys(aoisWithDates[aoi])[swipeValue];
+  const date = Object.keys(aoisWithDates[model][aoi])[swipeValue];
   const layers = [];
 
   removeLayersFromMap();
@@ -249,7 +251,7 @@ const setAOILayers = function () {
   layers[0] = layerGeoTiff;
 
   for (let i = 0; i < 4; i++) {
-    sourcesAndLayers["sources"][i].setUrl(aoisWithDates[aoi][date][i]);
+    sourcesAndLayers["sources"][i].setUrl(aoisWithDates[model][aoi][date][i]);
     sourcesAndLayers["sources"][i].refresh();
     sourcesAndLayers["layers"][i].setSource(sourcesAndLayers["sources"][i]);
     layers[i + 1] = sourcesAndLayers["layers"][i];
@@ -266,9 +268,14 @@ const setAOILayers = function () {
 const changeAOI = function () {
   let aoiBbox = null;
   const aoi = selectedAOI.value;
+  const model = selectedModel.value;
+
+  swipe.value = 0;
+  swipe.max = Object.keys(aoisWithDates[model][aoi]).length - 1;
+
   const swipeValue = swipe.value;
 
-  changeDate(Object.keys(aoisWithDates[aoi])[swipeValue]);
+  changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
   setAOILayers();
 
   if (aoi == "Kiskore") {
@@ -311,28 +318,41 @@ const fetchGeojsonPaths = async function () {
   const res = await fetch(base_url + "geojson_files.json");
   aoisWithDates = await res.json();
 
-  for (var out_key of Object.keys(aoisWithDates)) {
-    for (var in_key of Object.keys(aoisWithDates[out_key])) {
-      for (let i = 0; i < 4; i++) {
-        aoisWithDates[out_key][in_key][i] =
-          base_url + aoisWithDates[out_key][in_key][i];
+  for (var model_id of Object.keys(aoisWithDates)) {
+    const option = document.createElement("option");
+    option.text = model_id;
+    option.value = model_id;
+
+    selectedModel.add(option);
+    for (var out_key of Object.keys(aoisWithDates[model_id])) {
+      for (var in_key of Object.keys(aoisWithDates[model_id][out_key])) {
+        for (let i = 0; i < 4; i++) {
+          aoisWithDates[model_id][out_key][in_key][i] =
+            base_url + aoisWithDates[model_id][out_key][in_key][i];
+        }
       }
     }
   }
 
   swipe.max =
-    Object.keys(aoisWithDates[Object.keys(aoisWithDates)[0]]).length - 1;
+    Object.keys(
+      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]],
+    ).length - 1;
+};
+
+const updateClassification = function () {
+  const aoi = selectedAOI.value;
+  const model = selectedModel.value;
+  const swipeValue = swipe.value;
+  changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
+  setAOILayers(aoi);
 };
 
 // Events
 selectedAOI.onchange = changeAOI;
+selectedModel.onchange = updateClassification;
 
-swipe.addEventListener("input", function () {
-  const aoi = selectedAOI.value;
-  const swipeValue = swipe.value;
-  changeDate(Object.keys(aoisWithDates[aoi])[swipeValue]);
-  setAOILayers(aoi);
-});
+swipe.addEventListener("input", updateClassification);
 
 window.onresize = function () {
   setTimeout(resizeMap, 200);
