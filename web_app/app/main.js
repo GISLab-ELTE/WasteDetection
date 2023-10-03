@@ -15,6 +15,7 @@ import { Vector as VectorSource } from "ol/source";
 import { Vector as VectorLayer } from "ol/layer";
 import { defaults } from "ol/control/defaults";
 import { ZoomSlider } from "ol/control";
+import Draw from 'ol/interaction/Draw.js';
 
 // Constant values
 const base_url = import.meta.env.VITE_DATA_URL;
@@ -24,11 +25,13 @@ const kiskore_bbox = [2283300, 6021945, 2284684, 6023968];
 const kanyahaza_bbox = [2588995, 6087354, 2597328, 6091368];
 const pusztazamor_bbox = [2090012, 6002140, 2095385, 6005579];
 const raho_bbox = [2693024, 6114066, 2693905, 6114776];
+const drawType = "Polygon";
 
 // Variables
 var geojsonLayerGroup;
 var aoisWithDates;
 var satelliteImagesPaths;
+var drawVisible = false;
 
 // HTML elements
 const selectedAOI = document.getElementById("type");
@@ -105,6 +108,7 @@ const sourceClassified = new VectorSource({ format: new GeoJSON() });
 const sourceHeatmapLow = new VectorSource({ format: new GeoJSON() });
 const sourceHeatmapMedium = new VectorSource({ format: new GeoJSON() });
 const sourceHeatmapHigh = new VectorSource({ format: new GeoJSON() });
+const sourceDraw = new VectorSource({ wrapX: false });
 
 const layerGeoTiff = new TileLayer({
   title: "Satellite image",
@@ -129,6 +133,16 @@ const layerHeatmapHigh = new VectorLayer({
   title: "Heatmap High",
   style: styleFunctionHeatmapHigh,
   visible: true,
+});
+const layerDraw = new VectorLayer({
+  title: "Annotation",
+  source: sourceDraw,
+  visible: false,
+});
+
+const draw = new Draw({
+  source: sourceDraw,
+  type: drawType,
 });
 
 // Dictionary of sources and layers
@@ -191,6 +205,10 @@ const map = new Map({
           }),
         }),
       ],
+    }),
+    new LayerGroup({
+      title: "Manual annotation",
+      layers: [layerDraw],
     }),
   ],
   view: new View({
@@ -348,6 +366,13 @@ const updateClassification = function () {
   setAOILayers(aoi);
 };
 
+const addDrawInteraction = function () {
+  map.addInteraction(draw);
+}
+const removeDrawInteraction = function () {
+  map.removeInteraction(draw);
+}
+
 // Events
 selectedAOI.onchange = changeAOI;
 selectedModel.onchange = updateClassification;
@@ -357,6 +382,17 @@ swipe.addEventListener("input", updateClassification);
 window.onresize = function () {
   setTimeout(resizeMap, 200);
 };
+
+layerDraw.on("change:visible", function () {
+  if (!drawVisible) {
+    addDrawInteraction();
+    drawVisible = true;
+  }
+  else {
+    removeDrawInteraction();
+    drawVisible = false;
+  };
+});
 
 await fetchSatelliteImagePaths();
 await fetchGeojsonPaths();
