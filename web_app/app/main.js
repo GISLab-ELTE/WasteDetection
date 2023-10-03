@@ -15,7 +15,10 @@ import { Vector as VectorSource } from "ol/source";
 import { Vector as VectorLayer } from "ol/layer";
 import { defaults } from "ol/control/defaults";
 import { ZoomSlider } from "ol/control";
-import Draw from 'ol/interaction/Draw.js';
+import Draw from "ol/interaction/Draw.js";
+import Overlay from "ol/Overlay.js";
+import { toLonLat } from "ol/proj.js";
+import { toStringHDMS } from "ol/coordinate.js";
 
 // Constant values
 const base_url = import.meta.env.VITE_DATA_URL;
@@ -27,11 +30,31 @@ const pusztazamor_bbox = [2090012, 6002140, 2095385, 6005579];
 const raho_bbox = [2693024, 6114066, 2693905, 6114776];
 const drawType = "Polygon";
 
+const container = document.getElementById("popup");
+const content = document.getElementById("popup-content");
+const closer = document.getElementById("popup-closer");
+
+const overlay = new Overlay({
+  element: container,
+  autoPan: {
+    animation: {
+      duration: 250,
+    },
+  },
+});
+
+closer.onclick = function () {
+  overlay.setPosition(undefined);
+  closer.blur();
+  return false;
+};
+
 // Variables
 var geojsonLayerGroup;
 var aoisWithDates;
 var satelliteImagesPaths;
 var drawVisible = false;
+var drawnFeatures = [];
 
 // HTML elements
 const selectedAOI = document.getElementById("type");
@@ -143,6 +166,7 @@ const layerDraw = new VectorLayer({
 const draw = new Draw({
   source: sourceDraw,
   type: drawType,
+  features: drawnFeatures,
 });
 
 // Dictionary of sources and layers
@@ -211,6 +235,7 @@ const map = new Map({
       layers: [layerDraw],
     }),
   ],
+  overlays: [overlay],
   view: new View({
     center: [0, 0],
     zoom: 2,
@@ -264,7 +289,7 @@ const setAOILayers = function () {
         },
       ],
       transition: 0,
-    }),
+    })
   );
   layers[0] = layerGeoTiff;
 
@@ -354,7 +379,7 @@ const fetchGeojsonPaths = async function () {
 
   swipe.max =
     Object.keys(
-      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]],
+      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]]
     ).length - 1;
 };
 
@@ -368,10 +393,10 @@ const updateClassification = function () {
 
 const addDrawInteraction = function () {
   map.addInteraction(draw);
-}
+};
 const removeDrawInteraction = function () {
   map.removeInteraction(draw);
-}
+};
 
 // Events
 selectedAOI.onchange = changeAOI;
@@ -387,11 +412,16 @@ layerDraw.on("change:visible", function () {
   if (!drawVisible) {
     addDrawInteraction();
     drawVisible = true;
-  }
-  else {
+  } else {
     removeDrawInteraction();
     drawVisible = false;
-  };
+  }
+});
+
+draw.on("drawend", function (evt) {
+  const polygon = evt.feature;
+  const coordinate = polygon.getGeometry().getLastCoordinate();
+  overlay.setPosition(coordinate);
 });
 
 await fetchSatelliteImagePaths();
