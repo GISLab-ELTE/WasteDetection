@@ -3,17 +3,27 @@
 ## Running the application in Docker Container
 
 1. **Build image:** `docker build -t server_app .`
-2. **Run container:** `docker run -it --name server_app_container --mount type=bind,source="$(pwd)"/docker/config.docker.json,target=/mnt/config.docker.json,readonly --mount type=bind,source={YOUR OUTPUT DIRECTORY},target=/mnt/output server_app [startup] [sleep]`
-   - `startup`: Starts a startup process before the main loop.
-   - `sleep`: Sleeps after execution until the previously set local time.
+2. **Run container:**
+   ```bash
+      docker run -it --name server_app_container \
+        --mount type=bind,source="$(pwd)"/docker/config.docker.json,target=/mnt/config.docker.json,readonly \
+        --mount type=bind,source={YOUR OUTPUT DIRECTORY},target=/mnt/output \
+        server_app [download-init|download-update] [classify]
+	```
+
+   Options:
+   - `download-init`: Initialize image database: Download all the images on the given time interval.
+   - `download-update`: Download new images. Cannot be used with `download-init`.
+   - `classify`: Execute classification (does not download images).
 
 ## Running the application
 
 1. **Create the virtual environment:** `conda env create -f environment.yml`. The name of the new environment will be `WasteDetectionServerApp`.
 2. **Activate environment:** `conda activate WasteDetectionServerApp`.
-3. **Run the application:** `python __main__.py (-st) (-s)` There are two flags that can be used optionally:
-   - `-st`: Starts a startup process before the main loop.
-   - `-s`: Sleeps after execution until the previously set local time.
+3. **Run the application:** `python __main__.py [--download-init|--download-update] [--classify]` There are 3 flags that can be used, at least 1 must be given.
+   - `--download-init`: Initialize image database: Download all the images on the given time interval.
+   - `--download-update`: Download new images. Cannot be used with `--download-init`.
+   - `--classify`: Execute classification (does not download images).
 
 ## Configuration
 
