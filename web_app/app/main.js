@@ -21,13 +21,13 @@ import { toLonLat } from "ol/proj.js";
 import { toStringHDMS } from "ol/coordinate.js";
 
 // Constant values
-const base_url = import.meta.env.VITE_DATA_URL;
+const baseUrl = import.meta.env.VITE_DATA_URL;
 const bingKey =
   "AgKv8E2vHuEwgddyzg_pRM6ycSRygeePXSFYTqc8jbikPT8ILyQxm1EF3YUmeRQ2";
-const kiskore_bbox = [2283300, 6021945, 2284684, 6023968];
-const kanyahaza_bbox = [2588995, 6087354, 2597328, 6091368];
-const pusztazamor_bbox = [2090012, 6002140, 2095385, 6005579];
-const raho_bbox = [2693024, 6114066, 2693905, 6114776];
+const kiskoreBbox = [2283300, 6021945, 2284684, 6023968];
+const kanyahazaBbox = [2588995, 6087354, 2597328, 6091368];
+const pusztazamorBbox = [2090012, 6002140, 2095385, 6005579];
+const rahobBox = [2693024, 6114066, 2693905, 6114776];
 const drawType = "Polygon";
 
 const container = document.getElementById("popup");
@@ -289,7 +289,7 @@ const setAOILayers = function () {
         },
       ],
       transition: 0,
-    })
+    }),
   );
   layers[0] = layerGeoTiff;
 
@@ -322,13 +322,13 @@ const changeAOI = function () {
   setAOILayers();
 
   if (aoi == "Kiskore") {
-    aoiBbox = kiskore_bbox;
+    aoiBbox = kiskoreBbox;
   } else if (aoi == "Kanyahaza") {
-    aoiBbox = kanyahaza_bbox;
+    aoiBbox = kanyahazaBbox;
   } else if (aoi == "Pusztazamor") {
-    aoiBbox = pusztazamor_bbox;
+    aoiBbox = pusztazamorBbox;
   } else if (aoi == "Raho") {
-    aoiBbox = raho_bbox;
+    aoiBbox = rahobBox;
   } else {
     aoiBbox = null;
   }
@@ -346,19 +346,19 @@ const resizeMap = function () {
 };
 
 const fetchSatelliteImagePaths = async function () {
-  const res = await fetch(base_url + "satellite_images.json");
+  const res = await fetch(baseUrl + "satellite_images.json");
   satelliteImagesPaths = await res.json();
 
   for (var out_key of Object.keys(satelliteImagesPaths)) {
     for (var in_key of Object.keys(satelliteImagesPaths[out_key])) {
       satelliteImagesPaths[out_key][in_key]["src"] =
-        base_url + satelliteImagesPaths[out_key][in_key]["src"];
+        baseUrl + satelliteImagesPaths[out_key][in_key]["src"];
     }
   }
 };
 
 const fetchGeojsonPaths = async function () {
-  const res = await fetch(base_url + "geojson_files.json");
+  const res = await fetch(baseUrl + "geojson_files.json");
   aoisWithDates = await res.json();
 
   for (var model_id of Object.keys(aoisWithDates)) {
@@ -371,7 +371,7 @@ const fetchGeojsonPaths = async function () {
       for (var in_key of Object.keys(aoisWithDates[model_id][out_key])) {
         for (let i = 0; i < 4; i++) {
           aoisWithDates[model_id][out_key][in_key][i] =
-            base_url + aoisWithDates[model_id][out_key][in_key][i];
+            baseUrl + aoisWithDates[model_id][out_key][in_key][i];
         }
       }
     }
@@ -379,7 +379,7 @@ const fetchGeojsonPaths = async function () {
 
   swipe.max =
     Object.keys(
-      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]]
+      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]],
     ).length - 1;
 };
 
@@ -419,8 +419,9 @@ layerDraw.on("change:visible", function () {
 });
 
 draw.on("drawend", function (evt) {
+  console.log(evt.feature.getGeometry().getCoordinates());
   const polygon = evt.feature;
-  const coordinate = polygon.getGeometry().getLastCoordinate();
+  const coordinate = polygon.getGeometry().getInteriorPoint().getCoordinates();
   overlay.setPosition(coordinate);
 });
 
