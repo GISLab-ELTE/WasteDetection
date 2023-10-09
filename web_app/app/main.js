@@ -17,8 +17,6 @@ import { defaults } from "ol/control/defaults";
 import { ZoomSlider } from "ol/control";
 import Draw from "ol/interaction/Draw.js";
 import Overlay from "ol/Overlay.js";
-import { toLonLat } from "ol/proj.js";
-import { toStringHDMS } from "ol/coordinate.js";
 
 // Constant values
 const baseUrl = import.meta.env.VITE_DATA_URL;
@@ -30,25 +28,6 @@ const pusztazamorBbox = [2090012, 6002140, 2095385, 6005579];
 const rahobBox = [2693024, 6114066, 2693905, 6114776];
 const drawType = "Polygon";
 
-const container = document.getElementById("popup");
-const content = document.getElementById("popup-content");
-const closer = document.getElementById("popup-closer");
-
-const overlay = new Overlay({
-  element: container,
-  autoPan: {
-    animation: {
-      duration: 250,
-    },
-  },
-});
-
-closer.onclick = function () {
-  overlay.setPosition(undefined);
-  closer.blur();
-  return false;
-};
-
 // Variables
 var geojsonLayerGroup;
 var aoisWithDates;
@@ -57,9 +36,14 @@ var drawVisible = false;
 var drawnFeatures = [];
 
 // HTML elements
-const selectedAOI = document.getElementById("type");
+const selectedAOI = document.getElementById("location");
 const selectedModel = document.getElementById("model");
 const swipe = document.getElementById("swipe");
+const annotationContainer = document.getElementById("annotation-popup");
+const annotationContent = document.getElementById("annotation-popup-content");
+const annotationCloser = document.getElementById("annotation-popup-closer");
+const annotationSave = document.getElementById("annotation-save");
+const annotationCancel = document.getElementById("annotation-cancel");
 
 // Styles for GeoJSON polygons
 const stylesClassified = {
@@ -158,15 +142,24 @@ const layerHeatmapHigh = new VectorLayer({
   visible: true,
 });
 const layerDraw = new VectorLayer({
-  title: "Annotation",
   source: sourceDraw,
   visible: false,
+  zIndex: 100,
 });
 
 const draw = new Draw({
   source: sourceDraw,
   type: drawType,
   features: drawnFeatures,
+});
+
+const overlay = new Overlay({
+  element: annotationContainer,
+  autoPan: {
+    animation: {
+      duration: 250,
+    },
+  },
 });
 
 // Dictionary of sources and layers
@@ -289,7 +282,7 @@ const setAOILayers = function () {
         },
       ],
       transition: 0,
-    }),
+    })
   );
   layers[0] = layerGeoTiff;
 
@@ -379,7 +372,7 @@ const fetchGeojsonPaths = async function () {
 
   swipe.max =
     Object.keys(
-      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]],
+      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]]
     ).length - 1;
 };
 
@@ -419,11 +412,42 @@ layerDraw.on("change:visible", function () {
 });
 
 draw.on("drawend", function (evt) {
-  console.log(evt.feature.getGeometry().getCoordinates());
+  // console.log(evt.feature.getGeometry().getCoordinates());
   const polygon = evt.feature;
   const coordinate = polygon.getGeometry().getInteriorPoint().getCoordinates();
   overlay.setPosition(coordinate);
 });
+
+const annotationContainerClose = function () {
+  hideAnnotationPopup();
+  removeLastDrawnFeature();
+  return false;
+};
+
+const annotationContainerSave = function () {
+  hideAnnotationPopup();
+  const lastDrawnFeature = sourceDraw.getFeatures().slice(-1)[0];
+  const coordinates = lastDrawnFeature.getGeometry().getCoordinates();
+  const annotationTypeValue = document.getElementById(
+    "annotation-type-select"
+  ).value;
+  console.log(coordinates);
+  console.log(annotationTypeValue);
+  return true;
+};
+
+const removeLastDrawnFeature = function () {
+  sourceDraw.removeFeature(sourceDraw.getFeatures().slice(-1)[0]);
+};
+
+const hideAnnotationPopup = function () {
+  overlay.setPosition(undefined);
+  annotationCloser.blur();
+};
+
+annotationCloser.onclick = annotationContainerClose;
+annotationCancel.onclick = annotationContainerClose;
+annotationSave.onclick = annotationContainerSave;
 
 await fetchSatelliteImagePaths();
 await fetchGeojsonPaths();

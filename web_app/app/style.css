@@ -14,7 +14,7 @@
   height: 1px;
 }
 
-.ol-popup {
+.ol-annotation-popup {
   position: absolute;
   background-color: white;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
@@ -26,8 +26,8 @@
   min-width: 280px;
 }
 
-.ol-popup:after,
-.ol-popup:before {
+.ol-annotation-popup:after,
+.ol-annotation-popup:before {
   top: 100%;
   border: solid transparent;
   content: " ";
@@ -37,27 +37,27 @@
   pointer-events: none;
 }
 
-.ol-popup:after {
+.ol-annotation-popup:after {
   border-top-color: white;
   border-width: 10px;
   left: 48px;
   margin-left: -10px;
 }
 
-.ol-popup:before {
+.ol-annotation-popup:before {
   border-top-color: #cccccc;
   border-width: 11px;
   left: 48px;
   margin-left: -11px;
 }
 
-.ol-popup-closer {
+.ol-annotation-popup-closer {
   text-decoration: none;
   position: absolute;
   top: 2px;
   right: 8px;
 }
 
-.ol-popup-closer:after {
+.ol-annotation-popup-closer:after {
   content: "✖";
 }
