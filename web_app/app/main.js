@@ -247,7 +247,7 @@ const setAOILayers = function () {
         },
       ],
       transition: 0,
-    }),
+    })
   );
   layers[0] = layerGeoTiff;
 
@@ -339,7 +339,7 @@ const fetchGeojsonPaths = async function () {
 
   swipe.max =
     Object.keys(
-      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]],
+      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]]
     ).length - 1;
 };
 
