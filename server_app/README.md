@@ -4,14 +4,16 @@
 
 1. **Build image:** `docker build -t server_app .`
 2. **Run container:**
+
    ```bash
       docker run -it --name server_app_container \
         --mount type=bind,source="$(pwd)"/docker/config.docker.json,target=/mnt/config.docker.json,readonly \
         --mount type=bind,source={YOUR OUTPUT DIRECTORY},target=/mnt/output \
         server_app [download-init|download-update] [classify]
-	```
+   ```
 
    Options:
+
    - `download-init`: Initialize image database: Download all the images on the given time interval.
    - `download-update`: Download new images. Cannot be used with `download-init`.
    - `classify`: Execute classification (does not download images).

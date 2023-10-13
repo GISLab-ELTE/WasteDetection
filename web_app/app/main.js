@@ -24,6 +24,7 @@ const kiskore_bbox = [2283300, 6021945, 2284684, 6023968];
 const kanyahaza_bbox = [2588995, 6087354, 2597328, 6091368];
 const pusztazamor_bbox = [2090012, 6002140, 2095385, 6005579];
 const raho_bbox = [2693024, 6114066, 2693905, 6114776];
+const drina_bbox = [2145189, 5426572, 2147977, 5430040];
 
 // Variables
 var geojsonLayerGroup;
@@ -286,6 +287,8 @@ const changeAOI = function () {
     aoiBbox = pusztazamor_bbox;
   } else if (aoi == "Raho") {
     aoiBbox = raho_bbox;
+  } else if (aoi == "Drina") {
+    aoiBbox = drina_bbox;
   } else {
     aoiBbox = null;
   }
