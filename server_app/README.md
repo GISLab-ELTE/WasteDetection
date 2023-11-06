@@ -1,24 +1,44 @@
 # Server application for continuous waste detection
 
+## Running the application in Docker Container
+
+1. **Build image:** `docker build -t server_app .`
+2. **Run container:**
+
+   ```bash
+      docker run -it --name server_app_container \
+        --mount type=bind,source="$(pwd)"/docker/config.docker.json,target=/mnt/config.docker.json,readonly \
+        --mount type=bind,source={YOUR OUTPUT DIRECTORY},target=/mnt/output \
+        server_app [download-init|download-update] [classify]
+   ```
+
+   Options:
+
+   - `download-init`: Initialize image database: Download all the images on the given time interval.
+   - `download-update`: Download new images. Cannot be used with `download-init`.
+   - `classify`: Execute classification (does not download images).
+
 ## Running the application
 
-1. **Create the virtual environment**: `conda env create -f environment.yml`. The name of the new environment will be `WasteDetectionServerApp`.
+1. **Create the virtual environment:** `conda env create -f environment.yml`. The name of the new environment will be `WasteDetectionServerApp`.
 2. **Activate environment:** `conda activate WasteDetectionServerApp`.
-3. **Run the application:** `python __main__.py (-st) (-s)` There are two flags that can be used optionally:
-    - `-st`: Starts a startup process before the main loop.
-    - `-s`: Sleeps after execution until the previously set local time.
-   
+3. **Run the application:** `python __main__.py [--download-init|--download-update] [--classify]` There are 3 flags that can be used, at least 1 must be given.
+   - `--download-init`: Initialize image database: Download all the images on the given time interval.
+   - `--download-update`: Download new images. Cannot be used with `--download-init`.
+   - `--classify`: Execute classification (does not download images).
 
 ## Configuration
 
 Meaning of the parameters in `config.sample.json` file:
 
-- `download_dir_planetscope`: Download destination of PlanetScope images.
-- `download_dir_sentinel-2`: Download destination of Sentinel-2 images.
-- `result_dir_planetscope`: Output directory of result GeoJSON files created from PlanetScope images.
-- `result_dir_sentinel-2`: Output directory of result GeoJSON files created from Sentinel-2 images.
-- `estimations_file_path`: Path of the file that will contain the estimation of the polluted areas' extension.
-- `geojson_files_path`: Path of the dynamically produced JSON file that stores the location of the result GeoJSONs. 
+- `workspace_root_dir`: Root directory of workspace.
+- `download_dir_planetscope`: Download destination of PlanetScope images. Relative to `workspace_root_dir`.
+- `download_dir_sentinel-2`: Download destination of Sentinel-2 images. Relative to `workspace_root_dir`.
+- `result_dir_planetscope`: Output directory of result GeoJSON files created from PlanetScope images. Relative to `workspace_root_dir`.
+- `result_dir_sentinel-2`: Output directory of result GeoJSON files created from Sentinel-2 images. Relative to `workspace_root_dir`.
+- `estimations_file_path`: Path of the file that will contain the estimation of the polluted areas' extension. Relative to `workspace_root_dir`.
+- `geojson_files_path`: Path of the dynamically produced JSON file that stores the location of the result GeoJSONs. Relative to `workspace_root_dir`.
+- `satellite_images_path`: Path of the dynamically produced JSON file that stores the location of the downloaded satellite images. Relative to `workspace_root_dir`.
 - `planet_api_key`: Planet Account API key.
 - `sentinel_sh_client_id`: Account OAuth client ID in SentinelHub.
 - `sentinel_instance_id`: Account User ID in SentinelHub.
@@ -28,6 +48,7 @@ Meaning of the parameters in `config.sample.json` file:
 - `observation_span_in_days`: Number of days to analyze.
 - `max_cloud_cover`: Cloud coverage in percentage.
 - `clf_path`: Path of Random Forest classifier.
+- `clf_id`: The Id of the Random Forest classifier.
 - `classification_postfix`: File name postfix of classified image.
 - `heatmap_postfix`: File name postfix of heatmap image.
 - `masked_classification_postfix`: File name postfix of masked classified image.

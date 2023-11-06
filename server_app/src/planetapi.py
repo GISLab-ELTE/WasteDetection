@@ -1,4 +1,5 @@
 import os
+import copy
 import json
 import time
 import pathlib
@@ -25,8 +26,8 @@ class PlanetAPI(BaseAPI):
         """
         Constructor of PlanetAPI class.
 
-        :param config_file: dictionary containing the settings
-        :param data_file: dictionary containing the AOIs (GeoJSON)
+        :param config_file: Dictionary containing the settings.
+        :param data_file: Dictionary containing the AOIs (GeoJSON).
         """
 
         super(PlanetAPI, self).__init__(config_file, data_file)
@@ -62,8 +63,8 @@ class PlanetAPI(BaseAPI):
         """
         Searches the available images within the given time interval.
 
-        :param time_interval: acquisition time interval of images
-        :param max_result_limit: maximum number of results
+        :param time_interval: Acquisition time interval of images.
+        :param max_result_limit: Maximum number of results.
         :return: None
         """
 
@@ -71,7 +72,7 @@ class PlanetAPI(BaseAPI):
             geometry_filter = {
                 "type": "GeometryFilter",
                 "field_name": "geometry",
-                "config": feature["geometry"]
+                "config": feature["geometry"],
             }
 
             date_range_filter = {
@@ -79,25 +80,32 @@ class PlanetAPI(BaseAPI):
                 "field_name": "acquired",
                 "config": {
                     "gte": time_interval[0] + "T00:00:00.000Z",
-                    "lt": time_interval[1] + "T00:00:00.000Z"
-                }
+                    "lt": time_interval[1] + "T00:00:00.000Z",
+                },
             }
 
             cloud_cover_filter = {
                 "type": "RangeFilter",
                 "field_name": "cloud_cover",
-                "config": {
-                    "lte": float(self.config_file["max_cloud_cover"]) / 100
-                }
+                "config": {"lte": float(self.config_file["max_cloud_cover"]) / 100},
             }
 
-            geojson = self.start_search(self.item_type, geometry_filter, date_range_filter, cloud_cover_filter)
+            geojson = self.start_search(
+                self.item_type, geometry_filter, date_range_filter, cloud_cover_filter
+            )
 
+            feature_id = feature["properties"]["id"]
             time_difference = dt.timedelta(hours=12)
             image_ids = PlanetAPI.get_image_ids(geojson)
-            unique_image_ids = PlanetAPI.get_unique_image_ids(image_ids, time_difference)
+            unique_image_ids = PlanetAPI.get_unique_image_ids(
+                image_ids, time_difference
+            )
 
-            self.search_results[feature["properties"]["id"]] = unique_image_ids[:max_result_limit]
+            self.search_results[feature_id] = unique_image_ids[:max_result_limit]
+
+            self.search_results[feature_id] = self.filter_out_already_downloaded_images(
+                feature_id, self.search_results[feature_id]
+            )
 
     def order(self) -> None:
         """
@@ -112,36 +120,39 @@ class PlanetAPI(BaseAPI):
                     {
                         "item_ids": [product],
                         "item_type": "PSScene",
-                        "product_bundle": "analytic_sr_udm2"
+                        "product_bundle": "analytic_sr_udm2",
                     }
                 ]
 
-                clip = {
-                    "clip": {
-                        "aoi": feature["geometry"]
-                    }
-                }
+                clip = {"clip": {"aoi": feature["geometry"]}}
+
+                reproject = {"reproject": {"projection": "EPSG:3857"}}
 
                 request_clip = {
                     "name": feature["properties"]["id"] + ": automated download",
                     "products": products,
-                    "tools": [clip]
+                    "tools": [clip, reproject],
                 }
 
-                date_time_obj = dt.datetime.strptime("_".join(product.split("_")[:2]), '%Y%m%d_%H%M%S')
+                date_time_obj = dt.datetime.strptime(
+                    "_".join(product.split("_")[:2]), "%Y%m%d_%H%M%S"
+                )
                 date_time_str = dt.datetime.strftime(date_time_obj, "%Y-%m-%d")
 
                 order_url = self.place_order(request_clip)
 
                 if feature["properties"]["id"] not in self.order_urls.keys():
                     self.order_urls[feature["properties"]["id"]] = dict()
-                self.order_urls[feature["properties"]["id"]][date_time_str] = [order_url, "placed"]
+                self.order_urls[feature["properties"]["id"]][date_time_str] = [
+                    order_url,
+                    "placed",
+                ]
 
     def download(self, num_loops: int = 1000) -> None:
         """
         Downloads the available images.
 
-        :param num_loops: maximum number of iterations when waiting for order to be activated
+        :param num_loops: Maximum number of iterations when waiting for order to be activated.
         :return: None
         """
 
@@ -154,15 +165,18 @@ class PlanetAPI(BaseAPI):
             all_ended = True
 
             for feature in self.order_urls.keys():
-
                 for date in self.order_urls[feature]:
                     if self.order_urls[feature][date][1] in ["downloaded", "failed"]:
                         continue
 
-                    order_id, order_state = self.get_state(self.order_urls[feature][date][0])
+                    order_id, order_state = self.get_state(
+                        self.order_urls[feature][date][0]
+                    )
 
                     if order_state in success_states:
-                        success = self.download_order(feature, date, self.order_urls[feature][date][0])
+                        success = self.download_order(
+                            feature, date, self.order_urls[feature][date][0]
+                        )
                         if not success:
                             time.sleep(2)
                             continue
@@ -179,61 +193,109 @@ class PlanetAPI(BaseAPI):
                 time.sleep(60)
                 count += 1
 
-    def start_search(self, item_type: str, geometry_filter: Dict,
-                     date_range_filter: Dict, cloud_cover_filter: Dict) -> Dict:
+    def start_search(
+        self,
+        item_type: str,
+        geometry_filter: Dict,
+        date_range_filter: Dict,
+        cloud_cover_filter: Dict,
+    ) -> Dict:
         """
         Starts the search for images based on the set filters.
 
-        :param item_type: item type of Planet satellite
-        :param geometry_filter: filter for AOI
-        :param date_range_filter: filter for acquisition date
-        :param cloud_cover_filter: filter for cloud coverage
-        :return: dictionary containing the search results
+        :param item_type: Item type of Planet satellite.
+        :param geometry_filter: Filter for AOI.
+        :param date_range_filter: Filter for acquisition date.
+        :param cloud_cover_filter: Filter for cloud coverage.
+        :return: Dictionary containing the search results.
         """
 
         combined_filter = {
             "type": "AndFilter",
-            "config": [geometry_filter, date_range_filter, cloud_cover_filter]
+            "config": [geometry_filter, date_range_filter, cloud_cover_filter],
         }
 
         # API request object
-        search_request = {
-            "item_types": [item_type],
-            "filter": combined_filter
-        }
+        search_request = {"item_types": [item_type], "filter": combined_filter}
 
-        search_result = requests.post(self.search_url, auth=self.auth, json=search_request)
+        search_result = requests.post(
+            self.search_url, auth=self.auth, json=search_request
+        )
 
         geojson = search_result.json()
 
         return geojson
 
+    def filter_out_already_downloaded_images(
+        self, feature_id: str, image_ids: List[str]
+    ) -> List[str]:
+        """
+        Filters out image ids that already exist locally.
+
+        :param feature_id: The id property of a polygon (GeoJSON).
+        :param image_ids: List of product ids.
+        :return: Image ids that don't exist locally.
+        """
+
+        work_dir = "/".join(
+            [
+                self.config_file["workspace_root_dir"],
+                self.config_file["download_dir_planetscope"],
+                feature_id,
+            ]
+        )
+        filtered_image_ids = copy.deepcopy(image_ids)
+
+        dates = [
+            dt.datetime.strftime(
+                dt.datetime.strptime(
+                    "_".join(product.split("_")[:2]),
+                    "%Y%m%d_%H%M%S",
+                ),
+                "%Y-%m-%d",
+            )
+            for product in image_ids
+        ]
+
+        for _, dirnames, _ in os.walk(work_dir):
+            for dirname in dirnames:
+                if dirname in dates:
+                    index = dates.index(dirname)
+                    filtered_image_ids.remove(image_ids[index])
+
+        return filtered_image_ids
+
     def place_order(self, request: Dict) -> str:
         """
         Places the order with set parameters.
 
-        :param request: dictionary containing the order request parameters
-        :return: the URL of the placed order
+        :param request: Dictionary containing the order request parameters.
+        :return: The URL of the placed order.
         """
 
-        response = requests.post(self.orders_url, data=json.dumps(request), auth=self.auth, headers=self.headers)
+        response = requests.post(
+            self.orders_url,
+            data=json.dumps(request),
+            auth=self.auth,
+            headers=self.headers,
+        )
         print(response)
 
         if not response.ok:
             raise Exception(response.content)
 
-        order_id = response.json()['id']
+        order_id = response.json()["id"]
         print("Order id:", order_id)
 
-        order_url = self.orders_url + '/' + order_id
+        order_url = self.orders_url + "/" + order_id
         return order_url
 
     def get_state(self, order_url: str) -> Tuple[str, str]:
         """
         Returns the id and state of an order based on the given URL.
 
-        :param order_url: the URL of an order
-        :return: id and state of an order
+        :param order_url: The URL of an order.
+        :return: Id and state of an order.
         """
 
         r = requests.get(order_url, auth=self.auth)
@@ -252,11 +314,11 @@ class PlanetAPI(BaseAPI):
         """
         Downloads an order after it was processed.
 
-        :param feature_id: the id property of a polygon (GeoJSON)
-        :param date: date of acquisition
-        :param order_url: the URL of an order
-        :param overwrite: redownload image if True
-        :return:
+        :param feature_id: The id property of a polygon (GeoJSON).
+        :param date: Date of acquisition.
+        :param order_url: The URL of an order.
+        :param overwrite: Redownload image if True.
+        :return: True if download succeeded, False if not.
         """
 
         r = requests.get(order_url, auth=self.auth)
@@ -271,11 +333,18 @@ class PlanetAPI(BaseAPI):
         results_urls = [r["location"] for r in results]
         results_names = [r["name"] for r in results]
 
-        data_folder = "/".join([self.config_file["download_dir_planetscope"],
-                                str(feature_id),
-                                str(date)])
+        data_folder = "/".join(
+            [
+                self.config_file["workspace_root_dir"],
+                self.config_file["download_dir_planetscope"],
+                str(feature_id),
+                str(date),
+            ]
+        )
 
-        results_paths = [pathlib.Path(os.path.join(data_folder, n)) for n in results_names]
+        results_paths = [
+            pathlib.Path(os.path.join(data_folder, n)) for n in results_names
+        ]
         print("{} items to download".format(len(results_urls)))
 
         for url, name, path in zip(results_urls, results_names, results_paths):
@@ -295,21 +364,23 @@ class PlanetAPI(BaseAPI):
         """
         Filters out image ids from search result.
 
-        :param geojson: dictionary containing the search results
-        :return: image ids from the given search result.
+        :param geojson: Dictionary containing the search results.
+        :return: Image ids from the given search result.
         """
 
         image_ids = [feature["id"] for feature in geojson["features"]]
         return image_ids
 
     @staticmethod
-    def get_unique_image_ids(image_ids: List[str], time_difference: dt.timedelta) -> List[str]:
+    def get_unique_image_ids(
+        image_ids: List[str], time_difference: dt.timedelta
+    ) -> List[str]:
         """
         Returns image ids filtered out by the given time difference.
 
-        :param image_ids: list of image ids
-        :param time_difference: time difference between two acquisition dates
-        :return: list of image ids based on the time difference filter
+        :param image_ids: List of image ids.
+        :param time_difference: Time difference between two acquisition dates.
+        :return: List of image ids based on the time difference filter.
         """
 
         all_timestamps = list()
@@ -317,13 +388,13 @@ class PlanetAPI(BaseAPI):
 
         for image_id in image_ids:
             date_time_str = "_".join(image_id.split("_")[:2])
-            date_time_obj = dt.datetime.strptime(date_time_str, '%Y%m%d_%H%M%S')
+            date_time_obj = dt.datetime.strptime(date_time_str, "%Y%m%d_%H%M%S")
             all_timestamps.append(date_time_obj)
 
         all_unique_timestamps = filter_times(all_timestamps, time_difference)
 
         for timestamp in all_unique_timestamps:
-            date_time_str = dt.datetime.strftime(timestamp, '%Y%m%d_%H%M%S')
+            date_time_str = dt.datetime.strftime(timestamp, "%Y%m%d_%H%M%S")
             match = [image_id for image_id in image_ids if date_time_str in image_id]
             all_unique_image_ids.append(match[0])
 

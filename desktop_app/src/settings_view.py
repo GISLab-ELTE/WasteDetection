@@ -242,10 +242,16 @@ class SettingsView(ttk.Toplevel):
         self._morphology_matrix_spinbox = ttk.Spinbox(master=self._value_settings_lf)
 
         self._morphology_iterations_label = ttk.Label(master=self._value_settings_lf)
-        self._morphology_iterations_spinbox = ttk.Spinbox(master=self._value_settings_lf)
+        self._morphology_iterations_spinbox = ttk.Spinbox(
+            master=self._value_settings_lf
+        )
 
-        self._washed_up_heatmap_sections_label = ttk.Label(master=self._value_settings_lf)
-        self._washed_up_heatmap_sections_spinbox = ttk.Spinbox(master=self._value_settings_lf)
+        self._washed_up_heatmap_sections_label = ttk.Label(
+            master=self._value_settings_lf
+        )
+        self._washed_up_heatmap_sections_spinbox = ttk.Spinbox(
+            master=self._value_settings_lf
+        )
 
         self._heatmap_high_label = ttk.Label(master=self._value_settings_lf)
         self._heatmap_high_spinbox = ttk.Spinbox(master=self._value_settings_lf)
@@ -283,23 +289,39 @@ class SettingsView(ttk.Toplevel):
         self._file_extension_label = ttk.Label(master=self._file_settings_lf)
         self._file_extension_entry = ttk.Entry(master=self._file_settings_lf)
 
-        self._hotspot_classified_postfix_label = ttk.Label(master=self._file_settings_lf)
-        self._hotspot_classified_postfix_entry = ttk.Entry(master=self._file_settings_lf)
+        self._hotspot_classified_postfix_label = ttk.Label(
+            master=self._file_settings_lf
+        )
+        self._hotspot_classified_postfix_entry = ttk.Entry(
+            master=self._file_settings_lf
+        )
 
         self._hotspot_heatmap_postfix_label = ttk.Label(master=self._file_settings_lf)
         self._hotspot_heatmap_postfix_entry = ttk.Entry(master=self._file_settings_lf)
 
-        self._floating_classified_postfix_label = ttk.Label(master=self._file_settings_lf)
-        self._floating_classified_postfix_entry = ttk.Entry(master=self._file_settings_lf)
+        self._floating_classified_postfix_label = ttk.Label(
+            master=self._file_settings_lf
+        )
+        self._floating_classified_postfix_entry = ttk.Entry(
+            master=self._file_settings_lf
+        )
 
         self._floating_heatmap_postfix_label = ttk.Label(master=self._file_settings_lf)
         self._floating_heatmap_postfix_entry = ttk.Entry(master=self._file_settings_lf)
 
-        self._floating_masked_classified_postfix_label = ttk.Label(master=self._file_settings_lf)
-        self._floating_masked_classified_postfix_entry = ttk.Entry(master=self._file_settings_lf)
+        self._floating_masked_classified_postfix_label = ttk.Label(
+            master=self._file_settings_lf
+        )
+        self._floating_masked_classified_postfix_entry = ttk.Entry(
+            master=self._file_settings_lf
+        )
 
-        self._floating_masked_heatmap_postfix_label = ttk.Label(master=self._file_settings_lf)
-        self._floating_masked_heatmap_postfix_entry = ttk.Entry(master=self._file_settings_lf)
+        self._floating_masked_heatmap_postfix_label = ttk.Label(
+            master=self._file_settings_lf
+        )
+        self._floating_masked_heatmap_postfix_entry = ttk.Entry(
+            master=self._file_settings_lf
+        )
 
         self._washed_up_before_postfix_label = ttk.Label(master=self._file_settings_lf)
         self._washed_up_before_postfix_entry = ttk.Entry(master=self._file_settings_lf)
@@ -343,8 +365,12 @@ class SettingsView(ttk.Toplevel):
         self._satellite_lf.columnconfigure(0, weight=1)
         self._satellite_lf.columnconfigure(1, weight=1)
 
-        self._planet_rb.configure(text="Planet", variable=self._vars["satellite_rb"], value=1)
-        self._sentinel_rb.configure(text="Sentinel-2", variable=self._vars["satellite_rb"], value=2)
+        self._planet_rb.configure(
+            text="Planet", variable=self._vars["satellite_rb"], value=1
+        )
+        self._sentinel_rb.configure(
+            text="Sentinel-2", variable=self._vars["satellite_rb"], value=2
+        )
 
         self._sentinel_settings_lf.configure(text="Sentinel-2 settings", padding=10)
         for i in range(8):
@@ -368,17 +394,29 @@ class SettingsView(ttk.Toplevel):
             self._value_settings_lf.rowconfigure(i, weight=1)
             self._value_settings_lf.columnconfigure(i, weight=1)
 
-        self._training_estimators_label.configure(text="Number of decision trees in Random Forest:")
+        self._training_estimators_label.configure(
+            text="Number of decision trees in Random Forest:"
+        )
         self._training_estimators_entry.configure(width=2)
 
-        self._morphology_matrix_label.configure(text="Matrix size for morphology (NxN):")
+        self._morphology_matrix_label.configure(
+            text="Matrix size for morphology (NxN):"
+        )
         self._morphology_matrix_spinbox.configure(width=2, from_=1, increment=1, to=20)
 
-        self._morphology_iterations_label.configure(text="Number of iterations for morphology:")
-        self._morphology_iterations_spinbox.configure(width=2, from_=1, increment=1, to=20)
+        self._morphology_iterations_label.configure(
+            text="Number of iterations for morphology:"
+        )
+        self._morphology_iterations_spinbox.configure(
+            width=2, from_=1, increment=1, to=20
+        )
 
-        self._washed_up_heatmap_sections_label.configure(text="Washed up waste pixel uniqueness modifier:")
-        self._washed_up_heatmap_sections_spinbox.configure(width=2, from_=4, increment=1, to=20)
+        self._washed_up_heatmap_sections_label.configure(
+            text="Washed up waste pixel uniqueness modifier:"
+        )
+        self._washed_up_heatmap_sections_spinbox.configure(
+            width=2, from_=4, increment=1, to=20
+        )
 
         self._heatmap_high_label.configure(text="Heatmap high probability (%):")
         self._heatmap_high_spinbox.configure(width=2, from_=1, increment=1, to=100)
@@ -415,7 +453,9 @@ class SettingsView(ttk.Toplevel):
         self._hotspot_rf_entry.configure(validate="all", width=40)
         self._hotspot_rf_browse_btn.configure(text="...")
 
-        self._floating_rf_label.configure(text="Random Forest for Floating waste detection:")
+        self._floating_rf_label.configure(
+            text="Random Forest for Floating waste detection:"
+        )
         self._floating_rf_entry.configure(validate="all", width=40)
         self._floating_rf_browse_btn.configure(text="...")
 
@@ -428,16 +468,24 @@ class SettingsView(ttk.Toplevel):
         self._file_extension_label.configure(text="File extension:")
         self._file_extension_entry.configure(width=10)
 
-        self._hotspot_classified_postfix_label.configure(text="Postfix of Hot-spot classified image:")
+        self._hotspot_classified_postfix_label.configure(
+            text="Postfix of Hot-spot classified image:"
+        )
         self._hotspot_classified_postfix_entry.configure(width=20)
 
-        self._hotspot_heatmap_postfix_label.configure(text="Postfix of Hot-spot heatmap image:")
+        self._hotspot_heatmap_postfix_label.configure(
+            text="Postfix of Hot-spot heatmap image:"
+        )
         self._hotspot_heatmap_postfix_entry.configure(width=20)
 
-        self._floating_classified_postfix_label.configure(text="Postfix of Floating waste classified image:")
+        self._floating_classified_postfix_label.configure(
+            text="Postfix of Floating waste classified image:"
+        )
         self._floating_classified_postfix_entry.configure(width=20)
 
-        self._floating_heatmap_postfix_label.configure(text="Postfix of Floating waste heatmap image:")
+        self._floating_heatmap_postfix_label.configure(
+            text="Postfix of Floating waste heatmap image:"
+        )
         self._floating_heatmap_postfix_entry.configure(width=20)
 
         self._floating_masked_classified_postfix_label.configure(
@@ -450,10 +498,14 @@ class SettingsView(ttk.Toplevel):
         )
         self._floating_masked_heatmap_postfix_entry.configure(width=20)
 
-        self._washed_up_before_postfix_label.configure(text="Postfix of Washed up waste first result image:")
+        self._washed_up_before_postfix_label.configure(
+            text="Postfix of Washed up waste first result image:"
+        )
         self._washed_up_before_postfix_entry.configure(width=20)
 
-        self._washed_up_after_postfix_label.configure(text="Postfix of Washed up waste second result image:")
+        self._washed_up_after_postfix_label.configure(
+            text="Postfix of Washed up waste second result image:"
+        )
         self._washed_up_after_postfix_entry.configure(width=20)
 
         self._training_labels.configure(text="Training labels", padding=10)
@@ -462,13 +514,17 @@ class SettingsView(ttk.Toplevel):
         self._training_labels.columnconfigure(0, weight=1)
 
         self._training_blue.configure(text="Blue", variable=self._vars["training_blue"])
-        self._training_green.configure(text="Green", variable=self._vars["training_green"])
+        self._training_green.configure(
+            text="Green", variable=self._vars["training_green"]
+        )
         self._training_red.configure(text="Red", variable=self._vars["training_red"])
         self._training_nir.configure(text="NIR", variable=self._vars["training_nir"])
         self._training_pi.configure(text="PI", variable=self._vars["training_pi"])
         self._training_ndwi.configure(text="NDWI", variable=self._vars["training_ndwi"])
         self._training_ndvi.configure(text="NDVI", variable=self._vars["training_ndvi"])
-        self._training_rndvi.configure(text="RNDVI", variable=self._vars["training_rndvi"])
+        self._training_rndvi.configure(
+            text="RNDVI", variable=self._vars["training_rndvi"]
+        )
         self._training_sr.configure(text="SR", variable=self._vars["training_sr"])
         self._training_apwi.configure(text="APWI", variable=self._vars["training_apwi"])
 
@@ -639,17 +695,31 @@ class SettingsView(ttk.Toplevel):
 
         self._value_settings_lf.place(x=20, y=95, height=200, width=770)
 
-        self._training_estimators_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-        self._training_estimators_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        self._training_estimators_label.grid(
+            row=0, column=0, sticky="ew", padx=5, pady=5
+        )
+        self._training_estimators_entry.grid(
+            row=0, column=1, sticky="ew", padx=5, pady=5
+        )
 
         self._morphology_matrix_label.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
-        self._morphology_matrix_spinbox.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+        self._morphology_matrix_spinbox.grid(
+            row=1, column=1, sticky="ew", padx=5, pady=5
+        )
 
-        self._morphology_iterations_label.grid(row=2, column=0, sticky="ew", padx=5, pady=5)
-        self._morphology_iterations_spinbox.grid(row=2, column=1, sticky="ew", padx=5, pady=5)
+        self._morphology_iterations_label.grid(
+            row=2, column=0, sticky="ew", padx=5, pady=5
+        )
+        self._morphology_iterations_spinbox.grid(
+            row=2, column=1, sticky="ew", padx=5, pady=5
+        )
 
-        self._washed_up_heatmap_sections_label.grid(row=3, column=0, sticky="ew", padx=5, pady=5)
-        self._washed_up_heatmap_sections_spinbox.grid(row=3, column=1, sticky="ew", padx=5, pady=5)
+        self._washed_up_heatmap_sections_label.grid(
+            row=3, column=0, sticky="ew", padx=5, pady=5
+        )
+        self._washed_up_heatmap_sections_spinbox.grid(
+            row=3, column=1, sticky="ew", padx=5, pady=5
+        )
 
         self._heatmap_high_label.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
         self._heatmap_high_spinbox.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
@@ -660,7 +730,9 @@ class SettingsView(ttk.Toplevel):
         self._heatmap_low_label.grid(row=2, column=2, sticky="ew", padx=5, pady=5)
         self._heatmap_low_spinbox.grid(row=2, column=3, sticky="ew", padx=5, pady=5)
 
-        self._mc_id_frame.grid(row=3, column=2, columnspan=2, sticky="nsew", padx=5, pady=5)
+        self._mc_id_frame.grid(
+            row=3, column=2, columnspan=2, sticky="nsew", padx=5, pady=5
+        )
 
         self._garbage_mc_id_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         self._garbage_mc_id_spinbox.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
@@ -687,29 +759,61 @@ class SettingsView(ttk.Toplevel):
         self._file_extension_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         self._file_extension_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
-        self._hotspot_classified_postfix_label.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
-        self._hotspot_classified_postfix_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+        self._hotspot_classified_postfix_label.grid(
+            row=1, column=0, sticky="ew", padx=5, pady=5
+        )
+        self._hotspot_classified_postfix_entry.grid(
+            row=1, column=1, sticky="ew", padx=5, pady=5
+        )
 
-        self._hotspot_heatmap_postfix_label.grid(row=2, column=0, sticky="ew", padx=5, pady=5)
-        self._hotspot_heatmap_postfix_entry.grid(row=2, column=1, sticky="ew", padx=5, pady=5)
+        self._hotspot_heatmap_postfix_label.grid(
+            row=2, column=0, sticky="ew", padx=5, pady=5
+        )
+        self._hotspot_heatmap_postfix_entry.grid(
+            row=2, column=1, sticky="ew", padx=5, pady=5
+        )
 
-        self._floating_classified_postfix_label.grid(row=3, column=0, sticky="ew", padx=5, pady=5)
-        self._floating_classified_postfix_entry.grid(row=3, column=1, sticky="ew", padx=5, pady=5)
+        self._floating_classified_postfix_label.grid(
+            row=3, column=0, sticky="ew", padx=5, pady=5
+        )
+        self._floating_classified_postfix_entry.grid(
+            row=3, column=1, sticky="ew", padx=5, pady=5
+        )
 
-        self._floating_heatmap_postfix_label.grid(row=4, column=0, sticky="ew", padx=5, pady=5)
-        self._floating_heatmap_postfix_entry.grid(row=4, column=1, sticky="ew", padx=5, pady=5)
+        self._floating_heatmap_postfix_label.grid(
+            row=4, column=0, sticky="ew", padx=5, pady=5
+        )
+        self._floating_heatmap_postfix_entry.grid(
+            row=4, column=1, sticky="ew", padx=5, pady=5
+        )
 
-        self._floating_masked_classified_postfix_label.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
-        self._floating_masked_classified_postfix_entry.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
+        self._floating_masked_classified_postfix_label.grid(
+            row=0, column=2, sticky="ew", padx=5, pady=5
+        )
+        self._floating_masked_classified_postfix_entry.grid(
+            row=0, column=3, sticky="ew", padx=5, pady=5
+        )
 
-        self._floating_masked_heatmap_postfix_label.grid(row=1, column=2, sticky="ew", padx=5, pady=5)
-        self._floating_masked_heatmap_postfix_entry.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
+        self._floating_masked_heatmap_postfix_label.grid(
+            row=1, column=2, sticky="ew", padx=5, pady=5
+        )
+        self._floating_masked_heatmap_postfix_entry.grid(
+            row=1, column=3, sticky="ew", padx=5, pady=5
+        )
 
-        self._washed_up_before_postfix_label.grid(row=2, column=2, sticky="ew", padx=5, pady=5)
-        self._washed_up_before_postfix_entry.grid(row=2, column=3, sticky="ew", padx=5, pady=5)
+        self._washed_up_before_postfix_label.grid(
+            row=2, column=2, sticky="ew", padx=5, pady=5
+        )
+        self._washed_up_before_postfix_entry.grid(
+            row=2, column=3, sticky="ew", padx=5, pady=5
+        )
 
-        self._washed_up_after_postfix_label.grid(row=3, column=2, sticky="ew", padx=5, pady=5)
-        self._washed_up_after_postfix_entry.grid(row=3, column=3, sticky="ew", padx=5, pady=5)
+        self._washed_up_after_postfix_label.grid(
+            row=3, column=2, sticky="ew", padx=5, pady=5
+        )
+        self._washed_up_after_postfix_entry.grid(
+            row=3, column=3, sticky="ew", padx=5, pady=5
+        )
 
         self._training_labels.place(x=800, y=10, height=285, width=100)
 
@@ -764,67 +868,139 @@ class SettingsView(ttk.Toplevel):
         ToolTip(self._satellite_lf, "The type of satellite that recorded the image.")
 
         # Sentinel-2 settings
-        ToolTip(self._sentinel_blue_label, "The index of the Blue band on the Sentinel-2 image.")
-        ToolTip(self._sentinel_green_label, "The index of the Green band on the Sentinel-2 image.")
-        ToolTip(self._sentinel_red_label, "The index of the Red band on the Sentinel-2 image.")
-        ToolTip(self._sentinel_nir_label, "The index of the NIR (Near-infrared) band on the Sentinel-2 image.")
+        ToolTip(
+            self._sentinel_blue_label,
+            "The index of the Blue band on the Sentinel-2 image.",
+        )
+        ToolTip(
+            self._sentinel_green_label,
+            "The index of the Green band on the Sentinel-2 image.",
+        )
+        ToolTip(
+            self._sentinel_red_label,
+            "The index of the Red band on the Sentinel-2 image.",
+        )
+        ToolTip(
+            self._sentinel_nir_label,
+            "The index of the NIR (Near-infrared) band on the Sentinel-2 image.",
+        )
 
         # Algorithm settings
         ToolTip(self._training_estimators_label, "The number of trees in the forest.")
-        ToolTip(self._morphology_matrix_label, "Size of the kernel matrix for the morphology algorithms.")
-        ToolTip(self._morphology_iterations_label, "Number of iterations for the morphology algorithms.")
-        ToolTip(self._washed_up_heatmap_sections_label, "The larger the number, the more unique "
-                                                        "pixels are visible on result images.")
+        ToolTip(
+            self._morphology_matrix_label,
+            "Size of the kernel matrix for the morphology algorithms.",
+        )
+        ToolTip(
+            self._morphology_iterations_label,
+            "Number of iterations for the morphology algorithms.",
+        )
+        ToolTip(
+            self._washed_up_heatmap_sections_label,
+            "The larger the number, the more unique "
+            "pixels are visible on result images.",
+        )
 
-        for label in [self._heatmap_high_label, self._heatmap_medium_label, self._heatmap_low_label]:
-            ToolTip(label, "This value is used by the Hot-spot and Floating waste"
-                           " detection methods. On heatmap images there are four"
-                           " colors: red, yellow, green and black. The colors are"
-                           " decided by the classifier's prediction confidence:\n\n"
-                           "red\t--> High probability <= confidence <= 100%\n\n"
-                           "yellow\t--> Medium probability <= confidence "
-                           "< High probability\n\n"
-                           "green\t--> Low probability <= confidence "
-                           "< Medium probability\n\n"
-                           "black\t--> otherwise.")
-        ToolTip(self._garbage_mc_id_label, "The Class ID of the Garbage class"
-                                           " in the loaded Random Forest classifiers.")
-        ToolTip(self._water_mc_id_label, "The Class ID of the Water class"
-                                         " in the loaded Random Forest classifiers.")
+        for label in [
+            self._heatmap_high_label,
+            self._heatmap_medium_label,
+            self._heatmap_low_label,
+        ]:
+            ToolTip(
+                label,
+                "This value is used by the Hot-spot and Floating waste"
+                " detection methods. On heatmap images there are four"
+                " colors: red, yellow, green and black. The colors are"
+                " decided by the classifier's prediction confidence:\n\n"
+                "red\t--> High probability <= confidence <= 100%\n\n"
+                "yellow\t--> Medium probability <= confidence "
+                "< High probability\n\n"
+                "green\t--> Low probability <= confidence "
+                "< Medium probability\n\n"
+                "black\t--> otherwise.",
+            )
+        ToolTip(
+            self._garbage_mc_id_label,
+            "The Class ID of the Garbage class"
+            " in the loaded Random Forest classifiers.",
+        )
+        ToolTip(
+            self._water_mc_id_label,
+            "The Class ID of the Water class"
+            " in the loaded Random Forest classifiers.",
+        )
 
         # Path settings
-        ToolTip(self._working_dir_label, "The working directory of the application. "
-                                         "The result images will be saved here.")
-        ToolTip(self._hotspot_rf_label, "The path of the saved Random Forest classifier model "
-                                        "for the Hot-spot detection method.")
-        ToolTip(self._floating_rf_label, "The path of the saved Random Forest classifier model "
-                                         "for the Floating waste detection method.")
+        ToolTip(
+            self._working_dir_label,
+            "The working directory of the application. "
+            "The result images will be saved here.",
+        )
+        ToolTip(
+            self._hotspot_rf_label,
+            "The path of the saved Random Forest classifier model "
+            "for the Hot-spot detection method.",
+        )
+        ToolTip(
+            self._floating_rf_label,
+            "The path of the saved Random Forest classifier model "
+            "for the Floating waste detection method.",
+        )
         ToolTip(self._working_dir_browse_btn, "Browse working directory.")
-        ToolTip(self._hotspot_rf_browse_btn, "Browse saved Random Forest classifier model "
-                                             "for the Hot-spot detection method.")
-        ToolTip(self._floating_rf_browse_btn, "Browse saved Random Forest classifier model "
-                                              "for the Floating waste detection method.")
+        ToolTip(
+            self._hotspot_rf_browse_btn,
+            "Browse saved Random Forest classifier model "
+            "for the Hot-spot detection method.",
+        )
+        ToolTip(
+            self._floating_rf_browse_btn,
+            "Browse saved Random Forest classifier model "
+            "for the Floating waste detection method.",
+        )
 
         # Output file settings
-        ToolTip(self._file_extension_label, "File extension of the saved images. Recommended: tif.")
-        ToolTip(self._hotspot_classified_postfix_label, "File name postfix of the classified"
-                                                        " images (Hot-spot detection).")
-        ToolTip(self._hotspot_heatmap_postfix_label, "File name postfix of the heatmap"
-                                                     " images (Hot-spot detection).")
-        ToolTip(self._floating_classified_postfix_label, "File name postfix of the classified"
-                                                         " images (Floating waste detection).")
-        ToolTip(self._floating_heatmap_postfix_label, "File name postfix of the heatmap"
-                                                      " images (Floating waste detection).")
-        ToolTip(self._floating_masked_classified_postfix_label, "File name postfix of the masked"
-                                                                " and classified images "
-                                                                "(Floating waste detection).")
-        ToolTip(self._floating_masked_heatmap_postfix_label, "File name postfix of the masked"
-                                                             " heatmap images "
-                                                             "(Floating waste detection).")
-        ToolTip(self._washed_up_before_postfix_label, "File name postfix of the first result"
-                                                      " image (Washed up waste detection).")
-        ToolTip(self._washed_up_after_postfix_label, "File name postfix of the second result"
-                                                     " image (Washed up waste detection).")
+        ToolTip(
+            self._file_extension_label,
+            "File extension of the saved images. Recommended: tif.",
+        )
+        ToolTip(
+            self._hotspot_classified_postfix_label,
+            "File name postfix of the classified" " images (Hot-spot detection).",
+        )
+        ToolTip(
+            self._hotspot_heatmap_postfix_label,
+            "File name postfix of the heatmap" " images (Hot-spot detection).",
+        )
+        ToolTip(
+            self._floating_classified_postfix_label,
+            "File name postfix of the classified" " images (Floating waste detection).",
+        )
+        ToolTip(
+            self._floating_heatmap_postfix_label,
+            "File name postfix of the heatmap" " images (Floating waste detection).",
+        )
+        ToolTip(
+            self._floating_masked_classified_postfix_label,
+            "File name postfix of the masked"
+            " and classified images "
+            "(Floating waste detection).",
+        )
+        ToolTip(
+            self._floating_masked_heatmap_postfix_label,
+            "File name postfix of the masked"
+            " heatmap images "
+            "(Floating waste detection).",
+        )
+        ToolTip(
+            self._washed_up_before_postfix_label,
+            "File name postfix of the first result"
+            " image (Washed up waste detection).",
+        )
+        ToolTip(
+            self._washed_up_after_postfix_label,
+            "File name postfix of the second result"
+            " image (Washed up waste detection).",
+        )
 
         # Training labels
         ToolTip(self._training_blue, "Blue band.")
@@ -832,14 +1008,24 @@ class SettingsView(ttk.Toplevel):
         ToolTip(self._training_red, "Red band.")
         ToolTip(self._training_nir, "NIR (Near-infrared) band.")
         ToolTip(self._training_pi, "Plastic index: (NIR) / (NIR + Red).")
-        ToolTip(self._training_ndwi, "Normalized Difference Water index: "
-                                     "(Green - NIR) / (Green + NIR).")
-        ToolTip(self._training_ndvi, "Normalized Difference Vegetation index: "
-                                     "(NIR - Red) / (NIR + Red).")
-        ToolTip(self._training_rndvi, "Reversed Normalized Difference Vegetation index: "
-                                      "(Red - NIR) / (Red + NIR).")
+        ToolTip(
+            self._training_ndwi,
+            "Normalized Difference Water index: " "(Green - NIR) / (Green + NIR).",
+        )
+        ToolTip(
+            self._training_ndvi,
+            "Normalized Difference Vegetation index: " "(NIR - Red) / (NIR + Red).",
+        )
+        ToolTip(
+            self._training_rndvi,
+            "Reversed Normalized Difference Vegetation index: "
+            "(Red - NIR) / (Red + NIR).",
+        )
         ToolTip(self._training_sr, "Simple Ratio: (NIR) / (Red).")
-        ToolTip(self._training_apwi, "Agricultural Plastic Waste Index: (Blue) / (1 - (Red + Green + NIR) / 3).")
+        ToolTip(
+            self._training_apwi,
+            "Agricultural Plastic Waste Index: (Blue) / (1 - (Red + Green + NIR) / 3).",
+        )
 
         # Color settings
         for btn in self._color_buttons:

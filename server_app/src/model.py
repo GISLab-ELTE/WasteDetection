@@ -48,7 +48,9 @@ class Model(object):
         self.high_prob_value = int(self.config_file["high_prob_value"])
         self.classification_postfix = self.config_file["classification_postfix"]
         self.heatmap_postfix = self.config_file["heatmap_postfix"]
-        self.masked_classification_postfix = self.config_file["masked_classification_postfix"]
+        self.masked_classification_postfix = self.config_file[
+            "masked_classification_postfix"
+        ]
         self.masked_heatmap_postfix = self.config_file["masked_heatmap_postfix"]
         self.file_extension = self.config_file["file_extension"]
 
@@ -60,15 +62,15 @@ class Model(object):
         elif self.satellite_type.lower() == "Sentinel-2".lower():
             self.pixel_size_x = self.pixel_size_y = 10
 
-    def create_classification_and_heatmap_with_random_forest(self,
-                                                             input_path: str,
-                                                             clf: RandomForestClassifier) -> Tuple[str, str]:
+    def create_classification_and_heatmap_with_random_forest(
+        self, input_path: str, clf: RandomForestClassifier
+    ) -> Tuple[str, str]:
         """
         Creates classification and garbage heatmap with Random Forest Classifier.
 
-        :param input_path: input path of the image to be processed
-        :param clf: an instance of RandomForestClassifier
-        :return: path of the classified image and the heatmap image
+        :param input_path: Input path of the image to be processed.
+        :param clf: An instance of RandomForestClassifier.
+        :return: Path of the classified image and the heatmap image.
         """
 
         try:
@@ -94,13 +96,22 @@ class Model(object):
             # array to data frame
             array_df = pd.DataFrame(array, dtype="float32")
 
-            split_size = ceil(array_df.shape[0] /
-                              ceil((array_df.shape[0] * self.max_class_count) / self.max_class_value_count))
+            split_size = ceil(
+                array_df.shape[0]
+                / ceil(
+                    (array_df.shape[0] * self.max_class_count)
+                    / self.max_class_value_count
+                )
+            )
 
-            split_count = ceil((array_df.shape[0] * self.max_class_count) / self.max_class_value_count)
+            split_count = ceil(
+                (array_df.shape[0] * self.max_class_count) / self.max_class_value_count
+            )
 
             for c in range(split_count):
-                new_array_df = array_df[c * split_size:(c + 1) * split_size].dropna(axis="index")
+                new_array_df = array_df[c * split_size : (c + 1) * split_size].dropna(
+                    axis="index"
+                )
                 pred_proba = clf.predict_proba(new_array_df)
                 counter = 0
                 for i in range(c * split_size, (c + 1) * split_size):
@@ -112,13 +123,21 @@ class Model(object):
 
                     max_ind = np.argmax(pred_proba[counter])
                     max_value = pred_proba[counter][max_ind]
-
-                    if classes[max_ind] == self.garbage_c_id * 100:
+                    class_str = str(classes[max_ind])
+                    if class_str == (str(self.garbage_c_id * 100)):
                         if max_value >= self.high_prob_percent / 100:
                             heatmap[i] = self.high_prob_value
-                        elif self.medium_prob_percent / 100 <= max_value < self.high_prob_percent / 100:
+                        elif (
+                            self.medium_prob_percent / 100
+                            <= max_value
+                            < self.high_prob_percent / 100
+                        ):
                             heatmap[i] = self.medium_prob_value
-                        elif self.low_prob_percent / 100 <= max_value < self.medium_prob_percent / 100:
+                        elif (
+                            self.low_prob_percent / 100
+                            <= max_value
+                            < self.medium_prob_percent / 100
+                        ):
                             heatmap[i] = self.low_prob_value
 
                     classification[i] = classes[max_ind]
@@ -128,8 +147,12 @@ class Model(object):
             classification = classification.reshape((rows, cols))
             heatmap = heatmap.reshape((rows, cols))
 
-            classification_output_path = Model.output_path(input_path, self.classification_postfix, self.file_extension)
-            heatmap_output_path = Model.output_path(input_path, self.heatmap_postfix, self.file_extension)
+            classification_output_path = Model.output_path(
+                input_path, self.classification_postfix, self.file_extension
+            )
+            heatmap_output_path = Model.output_path(
+                input_path, self.heatmap_postfix, self.file_extension
+            )
 
             # save classification
             Model.save_tif(
@@ -157,9 +180,9 @@ class Model(object):
         """
         Returns the given satellite's band index.
 
-        :param band: name of satellite band
-        :return: index of given satellite band
-        :raise NameError: if wrong satellite name is given
+        :param band: Name of satellite band.
+        :return: Index of given satellite band.
+        :raise NameError: If wrong satellite name is given.
         """
 
         satellite_name = self.satellite_type.lower()
@@ -176,9 +199,9 @@ class Model(object):
         """
         Returns a list of arrays, containing the band values and/or calculated index values.
 
-        :param input_path: path of the input image
-        :param get: name of band/indices
-        :return: band values and/or index values
+        :param input_path: Path of the input image.
+        :param get: Name of band/indices.
+        :return: Band values and/or index values.
         """
 
         get_list = Model.resolve_bands_indices_string(get)
@@ -209,13 +232,19 @@ class Model(object):
                     pi = Model.calculate_index(numerator=nir, denominator=nir + red)
                     list_of_bands_and_indices.append(pi)
                 elif item == "ndwi":
-                    ndwi = Model.calculate_index(numerator=green - nir, denominator=green + nir)
+                    ndwi = Model.calculate_index(
+                        numerator=green - nir, denominator=green + nir
+                    )
                     list_of_bands_and_indices.append(ndwi)
                 elif item == "ndvi":
-                    ndvi = Model.calculate_index(numerator=nir - red, denominator=nir + red)
+                    ndvi = Model.calculate_index(
+                        numerator=nir - red, denominator=nir + red
+                    )
                     list_of_bands_and_indices.append(ndvi)
                 elif item == "rndvi":
-                    rndvi = Model.calculate_index(numerator=red - nir, denominator=red + nir)
+                    rndvi = Model.calculate_index(
+                        numerator=red - nir, denominator=red + nir
+                    )
                     list_of_bands_and_indices.append(rndvi)
                 elif item == "sr":
                     sr = Model.calculate_index(numerator=nir, denominator=red)
@@ -223,14 +252,17 @@ class Model(object):
 
             return list_of_bands_and_indices
 
-    def save_bands_indices(self, input_path: str, save: str, postfix: str) -> str:
+    def save_bands_indices(
+        self, input_path: str, output_dir_path: str, save: str, postfix: str
+    ) -> str:
         """
         Saves the specified band values and/or index values to a single- or multi-band tif file.
 
-        :param input_path: path of the input image
-        :param save: name of band/indices
-        :param postfix: postfix of output file name
-        :return: path of the output image
+        :param input_path: Path of the input image.
+        :param output_path: path of the output folder
+        :param save: Name of band/indices.
+        :param postfix: Postfix of output file name.
+        :return: Path of the output image.
         """
 
         list_of_bands_and_indices = self.get_bands_indices(
@@ -239,7 +271,11 @@ class Model(object):
         )
 
         bands = len(list_of_bands_and_indices)
-        output_path = Model.output_path(input_path, postfix, self.file_extension)
+        output_path = Model.output_path(
+            "/".join([output_dir_path, os.path.basename(input_path)]),
+            postfix,
+            self.file_extension,
+        )
 
         Model.save_tif(
             input_path=input_path,
@@ -251,17 +287,16 @@ class Model(object):
 
         return output_path
 
-    def estimate_garbage_area(
-            self, input_path: str, image_type: str) -> float:
+    def estimate_garbage_area(self, input_path: str, image_type: str) -> float:
         """
         Estimates the area covered by garbage, based on the pixel size of a picture.
 
-        :param input_path: input path of classified picture
-        :param image_type: "classified" or "heatmap"
-        :return: estimated area if it can be calculated, 0 otherwise
-        :raise NotEnoughBandsException: if the image to be opened does not have only one band
-        :raise CodValueNotPresentException: if the Garbage Class is not present on the image
-        :raise InvalidClassifiedImageException: if not all values could be divided by 100 on the classified image
+        :param input_path: Input path of classified picture.
+        :param image_type: Types -> "classified" or "heatmap".
+        :return: Estimated area if it can be calculated, 0 otherwise.
+        :raise NotEnoughBandsException: If the image to be opened does not have only one band.
+        :raise CodValueNotPresentException: If the Garbage Class is not present on the image.
+        :raise InvalidClassifiedImageException: If not all values could be divided by 100 on the classified image.
         """
 
         try:
@@ -290,31 +325,34 @@ class Model(object):
             elif image_type.lower() == "heatmap":
                 for i in range(rows):
                     for j in range(cols):
-                        if band[i, j] == self.low_prob_value or \
-                           band[i, j] == self.medium_prob_value or \
-                           band[i, j] == self.high_prob_value:
+                        if (
+                            band[i, j] == self.low_prob_value
+                            or band[i, j] == self.medium_prob_value
+                            or band[i, j] == self.high_prob_value
+                        ):
                             area += self.pixel_size_x * self.pixel_size_y
 
             return area
         finally:
             del dataset
 
-    def create_masked_classification_and_heatmap(self, original_input_path: str, classification_path: str,
-                                                 heatmap_path: str) -> Tuple[str, str]:
+    def create_masked_classification_and_heatmap(
+        self, original_input_path: str, classification_path: str, heatmap_path: str
+    ) -> Tuple[str, str]:
         """
         Creates the masked classification and masked heatmap based on the input classification and input heatmap.
         Uses morphological transformations (opening and dilation).
 
-        :param original_input_path: input path of source image
-        :param classification_path: path of the classified image
-        :param heatmap_path: path of the heatmap image
-        :return: the paths of the output images
+        :param original_input_path: Input path of source image.
+        :param classification_path: Path of the classified image.
+        :param heatmap_path: Path of the heatmap image.
+        :return: The paths of the output images.
         """
 
         # open inputs
-        with rasterio.open(classification_path, "r") as classification_matrix, \
-             rasterio.open(heatmap_path, "r") as heatmap_matrix:
-
+        with rasterio.open(
+            classification_path, "r"
+        ) as classification_matrix, rasterio.open(heatmap_path, "r") as heatmap_matrix:
             # create matrices
             classification_matrix = classification_matrix.read(1)
             heatmap_matrix = heatmap_matrix.read(1)
@@ -325,18 +363,30 @@ class Model(object):
             rows, cols = classification_matrix.shape
 
             # output paths
-            morphology_path = self.output_path(original_input_path, "morphology", self.file_extension)
-            opening_path = self.output_path(original_input_path, "morphology_opening", self.file_extension)
-            dilation_path = self.output_path(original_input_path, "morphology_opening_dilation", self.file_extension)
-            masked_classification_path = self.output_path(original_input_path, self.masked_classification_postfix,
-                                                          self.file_extension)
-            masked_heatmap_path = self.output_path(original_input_path, self.masked_heatmap_postfix,
-                                                   self.file_extension)
+            morphology_path = self.output_path(
+                original_input_path, "morphology", self.file_extension
+            )
+            opening_path = self.output_path(
+                original_input_path, "morphology_opening", self.file_extension
+            )
+            dilation_path = self.output_path(
+                original_input_path, "morphology_opening_dilation", self.file_extension
+            )
+            masked_classification_path = self.output_path(
+                original_input_path,
+                self.masked_classification_postfix,
+                self.file_extension,
+            )
+            masked_heatmap_path = self.output_path(
+                original_input_path, self.masked_heatmap_postfix, self.file_extension
+            )
 
             for i in range(rows):
                 for j in range(cols):
-                    if classification_matrix[i, j] == self.garbage_c_id * 100 or \
-                       classification_matrix[i, j] == self.water_c_id * 100:
+                    if (
+                        classification_matrix[i, j] == self.garbage_c_id * 100
+                        or classification_matrix[i, j] == self.water_c_id * 100
+                    ):
                         morphology_matrix[i, j] = 1
                     else:
                         morphology_matrix[i, j] = 0
@@ -350,15 +400,23 @@ class Model(object):
             )
 
             matrix = self.morphology_matrix_size, self.morphology_matrix_size
-            opening = Model.morphology("opening", morphology_path, opening_path, matrix=matrix)
+            opening = Model.morphology(
+                "opening", morphology_path, opening_path, matrix=matrix
+            )
             if opening is not None:
-                dilation = Model.morphology("dilation", opening_path,
-                                            dilation_path, iterations=self.morphology_iterations)
+                dilation = Model.morphology(
+                    "dilation",
+                    opening_path,
+                    dilation_path,
+                    iterations=self.morphology_iterations,
+                )
                 if dilation is not None:
                     for i in range(rows):
                         for j in range(cols):
                             if dilation[i, j] == 1:
-                                masked_classification[i, j] = classification_matrix[i, j]
+                                masked_classification[i, j] = classification_matrix[
+                                    i, j
+                                ]
                                 masked_heatmap[i, j] = heatmap_matrix[i, j]
                             else:
                                 masked_classification[i, j] = 0
@@ -390,15 +448,30 @@ class Model(object):
             return masked_classification_path, masked_heatmap_path
 
     @staticmethod
+    def get_min_max_value_of_band(input_path: str, band_number: int) -> Tuple[int, int]:
+        """
+        Calculates the minimum and maximum values of a band.
+
+        :param input_path: Path of an image.
+        :param band_number: Serial number of a band.
+        :return: Minimum and maximum values.
+        """
+
+        with rasterio.open(input_path, "r") as img:
+            band = img.read(band_number)
+            min_value, max_value = np.nanmin(band), np.nanmax(band)
+            return int(min_value), int(max_value)
+
+    @staticmethod
     def get_coords_of_pixel(i: int, j: int, gt: Tuple[int, ...]) -> Tuple[float, float]:
         """
         Calculates the geographical coordinate of the pixel in row "i" and column "j",
         based on the picture's GeoTransform.
 
-        :param i: row index
-        :param j: column index
-        :param gt: GeoTransform of the picture
-        :return: the calculated geographical coordinates: x and y
+        :param i: Row index.
+        :param j: Column index.
+        :param gt: GeoTransform of the picture.
+        :return: The calculated geographical coordinates: x and y.
         """
 
         x_coord = gt[0] + j * gt[1] + i * gt[2]
@@ -407,14 +480,16 @@ class Model(object):
         return x_coord, y_coord
 
     @staticmethod
-    def get_bbox_of_pixel(i: int, j: int, gt: Tuple[int, ...]) -> List[Tuple[float, float]]:
+    def get_bbox_of_pixel(
+        i: int, j: int, gt: Tuple[int, ...]
+    ) -> List[Tuple[float, float]]:
         """
         Calculates the bounding box of a single pixel.
 
-        :param i: row index
-        :param j: column index
-        :param gt: GeoTransform of the picture
-        :return: bounding box of a pixel
+        :param i: Row index.
+        :param j: Column index.
+        :param gt: GeoTransform of the picture.
+        :return: Bounding box of a pixel.
         """
 
         x_size = gt[1]
@@ -434,9 +509,9 @@ class Model(object):
         """
         Calculates all bounding boxes of all pixels.
 
-        :param input_file: path of input file
-        :param value: numerical value of the pixels
-        :return: list of bounding boxes
+        :param input_file: Path of input file.
+        :param value: Numerical value of the pixels.
+        :return: List of bounding boxes.
         """
 
         dataset = gdal.Open(input_file, gdal.GA_ReadOnly)
@@ -463,9 +538,9 @@ class Model(object):
         """
         Unites the adjacent pixels, then creates a GeoJSON file containing the result polygons.
 
-        :param input_file: path of input file
-        :param output_file: path of output file
-        :param search_value: numerical value of the pixels
+        :param input_file: Path of input file.
+        :param output_file: Path of output file.
+        :param search_value: Numerical value of the pixels.
         :return:
         """
 
@@ -475,12 +550,8 @@ class Model(object):
         srs_wkt = ds.GetProjection()
         srs_converter = osr.SpatialReference()
         srs_converter.ImportFromWkt(srs_wkt)
-        srs_for_pyproj = srs_converter.ExportToProj4()
 
         ds = None
-
-        input_crs = srs_for_pyproj
-        output_crs = "EPSG:3857"
 
         features = list()
         polygon_id = 1
@@ -490,13 +561,13 @@ class Model(object):
 
             coords = list(map(list, bbox))
 
-            new_coords = Model.transform_coordinates(coords, input_crs, output_crs)
-
-            bbox_transformed = list(map(tuple, new_coords))
+            bbox_transformed = list(map(tuple, coords))
 
             polygon = geojson.Polygon([bbox_transformed])
 
-            features.append(geojson.Feature(geometry=polygon, properties={"id": str(polygon_id)}))
+            features.append(
+                geojson.Feature(geometry=polygon, properties={"id": str(polygon_id)})
+            )
 
             polygon_id += 1
 
@@ -510,7 +581,10 @@ class Model(object):
         if polygons:
             boundary = gpd.GeoSeries(unary_union(polygons))
             boundary = boundary.__geo_interface__
-            boundary["crs"] = {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::3857"}}
+            boundary["crs"] = {
+                "type": "name",
+                "properties": {"name": "urn:ogc:def:crs:EPSG::3857"},
+            }
         else:
             boundary = {"type": "FeatureCollection", "features": []}
 
@@ -526,8 +600,8 @@ class Model(object):
         """
         Converts MultiPolygon shapes to Polygons.
 
-        :param data_file: dictionary containing the AOIs in GeoJSON format
-        :return: converted version of data_file
+        :param data_file: Dictionary containing the AOIs in GeoJSON format.
+        :return: Converted version of data_file.
         """
 
         new_data_file = copy.deepcopy(data_file)
@@ -535,24 +609,30 @@ class Model(object):
         for feature in new_data_file["features"]:
             if feature["geometry"]["type"] == "MultiPolygon":
                 feature["geometry"]["type"] = "Polygon"
-                feature["geometry"]["coordinates"] = feature["geometry"]["coordinates"][0]
+                feature["geometry"]["coordinates"] = feature["geometry"]["coordinates"][
+                    0
+                ]
 
         return new_data_file
 
     @staticmethod
-    def transform_coordinates(coords: List[List[int]], input_crs: str, output_crs: str) -> List[List[int]]:
+    def transform_list_of_coordinates_to_crs(
+        coords: List[List[int]], crs_from: str, crs_to: str
+    ) -> List[List[int]]:
         """
         Transforms coordinates from one CRS to another.
 
-        :param coords: list of coordinates: [[x1, y1], [x2, y2], ...]
-        :param input_crs: original CRS of coordinates
-        :param output_crs: wanted CRS of coordinates
-        :return: list of transformed coordinates
+        :param coords: List of coordinates: [[x1, y1], [x2, y2], ...].
+        :param crs_from: Projection of input data.
+        :param crs_to: Projection of output data.
+        :return: List of transformed coordinates.
         """
 
         transformed_coords = copy.deepcopy(coords)
 
-        transformer = pyproj.Transformer.from_crs(crs_from=input_crs, crs_to=output_crs, always_xy=True)
+        transformer = pyproj.Transformer.from_crs(
+            crs_from=crs_from, crs_to=crs_to, always_xy=True
+        )
 
         for i in range(len(coords)):
             x, y = coords[i]
@@ -563,40 +643,42 @@ class Model(object):
         return transformed_coords
 
     @staticmethod
-    def transform_coordinates_to_wgs84(data_file: Dict) -> Dict:
+    def transform_dict_of_coordinates_to_crs(data_file: Dict, crs_to: str) -> Dict:
         """
-        Transforms all coordinates from given CRS to WGS84.
+        Transforms all coordinates from their CRS to wanted CRS.
 
-        :param data_file: dictionary containing the AOIs in GeoJSON format
-        :return: transformed version of data_file
+        :param data_file: Dictionary containing the geometries in GeoJSON format.
+        :param crs_to: Projection of output data.
+        :return: Transformed version of data_file.
         """
 
-        if "crs" in data_file.keys() and data_file["crs"]["properties"]["name"] != "urn:ogc:def:crs:OGC:1.3:CRS84":
-            transformed_data_file = copy.deepcopy(data_file)
-            for feature in transformed_data_file["features"]:
+        transformed_data_file = copy.deepcopy(data_file)
+        for feature in transformed_data_file["features"]:
+            crs_from = "epsg:4326"
+            if "crs" in transformed_data_file.keys():
+                crs_from = transformed_data_file["crs"]["properties"]["name"]
 
-                input_crs = transformed_data_file["crs"]["properties"]["name"]
-                output_crs = "epsg:4326"
+            coordinates = feature["geometry"]["coordinates"][0]
 
-                coordinates = feature["geometry"]["coordinates"][0]
+            transformed_coords = Model.transform_list_of_coordinates_to_crs(
+                coordinates, crs_from, crs_to
+            )
 
-                transformed_coords = Model.transform_coordinates(coordinates, input_crs, output_crs)
+            feature["geometry"]["coordinates"] = [transformed_coords]
 
-                feature["geometry"]["coordinates"] = [transformed_coords]
+        transformed_data_file["crs"] = dict()
+        transformed_data_file["crs"]["properties"] = dict()
+        transformed_data_file["crs"]["properties"]["name"] = crs_to
 
-            transformed_data_file["crs"]["properties"]["name"] = "urn:ogc:def:crs:OGC:1.3:CRS84"
-
-            return transformed_data_file
-        else:
-            return data_file
+        return transformed_data_file
 
     @staticmethod
     def resolve_bands_indices_string(string: str) -> List[str]:
         """
         Resolves band strings.
 
-        :param string: name of band/indices separated by "-", or "all", "bands", "indices"
-        :return: list containing the band/index values
+        :param string: Name of band/indices separated by "-", or "all", "bands", "indices".
+        :return: List containing the band/index values.
         """
 
         string_list = string.lower().split("-")
@@ -635,10 +717,10 @@ class Model(object):
         """
         Creates the output path of result images.
 
-        :param input_path: path of original image
-        :param postfix: file name postfix for result image
-        :param output_file_extension: the wanted file extension of result image
-        :return: output path
+        :param input_path: Path of original image.
+        :param postfix: File name postfix for result image.
+        :param output_file_extension: The wanted file extension of result image.
+        :return: Output path.
         """
 
         filename, file_extension = os.path.splitext(input_path)
@@ -650,9 +732,9 @@ class Model(object):
         """
         Calculating an index based on given numerator and denominator.
 
-        :param numerator: numerator matrix
-        :param denominator: denominator matrix
-        :return: result matrix, containing the calculated values
+        :param numerator: Numerator matrix.
+        :param denominator: Denominator matrix.
+        :return: Result matrix, containing the calculated values.
         """
 
         # variables
@@ -683,17 +765,22 @@ class Model(object):
 
     @staticmethod
     def save_tif(
-            input_path: str, array: List[np.ndarray], shape: Tuple[int, int],
-            band_count: int, output_path: str, new_geo_trans: Tuple[float, float] = None) -> None:
+        input_path: str,
+        array: List[np.ndarray],
+        shape: Tuple[int, int],
+        band_count: int,
+        output_path: str,
+        new_geo_trans: Tuple[float, float] = None,
+    ) -> None:
         """
         Saves arrays (1 or more) to a georeferenced tif file.
 
-        :param input_path: georeferenced input image
-        :param array: list of arrays to be saved
-        :param shape: shape of the output image
-        :param band_count: number of bands in the output tif file
-        :param output_path: path of the output image
-        :param new_geo_trans: other GeoTransform if it is needed
+        :param input_path: Georeferenced input image.
+        :param array: List of arrays to be saved.
+        :param shape: Shape of the output image.
+        :param band_count: Number of bands in the output tif file.
+        :param output_path: Path of the output image.
+        :param new_geo_trans: Other GeoTransform if it is needed.
         :return: None
         """
 
@@ -712,7 +799,9 @@ class Model(object):
                 geotrans[3] = new_geo_trans[1]
                 geotrans = tuple(geotrans)
 
-            dataset = driver.Create(output_path, x_pixels, y_pixels, band_count, gdal.GDT_Float32)
+            dataset = driver.Create(
+                output_path, x_pixels, y_pixels, band_count, gdal.GDT_Float32
+            )
             dataset.SetGeoTransform(geotrans)
             dataset.SetProjection(projection)
 
@@ -727,17 +816,22 @@ class Model(object):
             del img_gdal
 
     @staticmethod
-    def morphology(morph_type: str, path: str, output: str,
-                   matrix: Tuple[int, int] = (3, 3), iterations: int = 1) -> Union[np.ndarray, None]:
+    def morphology(
+        morph_type: str,
+        path: str,
+        output: str,
+        matrix: Tuple[int, int] = (3, 3),
+        iterations: int = 1,
+    ) -> Union[np.ndarray, None]:
         """
         Morphological transformations: https://docs.opencv.org/4.5.2/d9/d61/tutorial_py_morphological_ops.html
 
-        :param morph_type: type of the morphology: "erosion", "dilation", "opening", "closing"
-        :param path: input path
-        :param output: output path
-        :param matrix: the helper matrix used for the algorithm
-        :param iterations: number of iterations per image
-        :return: matrix representing the result of transformation
+        :param morph_type: Type of the morphology: "erosion", "dilation", "opening", "closing".
+        :param path: Input path.
+        :param output: Output path.
+        :param matrix: The helper matrix used for the algorithm.
+        :param iterations: Number of iterations per image.
+        :return: Matrix representing the result of transformation.
         """
 
         try:
