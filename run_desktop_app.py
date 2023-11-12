@@ -7,7 +7,7 @@ from model import model, persistence
 
 
 if __name__ == "__main__":
-    CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/resources/config.json"
+    CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/resources/config.sample.json"
     try:
         model = model.Model(
             persistence.Persistence(config_file_path=CONFIG_FILE_NAME_DESKTOP_APP)
