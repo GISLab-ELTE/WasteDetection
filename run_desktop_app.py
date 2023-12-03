@@ -2,14 +2,15 @@ import traceback
 import tkinter.messagebox
 import desktop_app.src.view as view
 import desktop_app.src.controller as controller
+from desktop_app.src.view_model import ViewModel
 
-from model import model, persistence
+from model import persistence
 
 
 if __name__ == "__main__":
     CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/resources/config.sample.json"
     try:
-        model = model.Model(
+        model = ViewModel(
             persistence.Persistence(config_file_path=CONFIG_FILE_NAME_DESKTOP_APP)
         )
         view = view.View()
