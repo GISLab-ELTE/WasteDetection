@@ -78,8 +78,8 @@ class Controller(object):
         self._heatmap_func = self._view.settings_view.register(
             Controller._validate_heatmap
         )
-        self._settings_mc_id_func = self._view.settings_view.register(
-            Controller._validate_settings_mc_id
+        self._settings_c_id_func = self._view.settings_view.register(
+            Controller._validate_settings_c_id
         )
         self._heatmap_section_func = self._view.settings_view.register(
             Controller._validate_heatmap_sections
@@ -97,8 +97,8 @@ class Controller(object):
             Controller._validate_postfix
         )
         self._alpha_func = self._view.training_view.register(Controller._validate_alpha)
-        self._training_mc_id_func = self._view.training_view.register(
-            Controller._validate_training_mc_id
+        self._training_c_id_func = self._view.training_view.register(
+            Controller._validate_training_c_id
         )
 
     def _register_invalidator_functions(self) -> None:
@@ -126,8 +126,8 @@ class Controller(object):
         self._invalid_heatmap_func = self._view.settings_view.register(
             self._invalid_heatmap
         )
-        self._invalid_settings_mc_id_func = self._view.settings_view.register(
-            self._invalid_settings_mc_id
+        self._invalid_settings_c_id_func = self._view.settings_view.register(
+            self._invalid_settings_c_id
         )
         self._invalid_working_dir_func = self._view.settings_view.register(
             self._invalid_working_dir
@@ -291,16 +291,16 @@ class Controller(object):
             invalidcommand=self._invalid_heatmap_func,
         )
 
-        self._view.settings_view.garbage_mc_id_spinbox.configure(
+        self._view.settings_view.garbage_c_id_spinbox.configure(
             validate="focusout",
-            validatecommand=(self._settings_mc_id_func, "%P"),
-            invalidcommand=self._invalid_settings_mc_id_func,
+            validatecommand=(self._settings_c_id_func, "%P"),
+            invalidcommand=self._invalid_settings_c_id_func,
         )
 
-        self._view.settings_view.water_mc_id_spinbox.configure(
+        self._view.settings_view.water_c_id_spinbox.configure(
             validate="focusout",
-            validatecommand=(self._settings_mc_id_func, "%P"),
-            invalidcommand=self._invalid_settings_mc_id_func,
+            validatecommand=(self._settings_c_id_func, "%P"),
+            invalidcommand=self._invalid_settings_c_id_func,
         )
 
         self._view.settings_view.working_dir_entry.configure(
@@ -422,11 +422,11 @@ class Controller(object):
             command=self._training_save_classification_data
         )
 
-        self._view.training_view.mc_input.configure(
+        self._view.training_view.c_input.configure(
             validate="all", validatecommand=(self._alpha_func, "%P")
         )
-        self._view.training_view.mc_spinbox.configure(
-            validate="all", validatecommand=(self._training_mc_id_func, "%P")
+        self._view.training_view.c_spinbox.configure(
+            validate="all", validatecommand=(self._training_c_id_func, "%P")
         )
 
         self._set_classification_mode_mouse_handlers(self._model.classification_mode)
@@ -914,18 +914,17 @@ class Controller(object):
                     classification = model_result_files[index][0]
                     heatmap = model_result_files[index][1]
 
-                    garbage_c_id = self._model.persistence.garbage_mc_id
-                    classified_area = model.Model.estimate_garbage_area(
-                        classification, "classified", garbage_c_id
+                    classified_area = self._model.estimate_garbage_area(
+                        classification, "classified"
                     )
-                    low_area = model.Model.estimate_garbage_area(
-                        heatmap, "heatmap", garbage_c_id, (True, False, False)
+                    low_area = self._model.estimate_garbage_area(
+                        heatmap, "heatmap", "low"
                     )
-                    medium_area = model.Model.estimate_garbage_area(
-                        heatmap, "heatmap", garbage_c_id, (False, True, False)
+                    medium_area = self._model.estimate_garbage_area(
+                        heatmap, "heatmap", "medium"
                     )
-                    high_area = model.Model.estimate_garbage_area(
-                        heatmap, "heatmap", garbage_c_id, (False, False, True)
+                    high_area = self._model.estimate_garbage_area(
+                        heatmap, "heatmap", "high"
                     )
                     values = [classified_area, low_area, medium_area, high_area]
 
@@ -1253,8 +1252,8 @@ class Controller(object):
         heatmap_high = int(self._view.settings_view.heatmap_high_spinbox.get())
         heatmap_medium = int(self._view.settings_view.heatmap_medium_spinbox.get())
         heatmap_low = int(self._view.settings_view.heatmap_low_spinbox.get())
-        garbage_mc_id = int(self._view.settings_view.garbage_mc_id_spinbox.get())
-        water_mc_id = int(self._view.settings_view.water_mc_id_spinbox.get())
+        garbage_c_id = int(self._view.settings_view.garbage_c_id_spinbox.get())
+        water_c_id = int(self._view.settings_view.water_c_id_spinbox.get())
 
         bands_and_indices = [
             "blue",
@@ -1284,7 +1283,7 @@ class Controller(object):
             )
         elif not (heatmap_low < heatmap_medium < heatmap_high):
             error_message += "The Heatmap probabilities must be in ascending order: low < medium < high!"
-        elif garbage_mc_id == water_mc_id:
+        elif garbage_c_id == water_c_id:
             error_message += "Garbage Class ID must not be equal to Water Class ID!"
         elif sum(values) == 0:
             error_message += "There must be at least one Training label selected!"
@@ -1335,8 +1334,8 @@ class Controller(object):
         heatmap_high = int(self._view.settings_view.heatmap_high_spinbox.get())
         heatmap_medium = int(self._view.settings_view.heatmap_medium_spinbox.get())
         heatmap_low = int(self._view.settings_view.heatmap_low_spinbox.get())
-        garbage_mc_id = int(self._view.settings_view.garbage_mc_id_spinbox.get())
-        water_mc_id = int(self._view.settings_view.water_mc_id_spinbox.get())
+        garbage_c_id = int(self._view.settings_view.garbage_c_id_spinbox.get())
+        water_c_id = int(self._view.settings_view.water_c_id_spinbox.get())
 
         # Path settings
         working_dir = self._view.settings_view.working_dir_entry.get()
@@ -1398,10 +1397,10 @@ class Controller(object):
             self._model.persistence.satellite_type = "sentinel-2"
 
         # Sentinel-2 settings
-        self._model.persistence.sentinel_blue_band = blue_value
-        self._model.persistence.sentinel_green_band = green_value
-        self._model.persistence.sentinel_red_band = red_value
-        self._model.persistence.sentinel_nir_band = nir_value
+        self._model.persistence.sentinel_2_blue = blue_value
+        self._model.persistence.sentinel_2_green = green_value
+        self._model.persistence.sentinel_2_red = red_value
+        self._model.persistence.sentinel_2_nir = nir_value
 
         # Value settings
         self._model.persistence.training_estimators = n_estimators
@@ -1411,8 +1410,8 @@ class Controller(object):
         self._model.persistence.heatmap_high_prob = heatmap_high
         self._model.persistence.heatmap_medium_prob = heatmap_medium
         self._model.persistence.heatmap_low_prob = heatmap_low
-        self._model.persistence.garbage_mc_id = garbage_mc_id
-        self._model.persistence.water_mc_id = water_mc_id
+        self._model.persistence.garbage_c_id = garbage_c_id
+        self._model.persistence.water_c_id = water_c_id
 
         # Path settings
         self._model.persistence.working_dir = working_dir
@@ -1456,7 +1455,6 @@ class Controller(object):
             self._view.settings_view.hotspot_rf_entry.delete(0, END)
             self._view.settings_view.hotspot_rf_entry.insert(0, prev_hotspot_rf_path)
             self._model.persistence.hotspot_rf_path = prev_hotspot_rf_path
-            self._model.persistence.save_constants()
             tkinter.messagebox.showerror(
                 parent=self._view.settings_view,
                 message="Could not load Random Forest for Hot-spot detection!\nLoading previous classifier!",
@@ -1466,7 +1464,6 @@ class Controller(object):
             self._view.settings_view.floating_rf_entry.delete(0, END)
             self._view.settings_view.floating_rf_entry.insert(0, prev_floating_rf_path)
             self._model.persistence.floating_rf_path = prev_floating_rf_path
-            self._model.persistence.save_constants()
             tkinter.messagebox.showerror(
                 parent=self._view.settings_view,
                 message="Could not load Random Forest for Floating waste detection!\nLoading previous classifier!",
@@ -1499,16 +1496,16 @@ class Controller(object):
             self._view.settings_view.vars["satellite_rb"].set(0)
 
         # Sentinel-2 settings
-        blue_value = self._model.persistence.sentinel_blue_band
+        blue_value = self._model.persistence.sentinel_2_blue
         self._view.settings_view.sentinel_blue_spinbox.set(blue_value)
 
-        green_value = self._model.persistence.sentinel_green_band
+        green_value = self._model.persistence.sentinel_2_green
         self._view.settings_view.sentinel_green_spinbox.set(green_value)
 
-        red_value = self._model.persistence.sentinel_red_band
+        red_value = self._model.persistence.sentinel_2_red
         self._view.settings_view.sentinel_red_spinbox.set(red_value)
 
-        nir_value = self._model.persistence.sentinel_nir_band
+        nir_value = self._model.persistence.sentinel_2_nir
         self._view.settings_view.sentinel_nir_spinbox.set(nir_value)
 
         # Value settings
@@ -1538,11 +1535,11 @@ class Controller(object):
         heatmap_low = self._model.persistence.heatmap_low_prob
         self._view.settings_view.heatmap_low_spinbox.set(heatmap_low)
 
-        garbage_mc_id = self._model.persistence.garbage_mc_id
-        self._view.settings_view.garbage_mc_id_spinbox.set(garbage_mc_id)
+        garbage_c_id = self._model.persistence.garbage_c_id
+        self._view.settings_view.garbage_c_id_spinbox.set(garbage_c_id)
 
-        water_mc_id = self._model.persistence.water_mc_id
-        self._view.settings_view.water_mc_id_spinbox.set(water_mc_id)
+        water_c_id = self._model.persistence.water_c_id
+        self._view.settings_view.water_c_id_spinbox.set(water_c_id)
 
         # Path settings
         working_dir = self._model.persistence.working_dir
@@ -1829,8 +1826,8 @@ class Controller(object):
             ),
         )
 
-        for mc_id in self._model.tag_ids[selected_file].keys():
-            for tag_id in self._model.tag_ids[selected_file][mc_id][2]:
+        for c_id in self._model.tag_ids[selected_file].keys():
+            for tag_id in self._model.tag_ids[selected_file][c_id][2]:
                 self._view.training_view.zoom_canvas.show_shape(tag_id)
 
         self._training_build_treeview()
@@ -1847,29 +1844,29 @@ class Controller(object):
         if selected_file is None:
             return
 
-        mc_id = self._view.training_view.get_mc_id()
-        mc_name = self._view.training_view.get_mc_name()
-        mc_color = self._view.training_view.get_mc_color()
-        mc_ids = list(self._model.tag_ids[selected_file].keys())
-        mc_names = [
+        c_id = self._view.training_view.get_c_id()
+        c_name = self._view.training_view.get_c_name()
+        c_color = self._view.training_view.get_c_color()
+        c_ids = list(self._model.tag_ids[selected_file].keys())
+        c_names = [
             value[0].lower() for value in self._model.tag_ids[selected_file].values()
         ]
 
-        if len(mc_name) == 0:
-            message = "Invalid MC Name!"
+        if len(c_name) == 0:
+            message = "Invalid C Name!"
             tkinter.messagebox.showerror(
                 parent=self._view.training_view, title="Error", message=message
             )
             return
 
-        if (mc_id in mc_ids) or (mc_name in mc_names):
-            message = "MC ID or MC Name already in use!"
+        if (c_id in c_ids) or (c_name in c_names):
+            message = "C ID or C Name already in use!"
             tkinter.messagebox.showerror(
                 parent=self._view.training_view, title="Error", message=message
             )
             return
 
-        self._model.save_new_mc(selected_file, mc_id, mc_name, mc_color)
+        self._model.save_new_c(selected_file, c_id, c_name, c_color)
 
         self._training_build_treeview()
 
@@ -1887,14 +1884,14 @@ class Controller(object):
             return
 
         selected_item = self._view.training_view.treeview.item(selection[0])
-        mc_id = selected_item["values"][1]
+        c_id = selected_item["values"][1]
 
-        if len(str(mc_id)) == 0:
+        if len(str(c_id)) == 0:
             tag_id = int(selected_item["values"][2])
             self._model.delete_tag_id(selected_file, tag_id)
             self._view.training_view.zoom_canvas.delete_polygon_from_canvas([tag_id])
         else:
-            tag_ids = self._model.delete_mc(selected_file, int(mc_id))
+            tag_ids = self._model.delete_c(selected_file, int(c_id))
             self._view.training_view.zoom_canvas.delete_polygon_from_canvas(tag_ids)
 
         self._training_build_treeview()
@@ -1925,17 +1922,17 @@ class Controller(object):
         selection = self._view.training_view.get_selection_treeview()[0]
         selected_item = self._view.training_view.treeview.item(selection)
 
-        mc_name = selected_item["values"][0]
-        mc_id = selected_item["values"][1]
+        c_name = selected_item["values"][0]
+        c_id = selected_item["values"][1]
 
-        if len(mc_name) == 0:
+        if len(c_name) == 0:
             return
 
-        mc_color = self._model.tag_ids[selected_file][mc_id][1]
+        c_color = self._model.tag_ids[selected_file][c_id][1]
 
-        self._view.training_view.set_mc_id(int(mc_id))
-        self._view.training_view.set_mc_name(mc_name)
-        self._view.training_view.set_color_btn_bg(mc_color)
+        self._view.training_view.set_c_id(int(c_id))
+        self._view.training_view.set_c_name(c_name)
+        self._view.training_view.set_color_btn_bg(c_color)
 
     def _training_change_color_btn_color(self) -> None:
         """
@@ -2041,13 +2038,13 @@ class Controller(object):
             self._view.training_view.process_pb.configure(value=0, mode="determinate")
 
     def _training_draw_on_canvas(self, event) -> None:
-        mc_id = self._view.training_view.draw_pixel_on_canvas(event)
+        c_id = self._view.training_view.draw_pixel_on_canvas(event)
         selected_file = self._view.training_view.get_curselection_value_listbox()
         x, y = self._view.training_view.zoom_canvas.get_event_coordinates_on_image(
             event
         )
         self._model.set_classification_pixel_of_layer(
-            selected_file, (int(y), int(x)), mc_id
+            selected_file, (int(y), int(x)), c_id
         )
 
     def _training_remove_pixel_from_canvas(self, event) -> None:
@@ -2109,15 +2106,15 @@ class Controller(object):
         selected_training_file = (
             self._view.training_view.get_curselection_value_listbox()
         )
-        selected_mc = self._view.training_view.get_selection_treeview()
+        selected_c = self._view.training_view.get_selection_treeview()
 
-        if (selected_training_file is None) or (len(selected_mc) == 0):
+        if (selected_training_file is None) or (len(selected_c) == 0):
             return
 
-        selected_mc_item = self._view.training_view.treeview.item(selected_mc[0])
-        mc_id = str(selected_mc_item["values"][1])
+        selected_c_item = self._view.training_view.treeview.item(selected_c[0])
+        c_id = str(selected_c_item["values"][1])
 
-        if len(mc_id) == 0:
+        if len(c_id) == 0:
             return
 
         tag_ids = self._model.place_polygon_on_canvas()
@@ -2125,13 +2122,13 @@ class Controller(object):
 
         if coords:
             (
-                mc_id,
-                mc_name,
+                c_id,
+                c_name,
                 color,
                 tag_id,
             ) = self._view.training_view.place_polygon_on_canvas(coords)
             self._model.save_tag_id(
-                selected_training_file, mc_id, mc_name, color, tag_id
+                selected_training_file, c_id, c_name, color, tag_id
             )
             self._training_build_treeview()
             self._view.training_view.zoom_canvas.delete_points_from_canvas(tag_ids)
@@ -2230,14 +2227,14 @@ class Controller(object):
             return
 
         tag_ids = self._model.tag_ids
-        for mc_id in tag_ids[selected_file].keys():
-            mc_name, color, tags = tag_ids[selected_file][mc_id]
+        for c_id in tag_ids[selected_file].keys():
+            c_name, color, tags = tag_ids[selected_file][c_id]
             self._view.training_view.insert_into_treeview(
-                parent="", index=mc_id, iid=mc_id, values=(mc_name, mc_id, "")
+                parent="", index=c_id, iid=c_id, values=(c_name, c_id, "")
             )
             for tag in tags:
                 self._view.training_view.insert_into_treeview(
-                    parent=str(mc_id), index=tag, iid=None, values=("", "", tag)
+                    parent=str(c_id), index=tag, iid=None, values=("", "", tag)
                 )
 
     def _training_save_coords_of_tag_ids(self) -> None:
@@ -2259,14 +2256,14 @@ class Controller(object):
             self._view.training_view.opened_files_lb.event_generate("<<ListboxSelect>>")
             selected_file = self._view.training_view.get_curselection_value_listbox()
             self._view.training_view.opened_files_lb.unbind("<<ListboxSelect>>")
-            for mc_id in tag_ids[selected_file].keys():
-                mc_name, color, tags = tag_ids[selected_file][mc_id]
+            for c_id in tag_ids[selected_file].keys():
+                c_name, color, tags = tag_ids[selected_file][c_id]
                 (
                     coords,
                     bbox_coords,
                 ) = self._view.training_view.get_coords_of_tag_id_on_canvas(tags)
                 self._model.save_tag_id_coords(
-                    selected_file, mc_id, mc_name, coords, bbox_coords
+                    selected_file, c_id, c_name, coords, bbox_coords
                 )
 
     def _get_satellite_rgb(self) -> List[int]:
@@ -2278,14 +2275,14 @@ class Controller(object):
 
         satellite_rgb = list()
         if self._model.persistence.satellite_type.lower() == "planetscope":
-            red = self._model.persistence.planetscope_red_band
-            green = self._model.persistence.planetscope_green_band
-            blue = self._model.persistence.planetscope_blue_band
+            red = self._model.persistence.planetscope_red
+            green = self._model.persistence.planetscope_green
+            blue = self._model.persistence.planetscope_blue
             satellite_rgb += [red, green, blue]
         elif self._model.persistence.satellite_type.lower() == "sentinel-2":
-            red = self._model.persistence.sentinel_red_band
-            green = self._model.persistence.sentinel_green_band
-            blue = self._model.persistence.sentinel_blue_band
+            red = self._model.persistence.sentinel_2_red
+            green = self._model.persistence.sentinel_2_green
+            blue = self._model.persistence.sentinel_2_blue
             satellite_rgb += [red, green, blue]
         return satellite_rgb
 
@@ -2427,7 +2424,7 @@ class Controller(object):
                 parent=self._view.settings_view,
             )
 
-    def _invalid_settings_mc_id(self) -> None:
+    def _invalid_settings_c_id(self) -> None:
         if self._view.settings_view.state() == "normal":
             message = (
                 "Garbage Class ID and Water Class ID must be a number between 1 and 15!"
@@ -2584,7 +2581,7 @@ class Controller(object):
         return x.isdigit() and 1 <= int(x) <= 100
 
     @staticmethod
-    def _validate_settings_mc_id(x: str) -> bool:
+    def _validate_settings_c_id(x: str) -> bool:
         """
         Validates Garbage and Water Class ID in SettingsView.
 
@@ -2595,7 +2592,7 @@ class Controller(object):
         return x.isdigit() and 1 <= int(x) <= 15
 
     @staticmethod
-    def _validate_training_mc_id(x: str) -> bool:
+    def _validate_training_c_id(x: str) -> bool:
         """
         Validates Garbage and Water Class ID in TrainingView.
 
@@ -2675,7 +2672,7 @@ class Controller(object):
     @staticmethod
     def _validate_alpha(x) -> bool:
         """
-        Validates the MC NAME entry value in TrainingView.
+        Validates the C NAME entry value in TrainingView.
 
         :param x: entry input
         :return: valid or not
