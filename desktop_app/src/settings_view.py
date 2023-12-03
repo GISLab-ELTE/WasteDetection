@@ -90,12 +90,12 @@ class SettingsView(ttk.Toplevel):
         return self._heatmap_low_spinbox
 
     @property
-    def garbage_mc_id_spinbox(self) -> ttk.Spinbox:
-        return self._garbage_mc_id_spinbox
+    def garbage_c_id_spinbox(self) -> ttk.Spinbox:
+        return self._garbage_c_id_spinbox
 
     @property
-    def water_mc_id_spinbox(self) -> ttk.Spinbox:
-        return self._water_mc_id_spinbox
+    def water_c_id_spinbox(self) -> ttk.Spinbox:
+        return self._water_c_id_spinbox
 
     @property
     def working_dir_entry(self) -> ttk.Entry:
@@ -262,13 +262,13 @@ class SettingsView(ttk.Toplevel):
         self._heatmap_low_label = ttk.Label(master=self._value_settings_lf)
         self._heatmap_low_spinbox = ttk.Spinbox(master=self._value_settings_lf)
 
-        self._mc_id_frame = ttk.Frame(master=self._value_settings_lf)
+        self._c_id_frame = ttk.Frame(master=self._value_settings_lf)
 
-        self._garbage_mc_id_label = ttk.Label(master=self._mc_id_frame)
-        self._garbage_mc_id_spinbox = ttk.Spinbox(master=self._mc_id_frame)
+        self._garbage_c_id_label = ttk.Label(master=self._c_id_frame)
+        self._garbage_c_id_spinbox = ttk.Spinbox(master=self._c_id_frame)
 
-        self._water_mc_id_label = ttk.Label(master=self._mc_id_frame)
-        self._water_mc_id_spinbox = ttk.Spinbox(master=self._mc_id_frame)
+        self._water_c_id_label = ttk.Label(master=self._c_id_frame)
+        self._water_c_id_spinbox = ttk.Spinbox(master=self._c_id_frame)
 
         self._paths_lf = ttk.Labelframe(master=self)
 
@@ -427,16 +427,16 @@ class SettingsView(ttk.Toplevel):
         self._heatmap_low_label.configure(text="Heatmap low probability (%):")
         self._heatmap_low_spinbox.configure(width=2, from_=1, increment=1, to=100)
 
-        self._mc_id_frame.configure(None)
+        self._c_id_frame.configure(None)
         for i in range(4):
-            self._mc_id_frame.columnconfigure(i, weight=1)
-        self._mc_id_frame.rowconfigure(0, weight=1)
+            self._c_id_frame.columnconfigure(i, weight=1)
+        self._c_id_frame.rowconfigure(0, weight=1)
 
-        self._garbage_mc_id_label.configure(text="Garbage Class ID:")
-        self._garbage_mc_id_spinbox.configure(width=2, from_=1, increment=1, to=15)
+        self._garbage_c_id_label.configure(text="Garbage Class ID:")
+        self._garbage_c_id_spinbox.configure(width=2, from_=1, increment=1, to=15)
 
-        self._water_mc_id_label.configure(text="Water Class ID:")
-        self._water_mc_id_spinbox.configure(width=2, from_=1, increment=1, to=15)
+        self._water_c_id_label.configure(text="Water Class ID:")
+        self._water_c_id_spinbox.configure(width=2, from_=1, increment=1, to=15)
 
         self._paths_lf.configure(text="Path settings", padding=10)
         for i in range(4):
@@ -596,13 +596,13 @@ class SettingsView(ttk.Toplevel):
         self._heatmap_low_label["bootstyle"] = "default"
         self._heatmap_low_spinbox["bootstyle"] = "default"
 
-        self._mc_id_frame["bootstyle"] = "default"
+        self._c_id_frame["bootstyle"] = "default"
 
-        self._garbage_mc_id_label["bootstyle"] = "default"
-        self._garbage_mc_id_spinbox["bootstyle"] = "default"
+        self._garbage_c_id_label["bootstyle"] = "default"
+        self._garbage_c_id_spinbox["bootstyle"] = "default"
 
-        self._water_mc_id_label["bootstyle"] = "default"
-        self._water_mc_id_spinbox["bootstyle"] = "default"
+        self._water_c_id_label["bootstyle"] = "default"
+        self._water_c_id_spinbox["bootstyle"] = "default"
 
         self._paths_lf["bootstyle"] = "default"
 
@@ -730,15 +730,15 @@ class SettingsView(ttk.Toplevel):
         self._heatmap_low_label.grid(row=2, column=2, sticky="ew", padx=5, pady=5)
         self._heatmap_low_spinbox.grid(row=2, column=3, sticky="ew", padx=5, pady=5)
 
-        self._mc_id_frame.grid(
+        self._c_id_frame.grid(
             row=3, column=2, columnspan=2, sticky="nsew", padx=5, pady=5
         )
 
-        self._garbage_mc_id_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-        self._garbage_mc_id_spinbox.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        self._garbage_c_id_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        self._garbage_c_id_spinbox.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
-        self._water_mc_id_label.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
-        self._water_mc_id_spinbox.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
+        self._water_c_id_label.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
+        self._water_c_id_spinbox.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
 
         self._paths_lf.place(x=20, y=305, height=150, width=880)
 
@@ -920,12 +920,12 @@ class SettingsView(ttk.Toplevel):
                 "black\t--> otherwise.",
             )
         ToolTip(
-            self._garbage_mc_id_label,
+            self._garbage_c_id_label,
             "The Class ID of the Garbage class"
             " in the loaded Random Forest classifiers.",
         )
         ToolTip(
-            self._water_mc_id_label,
+            self._water_c_id_label,
             "The Class ID of the Water class"
             " in the loaded Random Forest classifiers.",
         )

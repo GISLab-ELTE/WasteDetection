@@ -65,12 +65,12 @@ class TrainingView(ttk.Toplevel):
         return self._delete_btn
 
     @property
-    def mc_spinbox(self) -> ttk.Spinbox:
-        return self._mc_spinbox
+    def c_spinbox(self) -> ttk.Spinbox:
+        return self._c_spinbox
 
     @property
-    def mc_input(self) -> ttk.Entry:
-        return self._mc_input
+    def c_input(self) -> ttk.Entry:
+        return self._c_input
 
     @property
     def color_btn(self) -> ttk.Button:
@@ -142,25 +142,25 @@ class TrainingView(ttk.Toplevel):
 
         return None
 
-    def get_mc_id(self) -> int:
+    def get_c_id(self) -> int:
         """
         Returns the value in the Class ID Spinbox.
 
         :return: Class ID value
         """
 
-        return int(self._mc_spinbox.get())
+        return int(self._c_spinbox.get())
 
-    def get_mc_name(self) -> str:
+    def get_c_name(self) -> str:
         """
         Return the value in the Class Name Entry.
 
         :return: Class NAME value
         """
 
-        return self._mc_input.get()
+        return self._c_input.get()
 
-    def get_mc_color(self) -> str:
+    def get_c_color(self) -> str:
         """
         Returns the background color of the Color Button.
 
@@ -169,7 +169,7 @@ class TrainingView(ttk.Toplevel):
 
         return self._color_btn.cget("bg")
 
-    def set_mc_id(self, value: int) -> None:
+    def set_c_id(self, value: int) -> None:
         """
         Sets the value in the Class ID Spinbox.
 
@@ -177,9 +177,9 @@ class TrainingView(ttk.Toplevel):
         :return: None
         """
 
-        self._mc_spinbox.set(value)
+        self._c_spinbox.set(value)
 
-    def set_mc_name(self, value: str) -> None:
+    def set_c_name(self, value: str) -> None:
         """
         Sets the value in the Class Name Entry.
 
@@ -187,8 +187,8 @@ class TrainingView(ttk.Toplevel):
         :return: None
         """
 
-        self._mc_input.delete(0, END)
-        self._mc_input.insert(0, value)
+        self._c_input.delete(0, END)
+        self._c_input.insert(0, value)
 
     def set_color_btn_bg(self, value: str) -> None:
         """
@@ -260,20 +260,20 @@ class TrainingView(ttk.Toplevel):
 
         color = self._color_btn.cget("bg")
         tag_id = self._zoom_canvas.place_polygon_on_canvas(coords, color)
-        mc_id = self.get_mc_id()
-        mc_name = self.get_mc_name()
-        return mc_id, mc_name, color, tag_id
+        c_id = self.get_c_id()
+        c_name = self.get_c_name()
+        return c_id, c_name, color, tag_id
 
     def draw_pixel_on_canvas(self, event) -> int:
         """
         Draws a pixel on the canvas
 
-        :return: the mc_id of pixel
+        :return: the c_id of pixel
         """
         color = self._color_btn.cget("bg")
         self._zoom_canvas.draw_pixel_on_last_layer(event, color)
 
-        return self.get_mc_id()
+        return self.get_c_id()
 
     def remove_pixel_from_canvas(self, event):
         """
@@ -367,10 +367,10 @@ class TrainingView(ttk.Toplevel):
         )
 
         self._input_frame = ttk.Labelframe(master=self._action_lf)
-        self._mc_id_label = ttk.Label(master=self._input_frame)
-        self._mc_name_label = ttk.Label(master=self._input_frame)
-        self._mc_spinbox = ttk.Spinbox(master=self._input_frame)
-        self._mc_input = ttk.Entry(master=self._input_frame)
+        self._c_id_label = ttk.Label(master=self._input_frame)
+        self._c_name_label = ttk.Label(master=self._input_frame)
+        self._c_spinbox = ttk.Spinbox(master=self._input_frame)
+        self._c_input = ttk.Entry(master=self._input_frame)
         self._color_label = ttk.Label(master=self._input_frame)
         self._color_btn = tk.Button(master=self._input_frame)
 
@@ -429,17 +429,17 @@ class TrainingView(ttk.Toplevel):
         self._process_pb.configure(value=0, mode="determinate")
 
         self._input_frame.configure(text="Class settings", padding=(20, 10, 10, 15))
-        self._mc_id_label.configure(text="Class ID:")
-        self._mc_name_label.configure(text="Class Name:")
-        self._mc_spinbox.configure(
+        self._c_id_label.configure(text="Class ID:")
+        self._c_name_label.configure(text="Class Name:")
+        self._c_spinbox.configure(
             width=4,
-            textvariable=self._vars["mc_id_spinbox"],
+            textvariable=self._vars["c_id_spinbox"],
             from_=1,
             increment=1,
             to=15,
         )
-        self._mc_input.configure(width=15)
-        self._mc_input.insert(0, "Garbage")
+        self._c_input.configure(width=15)
+        self._c_input.insert(0, "Garbage")
         self._color_label.configure(text="Color:")
         self._color_btn.configure(width=10, bg="#ff4136", activebackground="#ff4136")
 
@@ -505,10 +505,10 @@ class TrainingView(ttk.Toplevel):
         self._opened_files_sb_y["bootstyle"] = "default"
 
         self._input_frame["bootstyle"] = "default"
-        self._mc_id_label["bootstyle"] = "default"
-        self._mc_name_label["bootstyle"] = "default"
-        self._mc_spinbox["bootstyle"] = "default"
-        self._mc_input["bootstyle"] = "default"
+        self._c_id_label["bootstyle"] = "default"
+        self._c_name_label["bootstyle"] = "default"
+        self._c_spinbox["bootstyle"] = "default"
+        self._c_input["bootstyle"] = "default"
         self._color_label["bootstyle"] = "default"
 
         self._treeview["bootstyle"] = "dark"
@@ -558,11 +558,11 @@ class TrainingView(ttk.Toplevel):
             row=11, column=0, columnspan=2, sticky="ew", padx=5, pady=5
         )
 
-        self._mc_id_label.grid(row=0, column=0, sticky="sw", padx=5, pady=5)
-        self._mc_name_label.grid(row=0, column=1, sticky="sw", padx=5, pady=5)
+        self._c_id_label.grid(row=0, column=0, sticky="sw", padx=5, pady=5)
+        self._c_name_label.grid(row=0, column=1, sticky="sw", padx=5, pady=5)
         self._color_label.grid(row=0, column=2, sticky="sw", padx=5, pady=5)
-        self._mc_spinbox.grid(row=1, column=0, sticky="w", padx=5, pady=5)
-        self._mc_input.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+        self._c_spinbox.grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        self._c_input.grid(row=1, column=1, sticky="w", padx=5, pady=5)
         self._color_btn.grid(row=1, column=2, sticky="w", padx=5, pady=5)
 
         self._treeview.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
@@ -579,4 +579,4 @@ class TrainingView(ttk.Toplevel):
         """
 
         self._vars = dict()
-        self._vars["mc_id_spinbox"] = ttk.IntVar(master=self, value=1)
+        self._vars["c_id_spinbox"] = ttk.IntVar(master=self, value=1)
