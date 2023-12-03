@@ -29,14 +29,20 @@ class Persistence(object):
 
     # Non-static public methods
     def load(self) -> None:
-        name, extension = os.path.splitext(self.config_file_path)
-        if extension != ".json":
-            raise JsonFileExtensionException(extension, self.config_file_path)
+        if not os.path.exists(self.config_file_path):
+            raise ValueError(f"{self.config_file_path} does not exist!")
 
         with open(self.config_file_path, "r") as file:
-            settings = json.load(file, object_hook=Persistence._config_decoder)
-            for key, value in settings._asdict().items():
-                setattr(self, key, value)
+            settings = json.load(file)
+
+        config_local_path = os.path.join(os.path.dirname(self.config_file_path), "config.local.json")
+        if os.path.exists(config_local_path):
+            with open(config_local_path, "r") as file:
+                config_local = json.load(file)
+            settings = jsonmerge.merge(settings, config_local)
+
+        for key, value in settings.items():
+            setattr(self, key, value)
 
         if hasattr(self, "data_file_path"):
             with open(self.data_file_path, "r") as file:
@@ -64,7 +70,7 @@ class Persistence(object):
         with open(self.config_file_path, "w") as file:
             json.dump(new_config, file, indent=4)
 
-    # Static protected methods
-    @staticmethod
-    def _config_decoder(config: Dict) -> Tuple:
-        return namedtuple("settings", config.keys())(*config.values())
+    # # Static protected methods
+    # @staticmethod
+    # def _config_decoder(config: Dict) -> Tuple:
+    #     return namedtuple("settings", config.keys())(*config.values())
