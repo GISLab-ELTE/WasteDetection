@@ -1,5 +1,6 @@
 from typing import Dict, Tuple
 from abc import ABC, abstractmethod
+from model.persistence import Persistence
 
 
 class BaseAPI(ABC):
@@ -8,16 +9,16 @@ class BaseAPI(ABC):
 
     """
 
-    def __init__(self, config_file: Dict, data_file: Dict) -> None:
+    def __init__(self, settings: Persistence, data_file: Dict) -> None:
         """
         Constructor of BaseApi class.
 
-        :param config_file: Dictionary containing the settings parameters.
+        :param settings: Persistence object containing the settings parameters.
         :param data_file: Dictionary containing the AOIs in GeoJSON format.
         :return: None
         """
 
-        self.config_file = config_file
+        self.settings = settings
         self.data_file = data_file
 
     @abstractmethod
