@@ -57,10 +57,6 @@ class ViewModel(Model):
         return self._tag_id_coords
 
     @property
-    def persistence(self) -> Persistence:
-        return self._persistence
-
-    @property
     def classification_mode(self) -> str:
         return self._classification_mode
 
@@ -93,25 +89,25 @@ class ViewModel(Model):
         """
 
         labels = list()
-        if self._persistence.training_label_blue == 1:
+        if self.persistence.training_label_blue == 1:
             labels.append("blue")
-        if self._persistence.training_label_green == 1:
+        if self.persistence.training_label_green == 1:
             labels.append("green")
-        if self._persistence.training_label_red == 1:
+        if self.persistence.training_label_red == 1:
             labels.append("red")
-        if self._persistence.training_label_nir == 1:
+        if self.persistence.training_label_nir == 1:
             labels.append("nir")
-        if self._persistence.training_label_pi == 1:
+        if self.persistence.training_label_pi == 1:
             labels.append("pi")
-        if self._persistence.training_label_ndwi == 1:
+        if self.persistence.training_label_ndwi == 1:
             labels.append("ndwi")
-        if self._persistence.training_label_ndvi == 1:
+        if self.persistence.training_label_ndvi == 1:
             labels.append("ndvi")
-        if self._persistence.training_label_rndvi == 1:
+        if self.persistence.training_label_rndvi == 1:
             labels.append("rndvi")
-        if self._persistence.training_label_sr == 1:
+        if self.persistence.training_label_sr == 1:
             labels.append("sr")
-        if self._persistence.training_label_apwi == 1:
+        if self.persistence.training_label_apwi == 1:
             labels.append("apwi")
         return "-".join(labels)
 
@@ -125,14 +121,14 @@ class ViewModel(Model):
         """
 
         try:
-            with open(self._persistence.hotspot_rf_path, "rb") as file:
+            with open(self.persistence.hotspot_rf_path, "rb") as file:
                 self._hotspot_rf = pickle.load(file)
         except Exception:
             self._hotspot_rf = None
             raise HotspotRandomForestFileException()
 
         try:
-            with open(self._persistence.floating_rf_path, "rb") as file:
+            with open(self.persistence.floating_rf_path, "rb") as file:
                 self._floating_rf = pickle.load(file)
         except Exception:
             self._floating_rf = None
@@ -515,7 +511,7 @@ class ViewModel(Model):
             training_data_path,
             labels,
             ["COD"],
-            self._persistence.training_estimators,
+            self.persistence.training_estimators,
         )
 
         pickle.dump(clf, open(output_path, "wb"))
@@ -544,10 +540,10 @@ class ViewModel(Model):
             for value in unique_values:
                 c_id = int(value / 100)
 
-                if c_id >= len(self._persistence.colors):
+                if c_id >= len(self.persistence.colors):
                     continue
 
-                color = self._persistence.colors[c_id]
+                color = self.persistence.colors[c_id]
                 rgba = ImageColor.getcolor(color, "RGBA")
                 rgba = [val / 255 for val in rgba]
 
@@ -583,10 +579,10 @@ class ViewModel(Model):
         for value in unique_values:
             c_id = int(value / 100)
 
-            if c_id >= len(self._persistence.colors):
+            if c_id >= len(self.persistence.colors):
                 continue
 
-            color = self._persistence.colors[c_id]
+            color = self.persistence.colors[c_id]
             rgba = ImageColor.getcolor(color, "RGBA")
             rgba = [val / 255 for val in rgba]
 
@@ -633,8 +629,8 @@ class ViewModel(Model):
             ) = self.create_classification_and_heatmap_with_random_forest(
                 input_path=tmp_file,
                 clf=clf,
-                classification_postfix=self._persistence.hotspot_classified_postfix,
-                heatmap_postfix=self._persistence.hotspot_heatmap_postfix,
+                classification_postfix=self.persistence.hotspot_classified_postfix,
+                heatmap_postfix=self.persistence.hotspot_heatmap_postfix,
             )
 
             if classification and heatmap:
@@ -653,8 +649,8 @@ class ViewModel(Model):
                         original_input_path=tmp_file,
                         classification_path=classification,
                         heatmap_path=heatmap,
-                        classification_postfix=self._persistence.floating_masked_classified_postfix,
-                        heatmap_postfix=self._persistence.floating_masked_heatmap_postfix,
+                        classification_postfix=self.persistence.floating_masked_classified_postfix,
+                        heatmap_postfix=self.persistence.floating_masked_heatmap_postfix,
                     )
 
                     if not (
@@ -697,13 +693,13 @@ class ViewModel(Model):
                     before, after = self.get_pi_difference_heatmap(difference)
 
                     before_path = Model.output_path([file_1, file_2],
-                                                     "_" + self._persistence.washed_up_before_postfix,
-                                                     self._persistence.file_extension,
-                                                     self._persistence.working_dir)
+                                                     "_" + self.persistence.washed_up_before_postfix,
+                                                     self.persistence.file_extension,
+                                                     self.persistence.working_dir)
                     after_path = Model.output_path([file_1, file_2],
-                                                    "_" + self._persistence.washed_up_after_postfix,
-                                                    self._persistence.file_extension,
-                                                    self._persistence.working_dir)
+                                                    "_" + self.persistence.washed_up_after_postfix,
+                                                    self.persistence.file_extension,
+                                                    self.persistence.working_dir)
 
                     Model.save_tif(
                         input_path=file_1,
