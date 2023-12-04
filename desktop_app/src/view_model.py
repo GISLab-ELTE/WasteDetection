@@ -618,7 +618,8 @@ class ViewModel(Model):
             tmp_file = self.save_bands_indices(
                 input_path=file,
                 save=training_labels,
-                postfix="_",
+                postfix=training_labels,
+                working_dir=self.persistence.working_dir
             )
 
             clf = self._hotspot_rf if hotspot else self._floating_rf
@@ -693,11 +694,11 @@ class ViewModel(Model):
                     before, after = self.get_pi_difference_heatmap(difference)
 
                     before_path = Model.output_path([file_1, file_2],
-                                                     "_" + self.persistence.washed_up_before_postfix,
+                                                     self.persistence.washed_up_before_postfix,
                                                      self.persistence.file_extension,
                                                      self.persistence.working_dir)
                     after_path = Model.output_path([file_1, file_2],
-                                                    "_" + self.persistence.washed_up_after_postfix,
+                                                    self.persistence.washed_up_after_postfix,
                                                     self.persistence.file_extension,
                                                     self.persistence.working_dir)
 
