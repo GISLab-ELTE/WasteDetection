@@ -133,6 +133,7 @@ class Model(object):
         """
 
         satellite_name = self.persistence.satellite_type.lower()
+        satellite_name = satellite_name.replace("-", "_")
         band_name = band.lower()
 
         index = satellite_name + "_" + band_name
@@ -181,6 +182,7 @@ class Model(object):
         input_path: str,
         save: str,
         postfix: str,
+        working_dir: str,
     ) -> str:
         """
         Saves the specified band values and/or index values to a single- or multi-band tif file.
@@ -201,7 +203,7 @@ class Model(object):
 
         bands = len(list_of_bands_and_indices)
         output_path = Model.output_path(
-            [input_path], postfix, self.persistence.file_extension, self.persistence.working_dir
+            [input_path], postfix, self.persistence.file_extension, working_dir
         )
 
         Model.save_tif(
@@ -412,28 +414,29 @@ class Model(object):
             masked_heatmap = np.empty_like(classification_matrix)
 
             rows, cols = classification_matrix.shape
+            working_dir = self.persistence.working_dir if hasattr(self.persistence, "working_dir") else ""
 
             # output paths
             morphology_path = Model.output_path(
-                [original_input_path], "morphology", self.persistence.file_extension, self.persistence.working_dir
+                [original_input_path], "morphology", self.persistence.file_extension, working_dir
             )
             opening_path = Model.output_path(
-                [original_input_path], "morphology_opening", self.persistence.file_extension, self.persistence.working_dir,
+                [original_input_path], "morphology_opening", self.persistence.file_extension, working_dir,
             )
             dilation_path = Model.output_path(
                 [original_input_path],
                 "morphology_opening_dilation",
                 self.persistence.file_extension,
-                self.persistence.working_dir,
+                working_dir,
             )
             masked_classification_path = Model.output_path(
                 [original_input_path],
                 classification_postfix,
                 self.persistence.file_extension,
-                self.persistence.working_dir,
+                working_dir,
             )
             masked_heatmap_path = Model.output_path(
-                [original_input_path], heatmap_postfix, self.persistence.file_extension, self.persistence.working_dir,
+                [original_input_path], heatmap_postfix, self.persistence.file_extension, working_dir,
             )
 
             for i in range(rows):
@@ -743,7 +746,7 @@ class Model(object):
         input_paths: List[str],
         postfix: str,
         output_file_extension: str,
-        working_dir: str = "",
+        working_dir: str,
     ) -> str:
         """
         Returns generated output path from given parameters.
@@ -755,22 +758,20 @@ class Model(object):
         :return: generated output path
         """
 
-        if working_dir == "":
-            filename, file_extension = os.path.splitext(input_paths[0])
-            output_path = filename + "_" + postfix + "." + output_file_extension
-        else:
-            file_names = list()
-            for path in input_paths:
-                file_name = "".join(path.split(".")[:-1]).split("/")[-1]
-                file_names.append(file_name)
-            output_path = (
-                working_dir
-                + "/"
-                + "_".join(file_names)
-                + postfix
-                + "."
-                + output_file_extension
-            )
+        file_names = list()
+        for path in input_paths:
+            file_name_with_extension = os.path.basename(path)
+            file_name, _ = os.path.splitext(file_name_with_extension)
+            file_names.append(file_name)
+        output_path = (
+            working_dir
+            + "/"
+            + "_".join(file_names)
+            + "_"
+            + postfix
+            + "."
+            + output_file_extension
+        )
         return output_path
 
     @staticmethod
@@ -795,7 +796,6 @@ class Model(object):
                 "ndvi",
                 "rndvi",
                 "sr",
-                "apwi",
             ]
         elif "all_no_blue" in string_list:
             return ["green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr"]
@@ -1223,11 +1223,12 @@ class Model(object):
             classification = classification.reshape((rows, cols))
             heatmap = heatmap.reshape((rows, cols))
 
+            working_dir = self.persistence.working_dir if hasattr(self.persistence, "working_dir") else ""
             classification_output_path = Model.output_path(
-                [input_path], classification_postfix, self.persistence.file_extension, self.persistence.working_dir,
+                [input_path], classification_postfix, self.persistence.file_extension, working_dir,
             )
             heatmap_output_path = Model.output_path(
-                [input_path], heatmap_postfix, self.persistence.file_extension, self.persistence.working_dir,
+                [input_path], heatmap_postfix, self.persistence.file_extension, working_dir,
             )
 
             # save classification
