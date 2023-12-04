@@ -7,9 +7,10 @@ import requests
 
 import datetime as dt
 
-from baseapi import BaseAPI
 from sentinelhub import filter_times
 from requests.auth import HTTPBasicAuth
+from model.persistence import Persistence
+from server_app.src.baseapi import BaseAPI
 from typing import List, TypeVar, Tuple, Dict
 
 
@@ -22,15 +23,15 @@ class PlanetAPI(BaseAPI):
 
     """
 
-    def __init__(self, config_file: Dict, data_file: Dict) -> None:
+    def __init__(self, settings: Persistence, data_file: Dict) -> None:
         """
         Constructor of PlanetAPI class.
 
-        :param config_file: Dictionary containing the settings.
+        :param settings: Persistence object containing the settings.
         :param data_file: Dictionary containing the AOIs (GeoJSON).
         """
 
-        super(PlanetAPI, self).__init__(config_file, data_file)
+        super(PlanetAPI, self).__init__(settings, data_file)
 
         self.api_key = None
         self.search_url = None
@@ -52,10 +53,10 @@ class PlanetAPI(BaseAPI):
         :return: None
         """
 
-        self.api_key = self.config_file["planet_api_key"]
-        self.search_url = self.config_file["planet_search_url"]
-        self.orders_url = self.config_file["planet_orders_url"]
-        self.item_type = self.config_file["planet_item_type"]
+        self.api_key = self.settings.planet_api_key
+        self.search_url = self.settings.planet_search_url
+        self.orders_url = self.settings.planet_orders_url
+        self.item_type = self.settings.planet_item_type
         self.auth = HTTPBasicAuth(self.api_key, "")
         self.headers = {"content-type": "application/json"}
 
@@ -87,7 +88,7 @@ class PlanetAPI(BaseAPI):
             cloud_cover_filter = {
                 "type": "RangeFilter",
                 "field_name": "cloud_cover",
-                "config": {"lte": float(self.config_file["max_cloud_cover"]) / 100},
+                "config": {"lte": float(self.settings.max_cloud_cover) / 100},
             }
 
             geojson = self.start_search(
@@ -239,8 +240,8 @@ class PlanetAPI(BaseAPI):
 
         work_dir = "/".join(
             [
-                self.config_file["workspace_root_dir"],
-                self.config_file["download_dir_planetscope"],
+                self.settings.workspace_root_dir,
+                self.settings.download_dir_planetscope,
                 feature_id,
             ]
         )
@@ -335,8 +336,8 @@ class PlanetAPI(BaseAPI):
 
         data_folder = "/".join(
             [
-                self.config_file["workspace_root_dir"],
-                self.config_file["download_dir_planetscope"],
+                self.settings.workspace_root_dir,
+                self.settings.download_dir_planetscope,
                 str(feature_id),
                 str(date),
             ]
