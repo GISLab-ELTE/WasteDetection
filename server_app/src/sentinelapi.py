@@ -1,7 +1,8 @@
 import datetime as dt
 
-from baseapi import BaseAPI
+from server_app.src.baseapi import BaseAPI
 from typing import Dict, Tuple, List
+from model.persistence import Persistence
 
 from sentinelhub import (
     SHConfig,
@@ -22,15 +23,15 @@ class SentinelAPI(BaseAPI):
 
     """
 
-    def __init__(self, config_file: Dict, data_file: Dict) -> None:
+    def __init__(self, settings: Persistence, data_file: Dict) -> None:
         """
         Constructor of SentinelAPI class.
 
-        :param config_file: Dictionary containing the settings.
+        :param settings: Persistence object containing the settings.
         :param data_file: Dictionary containing the AOIs (GeoJSON).
         """
 
-        super(SentinelAPI, self).__init__(config_file, data_file)
+        super(SentinelAPI, self).__init__(settings, data_file)
 
         self.config = None
         self.catalog = None
@@ -69,9 +70,9 @@ class SentinelAPI(BaseAPI):
         :return: None
         """
 
-        self.sh_client_id = self.config_file["sentinel_sh_client_id"]
-        self.instance_id = self.config_file["sentinel_instance_id"]
-        self.sh_client_secret = self.config_file["sentinel_sh_client_secret"]
+        self.sh_client_id = self.settings.sentinel_sh_client_id
+        self.instance_id = self.settings.sentinel_instance_id
+        self.sh_client_secret = self.settings.sentinel_sh_client_secret
 
         self.config = SHConfig()
         self.config.sh_client_id = self.sh_client_id
@@ -103,7 +104,7 @@ class SentinelAPI(BaseAPI):
                 bbox=bbox,
                 time=time_interval,
                 query={
-                    "eo:cloud_cover": {"lte": int(self.config_file["max_cloud_cover"])}
+                    "eo:cloud_cover": {"lte": int(self.settings.max_cloud_cover)}
                 },
                 fields={
                     "include": [
@@ -122,8 +123,8 @@ class SentinelAPI(BaseAPI):
             for timestamp in reversed(unique_acquisitions):
                 data_folder = "/".join(
                     [
-                        self.config_file["workspace_root_dir"],
-                        self.config_file["download_dir_sentinel-2"],
+                        self.settings.workspace_root_dir,
+                        self.settings.download_dir_sentinel_2,
                         str(feature["properties"]["id"]),
                         dt.datetime.strftime(timestamp, "%Y-%m-%d"),
                     ]
