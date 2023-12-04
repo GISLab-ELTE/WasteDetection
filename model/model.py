@@ -39,14 +39,14 @@ class Model(object):
 
         super(Model, self).__init__()
 
-        self._persistence = persistence
+        self.persistence = persistence
 
         self.pixel_size_x = None
         self.pixel_size_y = None
 
-        if self._persistence.satellite_type.lower() == "PlanetScope".lower():
+        if self.persistence.satellite_type.lower() == "PlanetScope".lower():
             self.pixel_size_x = self.pixel_size_y = 3
-        elif self._persistence.satellite_type.lower() == "Sentinel-2".lower():
+        elif self.persistence.satellite_type.lower() == "Sentinel-2".lower():
             self.pixel_size_x = self.pixel_size_y = 10
 
     def estimate_garbage_area(
@@ -84,7 +84,7 @@ class Model(object):
             area = 0.0
 
             if image_type.lower() == "classified":
-                if self._persistence.garbage_c_id * 100 not in unique_values:
+                if self.persistence.garbage_c_id * 100 not in unique_values:
                     return 0
                     # raise CodValueNotPresentException(
                     #     "garbage", garbage_c_id * 100, input_path
@@ -98,15 +98,15 @@ class Model(object):
 
                 for i in range(rows):
                     for j in range(cols):
-                        if band[i, j] == self._persistence.garbage_c_id * 100:
+                        if band[i, j] == self.persistence.garbage_c_id * 100:
                             area += self.pixel_size_x * self.pixel_size_y
             elif image_type.lower() == "heatmap":
                 for i in range(rows):
                     for j in range(cols):
                         if (
-                            prob == "low" and band[i, j] == self._persistence.low_prob_value
-                            or prob == "medium" and band[i, j] == self._persistence.medium_prob_value
-                            or prob == "high" and band[i, j] == self._persistence.high_prob_value
+                            prob == "low" and band[i, j] == self.persistence.low_prob_value
+                            or prob == "medium" and band[i, j] == self.persistence.medium_prob_value
+                            or prob == "high" and band[i, j] == self.persistence.high_prob_value
                         ):
                             area += self.pixel_size_x * self.pixel_size_y
 
@@ -132,13 +132,13 @@ class Model(object):
         :raise NameError: If wrong satellite name is given.
         """
 
-        satellite_name = self._persistence.satellite_type.lower()
+        satellite_name = self.persistence.satellite_type.lower()
         band_name = band.lower()
 
         index = satellite_name + "_" + band_name
 
-        if hasattr(self._persistence, index):
-            return getattr(self._persistence, index)
+        if hasattr(self.persistence, index):
+            return getattr(self.persistence, index)
         else:
             raise NameError("Wrong satellite or band name!")
 
@@ -201,7 +201,7 @@ class Model(object):
 
         bands = len(list_of_bands_and_indices)
         output_path = Model.output_path(
-            [input_path], postfix, self._persistence.file_extension, self._persistence.working_dir
+            [input_path], postfix, self.persistence.file_extension, self.persistence.working_dir
         )
 
         Model.save_tif(
@@ -308,41 +308,41 @@ class Model(object):
 
             for i in range(rows):
                 for j in range(cols):
-                    n_equal_parts = int(self._persistence.washed_up_heatmap_sections)
+                    n_equal_parts = int(self.persistence.washed_up_heatmap_sections)
 
                     value_pos = mean_difference_pos[i, j]
                     equal_part_pos = max_pos / n_equal_parts
                     if value_pos >= equal_part_pos * (n_equal_parts - 1):
-                        heatmap_pos[i, j] = self._persistence.high_prob_value
+                        heatmap_pos[i, j] = self.persistence.high_prob_value
                     elif (
                         equal_part_pos * (n_equal_parts - 2)
                         <= value_pos
                         < equal_part_pos * (n_equal_parts - 1)
                     ):
-                        heatmap_pos[i, j] = self._persistence.medium_prob_value
+                        heatmap_pos[i, j] = self.persistence.medium_prob_value
                     elif (
                         equal_part_pos * (n_equal_parts - 3)
                         <= value_pos
                         < equal_part_pos * (n_equal_parts - 2)
                     ):
-                        heatmap_pos[i, j] = self._persistence.low_prob_value
+                        heatmap_pos[i, j] = self.persistence.low_prob_value
 
                     value_neg = mean_difference_neg[i, j]
                     equal_part_neg = max_neg / n_equal_parts
                     if value_neg >= equal_part_neg * (n_equal_parts - 1):
-                        heatmap_neg[i, j] = self._persistence.high_prob_value
+                        heatmap_neg[i, j] = self.persistence.high_prob_value
                     elif (
                         equal_part_neg * (n_equal_parts - 2)
                         <= value_neg
                         < equal_part_neg * (n_equal_parts - 1)
                     ):
-                        heatmap_neg[i, j] = self._persistence.medium_prob_value
+                        heatmap_neg[i, j] = self.persistence.medium_prob_value
                     elif (
                         equal_part_neg * (n_equal_parts - 3)
                         <= value_neg
                         < equal_part_neg * (n_equal_parts - 2)
                     ):
-                        heatmap_neg[i, j] = self._persistence.low_prob_value
+                        heatmap_neg[i, j] = self.persistence.low_prob_value
 
         return heatmap_pos, heatmap_neg
 
@@ -415,32 +415,32 @@ class Model(object):
 
             # output paths
             morphology_path = Model.output_path(
-                [original_input_path], "morphology", self._persistence.file_extension, self._persistence.working_dir
+                [original_input_path], "morphology", self.persistence.file_extension, self.persistence.working_dir
             )
             opening_path = Model.output_path(
-                [original_input_path], "morphology_opening", self._persistence.file_extension, self._persistence.working_dir,
+                [original_input_path], "morphology_opening", self.persistence.file_extension, self.persistence.working_dir,
             )
             dilation_path = Model.output_path(
                 [original_input_path],
                 "morphology_opening_dilation",
-                self._persistence.file_extension,
-                self._persistence.working_dir,
+                self.persistence.file_extension,
+                self.persistence.working_dir,
             )
             masked_classification_path = Model.output_path(
                 [original_input_path],
                 classification_postfix,
-                self._persistence.file_extension,
-                self._persistence.working_dir,
+                self.persistence.file_extension,
+                self.persistence.working_dir,
             )
             masked_heatmap_path = Model.output_path(
-                [original_input_path], heatmap_postfix, self._persistence.file_extension, self._persistence.working_dir,
+                [original_input_path], heatmap_postfix, self.persistence.file_extension, self.persistence.working_dir,
             )
 
             for i in range(rows):
                 for j in range(cols):
                     if (
-                        classification_matrix[i, j] == self._persistence.garbage_c_id * 100
-                        or classification_matrix[i, j] == self._persistence.water_c_id * 100
+                        classification_matrix[i, j] == self.persistence.garbage_c_id * 100
+                        or classification_matrix[i, j] == self.persistence.water_c_id * 100
                     ):
                         morphology_matrix[i, j] = 1
                     else:
@@ -454,14 +454,14 @@ class Model(object):
                 output_path=morphology_path,
             )
 
-            matrix = self._persistence.morphology_matrix_size, self._persistence.morphology_matrix_size
+            matrix = self.persistence.morphology_matrix_size, self.persistence.morphology_matrix_size
             opening = Model.morphology(
                 "opening", morphology_path, opening_path, matrix=matrix
             )
 
             if opening is not None:
                 dilation = Model.morphology(
-                    "dilation", opening_path, dilation_path, iterations=self._persistence.morphology_iterations
+                    "dilation", opening_path, dilation_path, iterations=self.persistence.morphology_iterations
                 )
 
                 if dilation is not None:
@@ -1177,10 +1177,10 @@ class Model(object):
 
             split_size = ceil(
                 array_df.shape[0]
-                / ceil((array_df.shape[0] * self._persistence.max_class_count) / self._persistence.max_class_value_count)
+                / ceil((array_df.shape[0] * self.persistence.max_class_count) / self.persistence.max_class_value_count)
             )
             split_count = ceil(
-                (array_df.shape[0] * self._persistence.max_class_count) / self._persistence.max_class_value_count
+                (array_df.shape[0] * self.persistence.max_class_count) / self.persistence.max_class_value_count
             )
             for c in range(split_count):
                 new_array_df = array_df[c * split_size : (c + 1) * split_size].dropna(
@@ -1200,21 +1200,21 @@ class Model(object):
                     max_value = pred_proba[counter][max_ind]
 
                     class_str = str(classes[max_ind])
-                    if class_str == (str(self._persistence.garbage_c_id * 100)):
-                        if max_value >= self._persistence.high_prob_percent / 100:
-                            heatmap[i] = self._persistence.high_prob_value
+                    if class_str == (str(self.persistence.garbage_c_id * 100)):
+                        if max_value >= self.persistence.high_prob_percent / 100:
+                            heatmap[i] = self.persistence.high_prob_value
                         elif (
-                            self._persistence.medium_prob_percent / 100
+                            self.persistence.medium_prob_percent / 100
                             <= max_value
-                            < self._persistence.high_prob_percent / 100
+                            < self.persistence.high_prob_percent / 100
                         ):
-                            heatmap[i] = self._persistence.medium_prob_value
+                            heatmap[i] = self.persistence.medium_prob_value
                         elif (
-                            self._persistence.low_prob_percent / 100
+                            self.persistence.low_prob_percent / 100
                             <= max_value
-                            < self._persistence.medium_prob_percent / 100
+                            < self.persistence.medium_prob_percent / 100
                         ):
-                            heatmap[i] = self._persistence.low_prob_value
+                            heatmap[i] = self.persistence.low_prob_value
 
                     classification[i] = classes[max_ind]
 
@@ -1224,10 +1224,10 @@ class Model(object):
             heatmap = heatmap.reshape((rows, cols))
 
             classification_output_path = Model.output_path(
-                [input_path], classification_postfix, self._persistence.file_extension, self._persistence.working_dir,
+                [input_path], classification_postfix, self.persistence.file_extension, self.persistence.working_dir,
             )
             heatmap_output_path = Model.output_path(
-                [input_path], heatmap_postfix, self._persistence.file_extension, self._persistence.working_dir,
+                [input_path], heatmap_postfix, self.persistence.file_extension, self.persistence.working_dir,
             )
 
             # save classification
