@@ -1,32 +1,33 @@
 import os
 import pickle
-import geojson
 import rasterio
-import traceback
-import cv2 as cv
 import numpy as np
 import pandas as pd
 
-from math import ceil
-from osgeo import gdal
 from matplotlib import cm
 from PIL import ImageColor
 from model.model import Model
-from itertools import compress
 from model.exceptions import *
-from shapely.geometry import Point
 from model.persistence import Persistence
-from shapely.geometry.polygon import Polygon
 from matplotlib.colors import ListedColormap
+from typing import List, Tuple, Callable, Dict
 from sklearn.ensemble import RandomForestClassifier
-from typing import List, Tuple, Callable, Union, TextIO, Dict
 
 
 HEATMAP_COLORS = {0: "#000000", 1: "#1fff00", 2: "#fff300", 3: "#ff0000"}
 
 
 class ViewModel(Model):
+    """
+    It is derived from the main Model class and contains logic specifically for the desktop_app.
+
+    """
+
     def __init__(self, persistence: Persistence) -> None:
+        """
+        Constructor of ViewModel.
+        """
+
         super(ViewModel, self).__init__(persistence)
 
         self._classification_mode = None
@@ -64,23 +65,7 @@ class ViewModel(Model):
     def classification_layer_data(self) -> Dict:
         return self._classification_layer_data
 
-    def _initialize_data_members(self) -> None:
-        """
-        Initializes the data members.
-
-        :return: None
-        """
-
-        self._opened_files = list()
-        self._result_files_hotspot = list()
-        self._result_files_floating = list()
-        self._result_files_washed_up = list()
-        self._point_tag_ids = list()
-        self._tag_ids = dict()
-        self._tag_id_coords = dict()
-        self._classification_mode = "polygon"
-        self._classification_layer_data = dict()
-
+    # Non-static public methods
     def get_training_labels(self) -> str:
         """
         Gets the checked training labels in SettingsView.
@@ -229,9 +214,7 @@ class ViewModel(Model):
 
         return self._classification_layer_data[image_name]
 
-    def set_classification_pixel_of_layer(
-        self, image_name: str, coordinates: Tuple[int, int], c_id: int
-    ) -> None:
+    def set_classification_pixel_of_layer(self, image_name: str, coordinates: Tuple[int, int], c_id: int) -> None:
         """
         sets a classification pixel of the given layer
 
@@ -246,9 +229,7 @@ class ViewModel(Model):
     def delete_classification_data(self, image_name: str) -> None:
         self._classification_layer_data.pop(image_name)
 
-    def save_new_c(
-        self, training_file: str, c_id: int, c_name: str, c_color: str
-    ) -> None:
+    def save_new_c(self, training_file: str, c_id: int, c_name: str, c_color: str) -> None:
         """
         Saves a new training class with the given file name, id, name and color.
 
@@ -293,9 +274,7 @@ class ViewModel(Model):
                     self._tag_ids[training_file][c_id][2].remove(tag_id)
                     return
 
-    def save_tag_id(
-        self, training_file: str, c_id: int, c_name: str, color: str, tag_id: int
-    ) -> None:
+    def save_tag_id(self, training_file: str, c_id: int, c_name: str, color: str, tag_id: int) -> None:
         """
         Saves the tag id of a new shape in the training class.
 
@@ -393,9 +372,7 @@ class ViewModel(Model):
 
         return usable_training_data, enough_data
 
-    def add_polygon_values_to_image(
-        self, training_file: str, usable_training_data: Dict[str, Dict]
-    ) -> np.ndarray:
+    def add_polygon_values_to_image(self, training_file: str, usable_training_data: Dict[str, Dict]) -> np.ndarray:
         """
         Creates a numpy array that adds the polygons to the image layer.
         :param training_file: the training file that needs to be updated.
@@ -414,9 +391,7 @@ class ViewModel(Model):
 
         return labeled_layer
 
-    def create_training_df(
-        self, usable_training_data: Dict[str, Dict]
-    ) -> Tuple[pd.DataFrame, Dict[str, np.ndarray]]:
+    def create_training_df(self, usable_training_data: Dict[str, Dict]) -> Tuple[pd.DataFrame, Dict[str, np.ndarray]]:
         """
         Creates a training DataFrame from the filtered training data.
 
@@ -439,9 +414,7 @@ class ViewModel(Model):
             bands_and_indices = self.get_bands_indices(training_file, training_labels)
             bands_and_indices = np.asarray(bands_and_indices)
             if training_file in usable_training_data:
-                labeled_layer = self.add_polygon_values_to_image(
-                    training_file, usable_training_data
-                )
+                labeled_layer = self.add_polygon_values_to_image(training_file, usable_training_data)
 
             classified_xs, classified_ys = np.nonzero(labeled_layer)
             classified_pixels = labeled_layer[classified_xs, classified_ys].flatten()
@@ -449,9 +422,7 @@ class ViewModel(Model):
                 np.full(fill_value="", shape=classified_pixels.shape),
                 classified_pixels.astype(int),
             ]
-            classified_bands_and_indices = bands_and_indices[
-                :, classified_xs, classified_ys
-            ]
+            classified_bands_and_indices = bands_and_indices[:, classified_xs, classified_ys]
             for i in range(classified_bands_and_indices.shape[0]):
                 list_of_columns.append(classified_bands_and_indices[i])
 
@@ -492,9 +463,7 @@ class ViewModel(Model):
                 metadata=c_id_c_name_pairs,
             )
 
-    def create_and_save_random_forest(
-        self, training_data_path: str, output_path: str
-    ) -> None:
+    def create_and_save_random_forest(self, training_data_path: str, output_path: str) -> None:
         """
         Trains and saves a Random Forest classifier.
 
@@ -516,9 +485,7 @@ class ViewModel(Model):
 
         pickle.dump(clf, open(output_path, "wb"))
 
-    def get_classification_color_map(
-        self, input_path: str, transparent_background: bool = False
-    ) -> ListedColormap:
+    def get_classification_color_map(self, input_path: str, transparent_background: bool = False) -> ListedColormap:
         """
         Creates a color map based on the values in the classified image.
 
@@ -598,6 +565,23 @@ class ViewModel(Model):
         return color_map
 
     # Non-static protected methods
+    def _initialize_data_members(self) -> None:
+        """
+        Initializes the data members.
+
+        :return: None
+        """
+
+        self._opened_files = list()
+        self._result_files_hotspot = list()
+        self._result_files_floating = list()
+        self._result_files_washed_up = list()
+        self._point_tag_ids = list()
+        self._tag_ids = dict()
+        self._tag_id_coords = dict()
+        self._classification_mode = "polygon"
+        self._classification_layer_data = dict()
+
     def _process_hotspot_floating(self, hotspot: bool) -> Tuple[bool, bool]:
         """
         Creates the output images of both the Hotspot and Floating waste detection processes.
@@ -616,10 +600,7 @@ class ViewModel(Model):
                 were_wrong_pictures = True
                 continue
             tmp_file = self.save_bands_indices(
-                input_path=file,
-                save=training_labels,
-                postfix=training_labels,
-                working_dir=self.persistence.working_dir
+                input_path=file, save=training_labels, postfix=training_labels, working_dir=self.persistence.working_dir
             )
 
             clf = self._hotspot_rf if hotspot else self._floating_rf
@@ -636,12 +617,8 @@ class ViewModel(Model):
 
             if classification and heatmap:
                 if hotspot:
-                    if not (
-                        (file, classification, heatmap) in self._result_files_hotspot
-                    ):
-                        self._result_files_hotspot.append(
-                            (file, classification, heatmap)
-                        )
+                    if not ((file, classification, heatmap) in self._result_files_hotspot):
+                        self._result_files_hotspot.append((file, classification, heatmap))
                 else:
                     (
                         masked_classification,
@@ -654,13 +631,8 @@ class ViewModel(Model):
                         heatmap_postfix=self.persistence.floating_masked_heatmap_postfix,
                     )
 
-                    if not (
-                        (file, masked_classification, masked_heatmap)
-                        in self._result_files_floating
-                    ):
-                        self._result_files_floating.append(
-                            (file, masked_classification, masked_heatmap)
-                        )
+                    if not ((file, masked_classification, masked_heatmap) in self._result_files_floating):
+                        self._result_files_floating.append((file, masked_classification, masked_heatmap))
             else:
                 were_wrong_labels = True
 
@@ -693,14 +665,18 @@ class ViewModel(Model):
                 if not (difference is None) and not (coords_information is None):
                     before, after = self.get_pi_difference_heatmap(difference)
 
-                    before_path = Model.output_path([file_1, file_2],
-                                                     self.persistence.washed_up_before_postfix,
-                                                     self.persistence.file_extension,
-                                                     self.persistence.working_dir)
-                    after_path = Model.output_path([file_1, file_2],
-                                                    self.persistence.washed_up_after_postfix,
-                                                    self.persistence.file_extension,
-                                                    self.persistence.working_dir)
+                    before_path = Model.output_path(
+                        [file_1, file_2],
+                        self.persistence.washed_up_before_postfix,
+                        self.persistence.file_extension,
+                        self.persistence.working_dir,
+                    )
+                    after_path = Model.output_path(
+                        [file_1, file_2],
+                        self.persistence.washed_up_after_postfix,
+                        self.persistence.file_extension,
+                        self.persistence.working_dir,
+                    )
 
                     Model.save_tif(
                         input_path=file_1,
@@ -720,22 +696,16 @@ class ViewModel(Model):
                         new_geo_trans=coords_information[0],
                     )
 
-                    if not (
-                        (file_1, file_2, before_path, after_path)
-                        in self._result_files_washed_up
-                    ):
-                        self._result_files_washed_up.append(
-                            (file_1, file_2, before_path, after_path)
-                        )
+                    if not ((file_1, file_2, before_path, after_path) in self._result_files_washed_up):
+                        self._result_files_washed_up.append((file_1, file_2, before_path, after_path))
                 else:
                     were_wrong_labels = True
 
         return were_wrong_labels, were_wrong_pictures
 
+    # Static public methods
     @staticmethod
-    def get_heatmap_color_map(
-        input_path: str, low_medium_high: List[str]
-    ) -> ListedColormap:
+    def get_heatmap_color_map(input_path: str, low_medium_high: List[str]) -> ListedColormap:
         """
         Creates a color map based on the values in the heatmap image.
 
