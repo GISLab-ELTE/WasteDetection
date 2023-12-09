@@ -6,10 +6,7 @@ class InvalidClassifiedImageException(Exception):
     """
 
     def __init__(self, input_path: str):
-        message = (
-            "Not all values can be divided by 100 on the image! The image: "
-            + input_path
-        )
+        message = f"Not all values can be divided by 100 on the image! The image: {input_path}"
         super(InvalidClassifiedImageException, self).__init__(message)
 
 
@@ -21,11 +18,8 @@ class TooLargeImageException(Exception):
 
     def __init__(self, actual_count: float, max_count: float, input_path: str):
         message = (
-            str(actual_count)
-            + " pixels -> Too large image! The limit is "
-            + str(max_count)
-            + " pixels. The image: "
-            + input_path
+            f"{str(actual_count)} pixels -> Too large image! The limit is {str(max_count)} pixels. "
+            f"The image: {input_path}"
         )
         super(TooLargeImageException, self).__init__(message)
 
@@ -38,13 +32,8 @@ class CodValueNotPresentException(Exception):
 
     def __init__(self, cod_type: str, cod_value: int, input_path: str):
         message = (
-            cod_type.upper()
-            + "_COD value ("
-            + str(cod_value)
-            + ") is not on the image! Wrong "
-            + cod_type.upper()
-            + " Class ID! The image: "
-            + input_path
+            f"{cod_type.upper()}_COD value ({str(cod_value)}) is not on the image! "
+            f"Wrong {cod_type.upper()} Class ID! The image: {input_path}"
         )
         super(CodValueNotPresentException, self).__init__(message)
 
@@ -57,12 +46,7 @@ class NotEnoughBandsException(Exception):
 
     def __init__(self, available_bands: int, needed_bands: int, input_path: str):
         message = (
-            "Available bands: "
-            + str(available_bands)
-            + " -> "
-            + str(needed_bands)
-            + " bands needed! The image: "
-            + input_path
+            f"Available bands: {str(available_bands)} -> {str(needed_bands)} bands needed! " f"The image: {input_path}"
         )
         super(NotEnoughBandsException, self).__init__(message)
 
@@ -74,7 +58,7 @@ class CanvasNameException(Exception):
     """
 
     def __init__(self, canvas_name: str):
-        message = canvas_name + " -> Wrong canvas name!"
+        message = f"{canvas_name} -> Wrong canvas name!"
         super(CanvasNameException, self).__init__(message)
 
 
@@ -85,7 +69,7 @@ class ImageTypeException(Exception):
     """
 
     def __init__(self, image_type: str):
-        message = image_type + " -> Wrong image type!"
+        message = f"{image_type} -> Wrong image type!"
         super(ImageTypeException, self).__init__(message)
 
 
@@ -96,7 +80,7 @@ class PictureDoesNotExistException(Exception):
     """
 
     def __init__(self, image_path: str):
-        message = "The image you want to open does not exist! The image: " + image_path
+        message = f"The image you want to open does not exist! The image: {image_path}"
         super(PictureDoesNotExistException, self).__init__(message)
 
 
@@ -107,7 +91,7 @@ class RandomForestFileException(Exception):
     """
 
     def __init__(self, rf_type: str):
-        message = rf_type + " detection -> Wrong Random Forest file!"
+        message = f"{rf_type} detection -> Wrong Random Forest file!"
         super(RandomForestFileException, self).__init__(message)
 
 
@@ -137,16 +121,8 @@ class FileExtensionException(Exception):
 
     """
 
-    def __init__(
-        self, wanted_file_extension: str, got_file_extension: str, input_path: str
-    ):
-        message = (
-            got_file_extension
-            + " -> File extension must be "
-            + wanted_file_extension
-            + ". The file: "
-            + input_path
-        )
+    def __init__(self, wanted_file_extension: str, got_file_extension: str, input_path: str):
+        message = f"{got_file_extension} -> File extension must be {wanted_file_extension}. The file: {input_path}"
         super(FileExtensionException, self).__init__(message)
 
 
@@ -157,9 +133,7 @@ class JsonFileExtensionException(FileExtensionException):
     """
 
     def __init__(self, got_file_extension: str, input_path: str):
-        super(JsonFileExtensionException, self).__init__(
-            ".json", got_file_extension, input_path
-        )
+        super(JsonFileExtensionException, self).__init__(".json", got_file_extension, input_path)
 
 
 class PersistenceLoadException(Exception):
