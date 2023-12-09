@@ -2006,7 +2006,7 @@ class Controller(object):
         :return: None
         """
 
-        with open("desktop_app/src/about.txt", mode="r") as file:
+        with open("desktop_app/resources/about.txt", mode="r") as file:
             text = file.read()
             tkinter.messagebox.showinfo(parent=self._view, title="About", message=text)
 
