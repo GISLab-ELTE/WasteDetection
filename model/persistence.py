@@ -4,10 +4,6 @@ import pickle
 import geojson
 import jsonmerge
 
-from model.exceptions import *
-from typing import Dict, Tuple
-from collections import namedtuple
-
 
 class Persistence(object):
     """
@@ -29,6 +25,11 @@ class Persistence(object):
 
     # Non-static public methods
     def load(self) -> None:
+        """
+        Sets class attributes dynamically based on the key-value pairs in the config file.
+        A config.sample.json file must be specified, its values can be overwritten in a config.local.json file.
+        """
+
         if not os.path.exists(self.config_file_path):
             raise ValueError(f"{self.config_file_path} does not exist!")
 
@@ -69,8 +70,3 @@ class Persistence(object):
 
         with open(self.config_file_path, "w") as file:
             json.dump(new_config, file, indent=4)
-
-    # # Static protected methods
-    # @staticmethod
-    # def _config_decoder(config: Dict) -> Tuple:
-    #     return namedtuple("settings", config.keys())(*config.values())
