@@ -1,15 +1,4 @@
 # New Exceptions for the application
-class InvalidClassifiedImageException(Exception):
-    """
-    The classified image is incorrect. Not all values on the image could be divided by 100.
-
-    """
-
-    def __init__(self, input_path: str):
-        message = f"Not all values can be divided by 100 on the image! The image: {input_path}"
-        super(InvalidClassifiedImageException, self).__init__(message)
-
-
 class TooLargeImageException(Exception):
     """
     The image to be opened exceeds the maximum supported pixel count.
@@ -22,20 +11,6 @@ class TooLargeImageException(Exception):
             f"The image: {input_path}"
         )
         super(TooLargeImageException, self).__init__(message)
-
-
-class CodValueNotPresentException(Exception):
-    """
-    The classified image does not contain the specified class.
-
-    """
-
-    def __init__(self, cod_type: str, cod_value: int, input_path: str):
-        message = (
-            f"{cod_type.upper()}_COD value ({str(cod_value)}) is not on the image! "
-            f"Wrong {cod_type.upper()} Class ID! The image: {input_path}"
-        )
-        super(CodValueNotPresentException, self).__init__(message)
 
 
 class NotEnoughBandsException(Exception):
