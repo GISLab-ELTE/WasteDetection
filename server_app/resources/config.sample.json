@@ -15,6 +15,7 @@
   "data_file_path": "server_app/resources/locations.geojson",
   "observation_span_in_days": 5,
   "max_cloud_cover": 0,
+  "min_coverage": 1,
   "clf_path": "server_app/clf/random_forest_model.sav",
   "clf_id": "random_forest_model",
   "classification_postfix": "classified",

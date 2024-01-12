@@ -44,10 +44,14 @@ class Process(object):
         self.satellite_type = self.model.persistence.satellite_type.lower()
 
         if self.satellite_type == "planetscope":
-            self.api = PlanetAPI(self.model.persistence, self.model.persistence.data_file)
+            self.api = PlanetAPI(
+                self.model.persistence, self.model.persistence.data_file
+            )
             self.pixel_size = 3
         elif self.satellite_type == "sentinel-2":
-            self.api = SentinelAPI(self.model.persistence, self.model.persistence.data_file)
+            self.api = SentinelAPI(
+                self.model.persistence, self.model.persistence.data_file
+            )
             self.pixel_size = 10
 
         self.api.data_file = Model.convert_multipolygons_to_polygons(self.api.data_file)
@@ -207,14 +211,21 @@ class Process(object):
                     classified,
                     heatmap,
                 ) = self.model.create_classification_and_heatmap_with_random_forest(
-                    indices_path, self.model.persistence.clf, self.model.persistence.classification_postfix, self.model.persistence.heatmap_postfix
+                    indices_path,
+                    self.model.persistence.clf,
+                    self.model.persistence.classification_postfix,
+                    self.model.persistence.heatmap_postfix,
                 )
 
                 (
                     masked_classified,
                     masked_heatmap,
                 ) = self.model.create_masked_classification_and_heatmap(
-                    indices_path, classified, heatmap, self.model.persistence.masked_classification_postfix, self.model.persistence.masked_heatmap_postfix
+                    indices_path,
+                    classified,
+                    heatmap,
+                    self.model.persistence.masked_classification_postfix,
+                    self.model.persistence.masked_heatmap_postfix,
                 )
 
                 Model.get_waste_geojson(
@@ -369,9 +380,10 @@ class Process(object):
         :return: The joined path.
         """
 
-        path = os.path.join(getattr(self.model.persistence, key_1), getattr(self.model.persistence, key_2)).replace(
-            "\\", "/"
-        )
+        path = os.path.join(
+            getattr(self.model.persistence, key_1),
+            getattr(self.model.persistence, key_2),
+        ).replace("\\", "/")
         return path
 
     def analyze_estimations(self) -> None:
