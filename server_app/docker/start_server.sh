@@ -4,7 +4,7 @@ ARGS=$@
 PYTHON_ARGS=()
 
 if [[ -f "/mnt/config.docker.json" ]]; then
-  cp /mnt/config.docker.json /workspace/resources/config.local.json
+  cp /mnt/config.docker.json /workspace/server_app/resources/config.local.json
 else
   echo "No mounted config file!"
   exit 1
@@ -28,8 +28,7 @@ if echo "${ARGS[@]}" | grep -qw "classify"; then
   PYTHON_ARGS+=("--classify")
 fi;
 
-cd src
 source /opt/conda/etc/profile.d/conda.sh
-conda activate WasteDetectionServerApp
+conda activate WasteDetection
 
-python __main__.py "${PYTHON_ARGS[@]}"
+python run_server_app.py "${PYTHON_ARGS[@]}"
