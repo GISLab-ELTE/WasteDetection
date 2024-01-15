@@ -2,7 +2,7 @@
 
 ## Running the application in Docker Container
 
-1. **Build image:** `docker build -t server_app .`
+1. **Build image:** `$(pwd)/waste-detection> docker build -t server_app .`
 2. **Run container:**
 
    ```bash
