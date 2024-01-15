@@ -17,8 +17,8 @@ dependencies:
   - scikit-learn=0.24.2
   - sentinelhub=3.4.4
   - shapely=1.7.1
-  - tk=8.6.11  # for desktop_app
+  - tk=8.6.11 # for desktop_app
   - pip:
-    - jsonmerge==1.9.0
-    - opencv-python-headless==4.5.3.56
-    - ttkbootstrap==1.7.3  # for desktop_app
+      - jsonmerge==1.9.0
+      - opencv-python-headless==4.5.3.56
+      - ttkbootstrap==1.7.3 # for desktop_app
