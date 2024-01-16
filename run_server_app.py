@@ -65,9 +65,7 @@ if __name__ == "__main__":
 
     CONFIG_FILE_NAME_DESKTOP_APP = "server_app/resources/config.sample.json"
 
-    model = Model(
-        Persistence(config_file_path=CONFIG_FILE_NAME_DESKTOP_APP)
-    )
+    model = Model(Persistence(config_file_path=CONFIG_FILE_NAME_DESKTOP_APP))
 
     process = Process(model, args.download_init, args.download_update, args.classify)
     process.mainloop()

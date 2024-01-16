@@ -7,6 +7,8 @@ RUN conda env create -f environment.yml -q && conda clean --all -q
 
 
 FROM base as server_app
-COPY . .
-RUN chmod 755 docker/start_server.sh
-ENTRYPOINT ["docker/start_server.sh"]
+ADD server_app server_app
+ADD model model
+COPY run_server_app.py .
+RUN chmod 755 server_app/docker/start_server.sh
+ENTRYPOINT ["server_app/docker/start_server.sh"]

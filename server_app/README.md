@@ -2,8 +2,9 @@
 
 ## Running the application in Docker Container
 
-1. **Build image:** `docker build -t server_app .`
-2. **Run container:**
+1. **Open CMD:** navigate to repository folder.
+2. **Build image:** `docker build -t server_app .`
+3. **Run container:**
 
    ```bash
       docker run -it --name server_app_container \
@@ -20,9 +21,10 @@
 
 ## Running the application
 
-1. **Create the virtual environment:** `conda env create -f environment.yml`. The name of the new environment will be `WasteDetectionServerApp`.
-2. **Activate environment:** `conda activate WasteDetectionServerApp`.
-3. **Run the application:** `python __main__.py [--download-init|--download-update] [--classify]` There are 3 flags that can be used, at least 1 must be given.
+1. **Open _Anaconda Prompt_:** navigate to repository folder.
+2. **Create the virtual environment:** `conda env create -f environment.yml`. The name of the new environment will be `WasteDetection`.
+3. **Activate environment:** `conda activate WasteDetection`.
+4. **Run the application:** `python run_server_app.py [--download-init|--download-update] [--classify]` There are 3 flags that can be used, at least 1 must be given.
    - `--download-init`: Initialize image database: Download all the images on the given time interval.
    - `--download-update`: Download new images. Cannot be used with `--download-init`.
    - `--classify`: Execute classification (does not download images).
