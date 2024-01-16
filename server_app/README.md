@@ -47,6 +47,7 @@ Meaning of the parameters in `config.sample.json` file:
 - `data_file_path`: Path of the GeoJSON file containing the AOIs.
 - `observation_span_in_days`: Number of days to analyze.
 - `max_cloud_cover`: Cloud coverage in percentage.
+- `min_coverage`: Minimum image coverage in percentage (value between 0 and 1)
 - `clf_path`: Path of Random Forest classifier.
 - `clf_id`: The Id of the Random Forest classifier.
 - `classification_postfix`: File name postfix of classified image.
