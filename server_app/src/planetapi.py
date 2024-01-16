@@ -284,8 +284,7 @@ class PlanetAPI(BaseAPI):
 
         return list(
             filter(
-                lambda item: PlanetAPI.calculate_coverage(feature, item)
-                >= self.settings.min_coverage,
+                lambda item: PlanetAPI.calculate_coverage(feature, item) >= self.settings.min_coverage,
                 items,
             )
         )
