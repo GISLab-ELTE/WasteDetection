@@ -111,9 +111,7 @@ class PlanetAPI(BaseAPI):
             feature_id = feature["properties"]["id"]
             time_difference = dt.timedelta(hours=12)
             image_ids = PlanetAPI.get_image_ids(geojson)
-            unique_image_ids = PlanetAPI.get_unique_image_ids(
-                image_ids, time_difference
-            )
+            unique_image_ids = PlanetAPI.get_unique_image_ids(image_ids, time_difference)
 
             self.search_results[feature_id] = unique_image_ids[:max_result_limit]
 
@@ -148,9 +146,7 @@ class PlanetAPI(BaseAPI):
                     "tools": [clip, reproject],
                 }
 
-                date_time_obj = dt.datetime.strptime(
-                    "_".join(product.split("_")[:2]), "%Y%m%d_%H%M%S"
-                )
+                date_time_obj = dt.datetime.strptime("_".join(product.split("_")[:2]), "%Y%m%d_%H%M%S")
                 date_time_str = dt.datetime.strftime(date_time_obj, "%Y-%m-%d")
 
                 order_url = self.place_order(request_clip)
@@ -183,14 +179,10 @@ class PlanetAPI(BaseAPI):
                     if self.order_urls[feature][date][1] in ["downloaded", "failed"]:
                         continue
 
-                    order_id, order_state = self.get_state(
-                        self.order_urls[feature][date][0]
-                    )
+                    order_id, order_state = self.get_state(self.order_urls[feature][date][0])
 
                     if order_state in success_states:
-                        success = self.download_order(
-                            feature, date, self.order_urls[feature][date][0]
-                        )
+                        success = self.download_order(feature, date, self.order_urls[feature][date][0])
                         if not success:
                             time.sleep(2)
                             continue
@@ -238,17 +230,13 @@ class PlanetAPI(BaseAPI):
         # API request object
         search_request = {"item_types": [item_type], "filter": combined_filter}
 
-        search_result = requests.post(
-            self.search_url, auth=self.auth, json=search_request
-        )
+        search_result = requests.post(self.search_url, auth=self.auth, json=search_request)
 
         geojson = search_result.json()
 
         return geojson
 
-    def filter_out_already_downloaded_images(
-        self, feature_id: str, image_ids: List[str]
-    ) -> List[str]:
+    def filter_out_already_downloaded_images(self, feature_id: str, image_ids: List[str]) -> List[str]:
         """
         Filters out image ids that already exist locally.
 
@@ -379,9 +367,7 @@ class PlanetAPI(BaseAPI):
             ]
         )
 
-        results_paths = [
-            pathlib.Path(os.path.join(data_folder, n)) for n in results_names
-        ]
+        results_paths = [pathlib.Path(os.path.join(data_folder, n)) for n in results_names]
         print("{} items to download".format(len(results_urls)))
 
         for url, name, path in zip(results_urls, results_names, results_paths):
@@ -425,9 +411,7 @@ class PlanetAPI(BaseAPI):
         return image_ids
 
     @staticmethod
-    def get_unique_image_ids(
-        image_ids: List[str], time_difference: dt.timedelta
-    ) -> List[str]:
+    def get_unique_image_ids(image_ids: List[str], time_difference: dt.timedelta) -> List[str]:
         """
         Returns image ids filtered out by the given time difference.
 

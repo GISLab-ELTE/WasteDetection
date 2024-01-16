@@ -63,9 +63,7 @@ class Model(object):
         """
 
         if image_type == "heatmap" and not prob:
-            raise ValueError(
-                "If image_type is heatmap then the value of prob must be given!"
-            )
+            raise ValueError("If image_type is heatmap then the value of prob must be given!")
         if prob and prob not in ["low", "medium", "high"]:
             raise ValueError("The value of prob must be low, medium, high!")
 
@@ -164,9 +162,7 @@ class Model(object):
                     img.count, max([blue_ind, green_ind, red_ind, nir_ind]), input_path
                 ) from None
 
-            return Model.calculate_indices(
-                get_list, {"blue": blue, "green": green, "red": red, "nir": nir}
-            )
+            return Model.calculate_indices(get_list, {"blue": blue, "green": green, "red": red, "nir": nir})
 
     def save_bands_indices(
         self,
@@ -191,9 +187,7 @@ class Model(object):
         )
 
         bands = len(list_of_bands_and_indices)
-        output_path = Model.output_path(
-            [input_path], postfix, self.persistence.file_extension, working_dir
-        )
+        output_path = Model.output_path([input_path], postfix, self.persistence.file_extension, working_dir)
 
         Model.save_tif(
             input_path=input_path,
@@ -219,9 +213,7 @@ class Model(object):
         (
             intersection_matrix,
             coords_information,
-        ) = Model.get_empty_intersection_matrix_and_start_coords(
-            input_path_1, input_path_2
-        )
+        ) = Model.get_empty_intersection_matrix_and_start_coords(input_path_1, input_path_2)
 
         if not (intersection_matrix is None) and not (coords_information is None):
             start_coords, input_1_start, input_2_start = coords_information
@@ -239,21 +231,15 @@ class Model(object):
                     row_1, col_1 = input_1_start[0] + i, input_1_start[1] + j
                     row_2, col_2 = input_2_start[0] + i, input_2_start[1] + j
                     if img_1_size >= img_2_size:
-                        intersection_matrix[i, j] = (
-                            input_1_pi[row_1, col_1] - input_2_pi[row_2, col_2]
-                        )
+                        intersection_matrix[i, j] = input_1_pi[row_1, col_1] - input_2_pi[row_2, col_2]
                     else:
-                        intersection_matrix[i, j] = (
-                            input_1_pi[row_2, col_2] - input_2_pi[row_1, col_1]
-                        )
+                        intersection_matrix[i, j] = input_1_pi[row_2, col_2] - input_2_pi[row_1, col_1]
 
             return intersection_matrix, coords_information
 
         return None, None
 
-    def get_pi_difference_heatmap(
-        self, difference_matrix: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def get_pi_difference_heatmap(self, difference_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Creates heatmaps for Washed up waste detection method.
 
@@ -269,11 +255,7 @@ class Model(object):
         if (
             (len(unique_values) == 1 and 0 in unique_values)
             or (len(unique_values) == 1 and float("NaN") in unique_values)
-            or (
-                len(unique_values) == 2
-                and 0 in unique_values
-                and float("NaN") in unique_values
-            )
+            or (len(unique_values) == 2 and 0 in unique_values and float("NaN") in unique_values)
         ):
             return heatmap_pos, heatmap_neg
 
@@ -305,34 +287,18 @@ class Model(object):
                     equal_part_pos = max_pos / n_equal_parts
                     if value_pos >= equal_part_pos * (n_equal_parts - 1):
                         heatmap_pos[i, j] = self.persistence.high_prob_value
-                    elif (
-                        equal_part_pos * (n_equal_parts - 2)
-                        <= value_pos
-                        < equal_part_pos * (n_equal_parts - 1)
-                    ):
+                    elif equal_part_pos * (n_equal_parts - 2) <= value_pos < equal_part_pos * (n_equal_parts - 1):
                         heatmap_pos[i, j] = self.persistence.medium_prob_value
-                    elif (
-                        equal_part_pos * (n_equal_parts - 3)
-                        <= value_pos
-                        < equal_part_pos * (n_equal_parts - 2)
-                    ):
+                    elif equal_part_pos * (n_equal_parts - 3) <= value_pos < equal_part_pos * (n_equal_parts - 2):
                         heatmap_pos[i, j] = self.persistence.low_prob_value
 
                     value_neg = mean_difference_neg[i, j]
                     equal_part_neg = max_neg / n_equal_parts
                     if value_neg >= equal_part_neg * (n_equal_parts - 1):
                         heatmap_neg[i, j] = self.persistence.high_prob_value
-                    elif (
-                        equal_part_neg * (n_equal_parts - 2)
-                        <= value_neg
-                        < equal_part_neg * (n_equal_parts - 1)
-                    ):
+                    elif equal_part_neg * (n_equal_parts - 2) <= value_neg < equal_part_neg * (n_equal_parts - 1):
                         heatmap_neg[i, j] = self.persistence.medium_prob_value
-                    elif (
-                        equal_part_neg * (n_equal_parts - 3)
-                        <= value_neg
-                        < equal_part_neg * (n_equal_parts - 2)
-                    ):
+                    elif equal_part_neg * (n_equal_parts - 3) <= value_neg < equal_part_neg * (n_equal_parts - 2):
                         heatmap_neg[i, j] = self.persistence.low_prob_value
 
         return heatmap_pos, heatmap_neg
@@ -358,9 +324,9 @@ class Model(object):
         """
 
         # open inputs
-        with rasterio.open(
-            classification_path, "r"
-        ) as classification_matrix, rasterio.open(heatmap_path, "r") as heatmap_matrix:
+        with rasterio.open(classification_path, "r") as classification_matrix, rasterio.open(
+            heatmap_path, "r"
+        ) as heatmap_matrix:
             # create matrices
             classification_matrix = classification_matrix.read(1)
             heatmap_matrix = heatmap_matrix.read(1)
@@ -369,18 +335,11 @@ class Model(object):
             masked_heatmap = np.empty_like(classification_matrix)
 
             rows, cols = classification_matrix.shape
-            working_dir = (
-                self.persistence.working_dir
-                if hasattr(self.persistence, "working_dir")
-                else ""
-            )
+            working_dir = self.persistence.working_dir if hasattr(self.persistence, "working_dir") else ""
 
             # output paths
             morphology_path = Model.output_path(
-                [original_input_path],
-                "morphology",
-                self.persistence.file_extension,
-                working_dir,
+                [original_input_path], "morphology", self.persistence.file_extension, working_dir
             )
             opening_path = Model.output_path(
                 [original_input_path],
@@ -410,10 +369,8 @@ class Model(object):
             for i in range(rows):
                 for j in range(cols):
                     if (
-                        classification_matrix[i, j]
-                        == self.persistence.garbage_c_id * 100
-                        or classification_matrix[i, j]
-                        == self.persistence.water_c_id * 100
+                        classification_matrix[i, j] == self.persistence.garbage_c_id * 100
+                        or classification_matrix[i, j] == self.persistence.water_c_id * 100
                     ):
                         morphology_matrix[i, j] = 1
                     else:
@@ -427,29 +384,19 @@ class Model(object):
                 output_path=morphology_path,
             )
 
-            matrix = (
-                self.persistence.morphology_matrix_size,
-                self.persistence.morphology_matrix_size,
-            )
-            opening = Model.morphology(
-                "opening", morphology_path, opening_path, matrix=matrix
-            )
+            matrix = self.persistence.morphology_matrix_size, self.persistence.morphology_matrix_size
+            opening = Model.morphology("opening", morphology_path, opening_path, matrix=matrix)
 
             if opening is not None:
                 dilation = Model.morphology(
-                    "dilation",
-                    opening_path,
-                    dilation_path,
-                    iterations=self.persistence.morphology_iterations,
+                    "dilation", opening_path, dilation_path, iterations=self.persistence.morphology_iterations
                 )
 
                 if dilation is not None:
                     for i in range(rows):
                         for j in range(cols):
                             if dilation[i, j] == 1:
-                                masked_classification[i, j] = classification_matrix[
-                                    i, j
-                                ]
+                                masked_classification[i, j] = classification_matrix[i, j]
                                 masked_heatmap[i, j] = heatmap_matrix[i, j]
                             else:
                                 masked_classification[i, j] = 0
@@ -522,19 +469,13 @@ class Model(object):
 
             split_size = ceil(
                 array_df.shape[0]
-                / ceil(
-                    (array_df.shape[0] * self.persistence.max_class_count)
-                    / self.persistence.max_class_value_count
-                )
+                / ceil((array_df.shape[0] * self.persistence.max_class_count) / self.persistence.max_class_value_count)
             )
             split_count = ceil(
-                (array_df.shape[0] * self.persistence.max_class_count)
-                / self.persistence.max_class_value_count
+                (array_df.shape[0] * self.persistence.max_class_count) / self.persistence.max_class_value_count
             )
             for c in range(split_count):
-                new_array_df = array_df[c * split_size : (c + 1) * split_size].dropna(
-                    axis="index"
-                )
+                new_array_df = array_df[c * split_size : (c + 1) * split_size].dropna(axis="index")
                 pred_proba = clf.predict_proba(new_array_df)
 
                 counter = 0
@@ -572,11 +513,7 @@ class Model(object):
             classification = classification.reshape((rows, cols))
             heatmap = heatmap.reshape((rows, cols))
 
-            working_dir = (
-                self.persistence.working_dir
-                if hasattr(self.persistence, "working_dir")
-                else ""
-            )
+            working_dir = self.persistence.working_dir if hasattr(self.persistence, "working_dir") else ""
             classification_output_path = Model.output_path(
                 [input_path],
                 classification_postfix,
@@ -617,9 +554,7 @@ class Model(object):
 
     # Static public methods
     @staticmethod
-    def create_garbage_bbox_geojson(
-        input_path: str, file: TextIO, searched_value: List[int]
-    ) -> None:
+    def create_garbage_bbox_geojson(input_path: str, file: TextIO, searched_value: List[int]) -> None:
         """
         Creates the GeoJSON file containing the bounding boxes of garbage areas.
 
@@ -629,9 +564,7 @@ class Model(object):
         :return: None
         """
 
-        bbox_coords = Model.get_bbox_coordinates_of_same_areas(
-            input_path, searched_value
-        )
+        bbox_coords = Model.get_bbox_coordinates_of_same_areas(input_path, searched_value)
 
         if bbox_coords is not None:
             features = list()
@@ -640,11 +573,7 @@ class Model(object):
             for bbox in bbox_coords:
                 bbox.append(bbox[0])
                 polygon = geojson.Polygon([bbox])
-                features.append(
-                    geojson.Feature(
-                        geometry=polygon, properties={"id": str(polygon_id)}
-                    )
-                )
+                features.append(geojson.Feature(geometry=polygon, properties={"id": str(polygon_id)}))
                 polygon_id += 1
 
             feature_collection = geojson.FeatureCollection(features)
@@ -667,9 +596,7 @@ class Model(object):
             return int(min_value), int(max_value)
 
     @staticmethod
-    def calculate_indices(
-        get_list: List[str], bands: Dict[str, np.ndarray]
-    ) -> List[np.ndarray]:
+    def calculate_indices(get_list: List[str], bands: Dict[str, np.ndarray]) -> List[np.ndarray]:
         # calculate indices
         # PI = NIR / (NIR + RED)
         # NDWI = (GREEN - NIR) / (GREEN + NIR)
@@ -697,25 +624,19 @@ class Model(object):
                 pi = Model.calculate_index(numerator=nir, denominator=nir + red)
                 list_of_bands_and_indices.append(pi)
             elif item == "ndwi":
-                ndwi = Model.calculate_index(
-                    numerator=green - nir, denominator=green + nir
-                )
+                ndwi = Model.calculate_index(numerator=green - nir, denominator=green + nir)
                 list_of_bands_and_indices.append(ndwi)
             elif item == "ndvi":
                 ndvi = Model.calculate_index(numerator=nir - red, denominator=nir + red)
                 list_of_bands_and_indices.append(ndvi)
             elif item == "rndvi":
-                rndvi = Model.calculate_index(
-                    numerator=red - nir, denominator=red + nir
-                )
+                rndvi = Model.calculate_index(numerator=red - nir, denominator=red + nir)
                 list_of_bands_and_indices.append(rndvi)
             elif item == "sr":
                 sr = Model.calculate_index(numerator=nir, denominator=red)
                 list_of_bands_and_indices.append(sr)
             elif item == "apwi":
-                apwi = Model.calculate_index(
-                    numerator=blue, denominator=1 - (red + green + nir) / 3
-                )
+                apwi = Model.calculate_index(numerator=blue, denominator=1 - (red + green + nir) / 3)
                 list_of_bands_and_indices.append(apwi)
 
         return list_of_bands_and_indices
@@ -728,9 +649,7 @@ class Model(object):
         :return: A dataframe that has noisy data added to it.
         """
 
-        data_copy = data.copy()[
-            ["BLUE", "GREEN", "RED", "NIR", "PI", "NDWI", "NDVI", "RNDVI", "SR"]
-        ]
+        data_copy = data.copy()[["BLUE", "GREEN", "RED", "NIR", "PI", "NDWI", "NDVI", "RNDVI", "SR"]]
         noise = (np.random.normal(0, 0.1, data_copy.shape) * 1000).astype(int)
         data_copy = data_copy + noise
         bands = {
@@ -742,9 +661,7 @@ class Model(object):
 
         requested_indices = [col.lower() for col in data_copy.columns]
         labels = [data["SURFACE"].to_numpy(), data["COD"].to_numpy()]
-        indices = [
-            id.flatten() for id in Model.calculate_indices(requested_indices, bands)
-        ]
+        indices = [id.flatten() for id in Model.calculate_indices(requested_indices, bands)]
         labels_indices = [pd.Series(col) for col in labels + indices]
 
         data_noisy = pd.DataFrame(labels_indices).T
@@ -754,9 +671,7 @@ class Model(object):
         return data_noisy
 
     @staticmethod
-    def get_coords_inside_polygon(
-        polygon_coords: List[float], bbox_coords: Tuple[int, ...]
-    ) -> List[Tuple[int, int]]:
+    def get_coords_inside_polygon(polygon_coords: List[float], bbox_coords: Tuple[int, ...]) -> List[Tuple[int, int]]:
         """
         Calculates the coordinates inside a given polygon.
 
@@ -818,9 +733,7 @@ class Model(object):
                 geotrans[3] = new_geo_trans[1]
                 geotrans = tuple(geotrans)
 
-            dataset = driver.Create(
-                output_path, x_pixels, y_pixels, band_count, gdal.GDT_Float32
-            )
+            dataset = driver.Create(output_path, x_pixels, y_pixels, band_count, gdal.GDT_Float32)
             dataset.SetGeoTransform(geotrans)
             dataset.SetProjection(projection)
 
@@ -864,24 +777,17 @@ class Model(object):
         invalid_mask = nan_mask | (numerator_zero_mask & denominator_zero_mask)
         valid_mask = np.logical_not(invalid_mask)
 
-        valid_denominator_non_zero_mask = valid_mask & np.logical_not(
-            denominator_zero_mask
-        )
+        valid_denominator_non_zero_mask = valid_mask & np.logical_not(denominator_zero_mask)
         valid_denominator_zero_mask = valid_mask & denominator_zero_mask
 
-        numerator_positive_denominator_zero_mask = valid_denominator_zero_mask & (
-            numerator > 0
-        )
-        numerator_negative_denominator_zero_mask = valid_denominator_zero_mask & (
-            numerator < 0
-        )
+        numerator_positive_denominator_zero_mask = valid_denominator_zero_mask & (numerator > 0)
+        numerator_negative_denominator_zero_mask = valid_denominator_zero_mask & (numerator < 0)
 
         index[invalid_mask] = float("NaN")
         index[numerator_positive_denominator_zero_mask] = numerator_nan_max
         index[numerator_negative_denominator_zero_mask] = numerator_nan_min
         index[valid_denominator_non_zero_mask] = (
-            numerator[valid_denominator_non_zero_mask]
-            / denominator[valid_denominator_non_zero_mask]
+            numerator[valid_denominator_non_zero_mask] / denominator[valid_denominator_non_zero_mask]
         )
 
         # return index values
@@ -909,15 +815,7 @@ class Model(object):
             file_name_with_extension = os.path.basename(path)
             file_name, _ = os.path.splitext(file_name_with_extension)
             file_names.append(file_name)
-        output_path = (
-            working_dir
-            + "/"
-            + "_".join(file_names)
-            + "_"
-            + postfix
-            + "."
-            + output_file_extension
-        )
+        output_path = working_dir + "/" + "_".join(file_names) + "_" + postfix + "." + output_file_extension
         return output_path
 
     @staticmethod
@@ -992,9 +890,7 @@ class Model(object):
         return x_coord, y_coord
 
     @staticmethod
-    def get_bbox_of_pixel(
-        i: int, j: int, gt: Tuple[int, ...]
-    ) -> List[Tuple[float, float]]:
+    def get_bbox_of_pixel(i: int, j: int, gt: Tuple[int, ...]) -> List[Tuple[float, float]]:
         """
         Calculates the bounding box of a single pixel.
 
@@ -1077,9 +973,7 @@ class Model(object):
 
             polygon = geojson.Polygon([bbox_transformed])
 
-            features.append(
-                geojson.Feature(geometry=polygon, properties={"id": str(polygon_id)})
-            )
+            features.append(geojson.Feature(geometry=polygon, properties={"id": str(polygon_id)}))
 
             polygon_id += 1
 
@@ -1121,16 +1015,12 @@ class Model(object):
         for feature in new_data_file["features"]:
             if feature["geometry"]["type"] == "MultiPolygon":
                 feature["geometry"]["type"] = "Polygon"
-                feature["geometry"]["coordinates"] = feature["geometry"]["coordinates"][
-                    0
-                ]
+                feature["geometry"]["coordinates"] = feature["geometry"]["coordinates"][0]
 
         return new_data_file
 
     @staticmethod
-    def transform_list_of_coordinates_to_crs(
-        coords: List[List[int]], crs_from: str, crs_to: str
-    ) -> List[List[int]]:
+    def transform_list_of_coordinates_to_crs(coords: List[List[int]], crs_from: str, crs_to: str) -> List[List[int]]:
         """
         Transforms coordinates from one CRS to another.
 
@@ -1142,9 +1032,7 @@ class Model(object):
 
         transformed_coords = copy.deepcopy(coords)
 
-        transformer = pyproj.Transformer.from_crs(
-            crs_from=crs_from, crs_to=crs_to, always_xy=True
-        )
+        transformer = pyproj.Transformer.from_crs(crs_from=crs_from, crs_to=crs_to, always_xy=True)
 
         for i in range(len(coords)):
             x, y = coords[i]
@@ -1172,9 +1060,7 @@ class Model(object):
 
             coordinates = feature["geometry"]["coordinates"][0]
 
-            transformed_coords = Model.transform_list_of_coordinates_to_crs(
-                coordinates, crs_from, crs_to
-            )
+            transformed_coords = Model.transform_list_of_coordinates_to_crs(coordinates, crs_from, crs_to)
 
             feature["geometry"]["coordinates"] = [transformed_coords]
 
@@ -1240,9 +1126,7 @@ class Model(object):
             new_rows, new_cols = 0, 0
 
             if intersection:
-                larger_rows, larger_cols = np.unravel_index(
-                    intersection, larger_img.shape
-                )
+                larger_rows, larger_cols = np.unravel_index(intersection, larger_img.shape)
                 larger_start_index = (larger_rows[0], larger_cols[0])
 
                 start_coord = larger_img[larger_start_index]
@@ -1356,9 +1240,7 @@ class Model(object):
         return 0 <= col < shape[1]
 
     @staticmethod
-    def is_search_value(
-        matrix: np.ndarray, row: int, col: int, search_value: List[int]
-    ) -> bool:
+    def is_search_value(matrix: np.ndarray, row: int, col: int, search_value: List[int]) -> bool:
         """
         Checks whether the value of the given pixel is the expected value or not.
         Source: https://playandlearntocode.com/article/flood-fill-algorithm-in-python
@@ -1436,9 +1318,7 @@ class Model(object):
         return region
 
     @staticmethod
-    def find_regions(
-        matrix: np.ndarray, search_value: List[int]
-    ) -> List[List[Tuple[int, int]]]:
+    def find_regions(matrix: np.ndarray, search_value: List[int]) -> List[List[Tuple[int, int]]]:
         """
         Calculates all the separate regions containing the expected value.
 
@@ -1460,9 +1340,7 @@ class Model(object):
         return all_regions
 
     @staticmethod
-    def get_bbox_indices_of_region(
-        region: List[Tuple[int, int]]
-    ) -> List[Tuple[int, int]]:
+    def get_bbox_indices_of_region(region: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
         """
         Calculates the indices of the bounding box of the given region.
 
@@ -1488,9 +1366,7 @@ class Model(object):
         return bbox
 
     @staticmethod
-    def get_bbox_indices_of_all_regions(
-        all_regions: List[List[Tuple[int, int]]]
-    ) -> List[List[Tuple[int, int]]]:
+    def get_bbox_indices_of_all_regions(all_regions: List[List[Tuple[int, int]]]) -> List[List[Tuple[int, int]]]:
         """
         Returns the indices of the bounding boxes of all the given regions.
 
@@ -1541,9 +1417,7 @@ class Model(object):
 
                 coords.append(upper_left)
                 coords.append((upper_right[0] + pixel_size_x, upper_right[1]))
-                coords.append(
-                    (bottom_right[0] + pixel_size_x, bottom_right[1] - pixel_size_y)
-                )
+                coords.append((bottom_right[0] + pixel_size_x, bottom_right[1] - pixel_size_y))
                 coords.append((bottom_left[0], bottom_left[1] - pixel_size_y))
 
                 bbox_coords.append(coords)

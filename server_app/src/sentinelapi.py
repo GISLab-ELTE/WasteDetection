@@ -93,9 +93,7 @@ class SentinelAPI(BaseAPI):
         self.requests.clear()
 
         for feature in self.data_file["features"]:
-            bbox_coords = SentinelAPI.get_bbox_of_polygon(
-                feature["geometry"]["coordinates"][0]
-            )
+            bbox_coords = SentinelAPI.get_bbox_of_polygon(feature["geometry"]["coordinates"][0])
 
             bbox = BBox(bbox=bbox_coords, crs=CRS.POP_WEB)
 
@@ -140,9 +138,7 @@ class SentinelAPI(BaseAPI):
                             ),
                         )
                     ],
-                    responses=[
-                        SentinelHubRequest.output_response("default", MimeType.TIFF)
-                    ],
+                    responses=[SentinelHubRequest.output_response("default", MimeType.TIFF)],
                     bbox=bbox,
                     size=bbox_to_dimensions(bbox, resolution=self.resolution),
                     config=self.config,
