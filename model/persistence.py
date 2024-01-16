@@ -36,7 +36,9 @@ class Persistence(object):
         with open(self.config_file_path, "r") as file:
             settings = json.load(file)
 
-        config_local_path = os.path.join(os.path.dirname(self.config_file_path), "config.local.json")
+        config_local_path = os.path.join(
+            os.path.dirname(self.config_file_path), "config.local.json"
+        )
         if os.path.exists(config_local_path):
             with open(config_local_path, "r") as file:
                 config_local = json.load(file)

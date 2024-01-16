@@ -21,7 +21,8 @@ class NotEnoughBandsException(Exception):
 
     def __init__(self, available_bands: int, needed_bands: int, input_path: str):
         message = (
-            f"Available bands: {str(available_bands)} -> {str(needed_bands)} bands needed! " f"The image: {input_path}"
+            f"Available bands: {str(available_bands)} -> {str(needed_bands)} bands needed! "
+            f"The image: {input_path}"
         )
         super(NotEnoughBandsException, self).__init__(message)
 
@@ -96,7 +97,9 @@ class FileExtensionException(Exception):
 
     """
 
-    def __init__(self, wanted_file_extension: str, got_file_extension: str, input_path: str):
+    def __init__(
+        self, wanted_file_extension: str, got_file_extension: str, input_path: str
+    ):
         message = f"{got_file_extension} -> File extension must be {wanted_file_extension}. The file: {input_path}"
         super(FileExtensionException, self).__init__(message)
 
@@ -108,7 +111,9 @@ class JsonFileExtensionException(FileExtensionException):
     """
 
     def __init__(self, got_file_extension: str, input_path: str):
-        super(JsonFileExtensionException, self).__init__(".json", got_file_extension, input_path)
+        super(JsonFileExtensionException, self).__init__(
+            ".json", got_file_extension, input_path
+        )
 
 
 class PersistenceLoadException(Exception):

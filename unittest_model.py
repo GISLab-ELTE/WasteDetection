@@ -11,7 +11,9 @@ CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/resources/config.sample.json"
 
 class TestAddFiles(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_add_new_file(self) -> None:
         file_name = "NewFile1"
@@ -40,7 +42,9 @@ class TestAddFiles(unittest.TestCase, ViewModel):
 
 class TestDeleteFiles(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_delete_file(self):
         self._opened_files += ["NewFile1", "NewFile2", "NewFile0", "NewFile4"]
@@ -66,7 +70,9 @@ class TestDeleteFiles(unittest.TestCase, ViewModel):
 
 class TestSaveTrainingInputFile(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_save_file(self):
         path = "D:/Desktop/test.tif"
@@ -90,7 +96,9 @@ class TestSaveTrainingInputFile(unittest.TestCase, ViewModel):
 
 class TestSavePointOnCanvas(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_save_point(self):
         tag_id = 42
@@ -103,7 +111,9 @@ class TestSavePointOnCanvas(unittest.TestCase, ViewModel):
 
 class TestSaveNewC(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_save_class(self):
         training_file = "D:/Desktop/test.tif"
@@ -145,16 +155,25 @@ class TestSaveNewC(unittest.TestCase, ViewModel):
         self.save_new_c(training_file_3, c_id_3, c_name_3, color_3)
 
         self.assertTrue(
-            all(file in self._tag_ids.keys() for file in [training_file_1, training_file_2, training_file_3])
+            all(
+                file in self._tag_ids.keys()
+                for file in [training_file_1, training_file_2, training_file_3]
+            )
         )
 
         self.assertTrue(c_id_1 in self._tag_ids[training_file_1].keys())
         self.assertTrue(c_id_2 in self._tag_ids[training_file_2].keys())
         self.assertTrue(c_id_3 in self._tag_ids[training_file_3].keys())
 
-        self.assertTrue(self._tag_ids[training_file_1][c_id_1] == [c_name_1, color_1, []])
-        self.assertTrue(self._tag_ids[training_file_2][c_id_2] == [c_name_2, color_2, []])
-        self.assertTrue(self._tag_ids[training_file_3][c_id_3] == [c_name_3, color_3, []])
+        self.assertTrue(
+            self._tag_ids[training_file_1][c_id_1] == [c_name_1, color_1, []]
+        )
+        self.assertTrue(
+            self._tag_ids[training_file_2][c_id_2] == [c_name_2, color_2, []]
+        )
+        self.assertTrue(
+            self._tag_ids[training_file_3][c_id_3] == [c_name_3, color_3, []]
+        )
 
         self.assertEqual(len(self._tag_ids.keys()), 3)
         self.assertEqual(len(self._tag_ids[training_file_1].keys()), 1)
@@ -169,7 +188,9 @@ class TestSaveNewC(unittest.TestCase, ViewModel):
 
 class TestDeleteC(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_delete_class(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -214,7 +235,9 @@ class TestDeleteC(unittest.TestCase, ViewModel):
 
 class TestDeleteTagId(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_delete_tag_ids(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -247,7 +270,9 @@ class TestDeleteTagId(unittest.TestCase, ViewModel):
 
 class TestSaveTagId(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_save_tag_ids(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -266,7 +291,9 @@ class TestSaveTagId(unittest.TestCase, ViewModel):
 
 class TestSaveTagIdCoords(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_save_tag_id_coord(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -287,7 +314,9 @@ class TestSaveTagIdCoords(unittest.TestCase, ViewModel):
 
 class TestDeletePoints(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_delete_points(self):
         for i in range(42):
@@ -301,7 +330,9 @@ class TestDeletePoints(unittest.TestCase, ViewModel):
 
 class TestPlacePolygonOnCanvas(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_not_enough_points(self):
         self.save_point_on_canvas(33)
@@ -324,7 +355,9 @@ class TestPlacePolygonOnCanvas(unittest.TestCase, ViewModel):
 
 class TestCreateUsableTrainingData(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_no_usable_one_file(self):
         training_file_1 = "D:/Desktop/test_1.tif"
@@ -479,7 +512,9 @@ class TestCreateUsableTrainingData(unittest.TestCase, ViewModel):
 
 class TestGetCoordsInsidePolygon(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
     def test_convex_polygon(self):
         polygon_coords = [1.0, 1.0, 2.0, 5.0, 4.0, 3.0, 3.0, 1.0]
@@ -523,7 +558,9 @@ class TestGetCoordsInsidePolygon(unittest.TestCase, ViewModel):
 
 class TestCalculateIndex(unittest.TestCase, ViewModel):
     def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
+        ViewModel.__init__(
+            self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP)
+        )
 
         self.shape = (3, 3)
 
