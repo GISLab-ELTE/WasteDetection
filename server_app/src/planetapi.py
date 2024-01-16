@@ -92,8 +92,19 @@ class PlanetAPI(BaseAPI):
                 "config": {"lte": float(self.settings.max_cloud_cover) / 100},
             }
 
+            # Standard quality returns images that have a higher quality and a smaller rate of (missing) pixels
+            standard_quality_filter = {
+                "type": "StringInFilter",
+                "field_name": "quality_category",
+                "config": ["standard"],
+            }
+
             geojson = self.start_search(
-                self.item_type, geometry_filter, date_range_filter, cloud_cover_filter
+                self.item_type,
+                geometry_filter,
+                date_range_filter,
+                cloud_cover_filter,
+                standard_quality_filter,
             )
 
             geojson["features"] = self.filter_by_coverage(feature, geojson["features"])
@@ -202,6 +213,7 @@ class PlanetAPI(BaseAPI):
         geometry_filter: Dict,
         date_range_filter: Dict,
         cloud_cover_filter: Dict,
+        standard_quality_filter: Dict,
     ) -> Dict:
         """
         Starts the search for images based on the set filters.
@@ -215,7 +227,12 @@ class PlanetAPI(BaseAPI):
 
         combined_filter = {
             "type": "AndFilter",
-            "config": [geometry_filter, date_range_filter, cloud_cover_filter],
+            "config": [
+                geometry_filter,
+                date_range_filter,
+                cloud_cover_filter,
+                standard_quality_filter,
+            ],
         }
 
         # API request object
