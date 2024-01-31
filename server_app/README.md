@@ -2,8 +2,9 @@
 
 ## Running the application in Docker Container
 
-1. **Build image:** `docker build -t server_app .`
-2. **Run container:**
+1. **Open CMD:** navigate to repository folder.
+2. **Build image:** `docker build -t server_app .`
+3. **Run container:**
 
    ```bash
       docker run -it --name server_app_container \
@@ -20,9 +21,10 @@
 
 ## Running the application
 
-1. **Create the virtual environment:** `conda env create -f environment.yml`. The name of the new environment will be `WasteDetectionServerApp`.
-2. **Activate environment:** `conda activate WasteDetectionServerApp`.
-3. **Run the application:** `python __main__.py [--download-init|--download-update] [--classify]` There are 3 flags that can be used, at least 1 must be given.
+1. **Open _Anaconda Prompt_:** navigate to repository folder.
+2. **Create the virtual environment:** `conda env create -f environment.yml`. The name of the new environment will be `WasteDetection`.
+3. **Activate environment:** `conda activate WasteDetection`.
+4. **Run the application:** `python run_server_app.py [--download-init|--download-update] [--classify]` There are 3 flags that can be used, at least 1 must be given.
    - `--download-init`: Initialize image database: Download all the images on the given time interval.
    - `--download-update`: Download new images. Cannot be used with `--download-init`.
    - `--classify`: Execute classification (does not download images).
@@ -33,9 +35,9 @@ Meaning of the parameters in `config.sample.json` file:
 
 - `workspace_root_dir`: Root directory of workspace.
 - `download_dir_planetscope`: Download destination of PlanetScope images. Relative to `workspace_root_dir`.
-- `download_dir_sentinel-2`: Download destination of Sentinel-2 images. Relative to `workspace_root_dir`.
+- `download_dir_sentinel_2`: Download destination of Sentinel-2 images. Relative to `workspace_root_dir`.
 - `result_dir_planetscope`: Output directory of result GeoJSON files created from PlanetScope images. Relative to `workspace_root_dir`.
-- `result_dir_sentinel-2`: Output directory of result GeoJSON files created from Sentinel-2 images. Relative to `workspace_root_dir`.
+- `result_dir_sentinel_2`: Output directory of result GeoJSON files created from Sentinel-2 images. Relative to `workspace_root_dir`.
 - `estimations_file_path`: Path of the file that will contain the estimation of the polluted areas' extension. Relative to `workspace_root_dir`.
 - `geojson_files_path`: Path of the dynamically produced JSON file that stores the location of the result GeoJSONs. Relative to `workspace_root_dir`.
 - `satellite_images_path`: Path of the dynamically produced JSON file that stores the location of the downloaded satellite images. Relative to `workspace_root_dir`.

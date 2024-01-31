@@ -7,9 +7,10 @@ import requests
 
 import datetime as dt
 
-from baseapi import BaseAPI
 from sentinelhub import filter_times
 from requests.auth import HTTPBasicAuth
+from model.persistence import Persistence
+from server_app.src.baseapi import BaseAPI
 from typing import List, TypeVar, Tuple, Dict
 
 
@@ -22,15 +23,15 @@ class PlanetAPI(BaseAPI):
 
     """
 
-    def __init__(self, config_file: Dict, data_file: Dict) -> None:
+    def __init__(self, settings: Persistence, data_file: Dict) -> None:
         """
         Constructor of PlanetAPI class.
 
-        :param config_file: Dictionary containing the settings.
+        :param settings: Persistence object containing the settings.
         :param data_file: Dictionary containing the AOIs (GeoJSON).
         """
 
-        super(PlanetAPI, self).__init__(config_file, data_file)
+        super(PlanetAPI, self).__init__(settings, data_file)
 
         self.api_key = None
         self.search_url = None
@@ -52,10 +53,10 @@ class PlanetAPI(BaseAPI):
         :return: None
         """
 
-        self.api_key = self.config_file["planet_api_key"]
-        self.search_url = self.config_file["planet_search_url"]
-        self.orders_url = self.config_file["planet_orders_url"]
-        self.item_type = self.config_file["planet_item_type"]
+        self.api_key = self.settings.planet_api_key
+        self.search_url = self.settings.planet_search_url
+        self.orders_url = self.settings.planet_orders_url
+        self.item_type = self.settings.planet_item_type
         self.auth = HTTPBasicAuth(self.api_key, "")
         self.headers = {"content-type": "application/json"}
 
@@ -87,19 +88,15 @@ class PlanetAPI(BaseAPI):
             cloud_cover_filter = {
                 "type": "RangeFilter",
                 "field_name": "cloud_cover",
-                "config": {"lte": float(self.config_file["max_cloud_cover"]) / 100},
+                "config": {"lte": float(self.settings.max_cloud_cover) / 100},
             }
 
-            geojson = self.start_search(
-                self.item_type, geometry_filter, date_range_filter, cloud_cover_filter
-            )
+            geojson = self.start_search(self.item_type, geometry_filter, date_range_filter, cloud_cover_filter)
 
             feature_id = feature["properties"]["id"]
             time_difference = dt.timedelta(hours=12)
             image_ids = PlanetAPI.get_image_ids(geojson)
-            unique_image_ids = PlanetAPI.get_unique_image_ids(
-                image_ids, time_difference
-            )
+            unique_image_ids = PlanetAPI.get_unique_image_ids(image_ids, time_difference)
 
             self.search_results[feature_id] = unique_image_ids[:max_result_limit]
 
@@ -134,9 +131,7 @@ class PlanetAPI(BaseAPI):
                     "tools": [clip, reproject],
                 }
 
-                date_time_obj = dt.datetime.strptime(
-                    "_".join(product.split("_")[:2]), "%Y%m%d_%H%M%S"
-                )
+                date_time_obj = dt.datetime.strptime("_".join(product.split("_")[:2]), "%Y%m%d_%H%M%S")
                 date_time_str = dt.datetime.strftime(date_time_obj, "%Y-%m-%d")
 
                 order_url = self.place_order(request_clip)
@@ -169,14 +164,10 @@ class PlanetAPI(BaseAPI):
                     if self.order_urls[feature][date][1] in ["downloaded", "failed"]:
                         continue
 
-                    order_id, order_state = self.get_state(
-                        self.order_urls[feature][date][0]
-                    )
+                    order_id, order_state = self.get_state(self.order_urls[feature][date][0])
 
                     if order_state in success_states:
-                        success = self.download_order(
-                            feature, date, self.order_urls[feature][date][0]
-                        )
+                        success = self.download_order(feature, date, self.order_urls[feature][date][0])
                         if not success:
                             time.sleep(2)
                             continue
@@ -218,17 +209,13 @@ class PlanetAPI(BaseAPI):
         # API request object
         search_request = {"item_types": [item_type], "filter": combined_filter}
 
-        search_result = requests.post(
-            self.search_url, auth=self.auth, json=search_request
-        )
+        search_result = requests.post(self.search_url, auth=self.auth, json=search_request)
 
         geojson = search_result.json()
 
         return geojson
 
-    def filter_out_already_downloaded_images(
-        self, feature_id: str, image_ids: List[str]
-    ) -> List[str]:
+    def filter_out_already_downloaded_images(self, feature_id: str, image_ids: List[str]) -> List[str]:
         """
         Filters out image ids that already exist locally.
 
@@ -239,8 +226,8 @@ class PlanetAPI(BaseAPI):
 
         work_dir = "/".join(
             [
-                self.config_file["workspace_root_dir"],
-                self.config_file["download_dir_planetscope"],
+                self.settings.workspace_root_dir,
+                self.settings.download_dir_planetscope,
                 feature_id,
             ]
         )
@@ -335,16 +322,14 @@ class PlanetAPI(BaseAPI):
 
         data_folder = "/".join(
             [
-                self.config_file["workspace_root_dir"],
-                self.config_file["download_dir_planetscope"],
+                self.settings.workspace_root_dir,
+                self.settings.download_dir_planetscope,
                 str(feature_id),
                 str(date),
             ]
         )
 
-        results_paths = [
-            pathlib.Path(os.path.join(data_folder, n)) for n in results_names
-        ]
+        results_paths = [pathlib.Path(os.path.join(data_folder, n)) for n in results_names]
         print("{} items to download".format(len(results_urls)))
 
         for url, name, path in zip(results_urls, results_names, results_paths):
@@ -372,9 +357,7 @@ class PlanetAPI(BaseAPI):
         return image_ids
 
     @staticmethod
-    def get_unique_image_ids(
-        image_ids: List[str], time_difference: dt.timedelta
-    ) -> List[str]:
+    def get_unique_image_ids(image_ids: List[str], time_difference: dt.timedelta) -> List[str]:
         """
         Returns image ids filtered out by the given time difference.
 

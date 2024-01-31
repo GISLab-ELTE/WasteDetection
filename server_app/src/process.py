@@ -1,22 +1,17 @@
 import os
-import time
 import json
-import pickle
 import fnmatch
-import geojson
 import logging
-import jsonmerge
 
 import numpy as np
 import datetime as dt
 
-from model import Model
 from pathlib import Path
-from planetapi import PlanetAPI
+from model.model import Model
+from typing import List, Optional
 from collections import OrderedDict
-from sentinelapi import SentinelAPI
-from typing import Dict, List, Optional
-from sklearn.ensemble import RandomForestClassifier
+from server_app.src.planetapi import PlanetAPI
+from server_app.src.sentinelapi import SentinelAPI
 
 
 class Process(object):
@@ -25,9 +20,7 @@ class Process(object):
 
     """
 
-    def __init__(
-        self, download_init: bool, download_update: bool, classify: bool
-    ) -> None:
+    def __init__(self, model: Model, download_init: bool, download_update: bool, classify: bool) -> None:
         """
         Constructor of Process class.
 
@@ -36,14 +29,7 @@ class Process(object):
 
         super(Process, self).__init__()
 
-        self.config_sample_name = "../resources/config.sample.json"
-        self.config_local_name = "../resources/config.local.json"
-
-        self.config_file = self.load_config_file()
-        self.data_file = self.load_data_file()
-        self.clf = self.load_clf()
-
-        self.model = Model(self.config_file)
+        self.model = model
 
         self.api = None
         self.pixel_size = None
@@ -53,13 +39,13 @@ class Process(object):
 
         self.estimations = dict()
 
-        self.satellite_type = self.config_file["satellite_type"].lower()
+        self.satellite_type = self.model.persistence.satellite_type.lower()
 
         if self.satellite_type == "planetscope":
-            self.api = PlanetAPI(self.config_file, self.data_file)
+            self.api = PlanetAPI(self.model.persistence, self.model.persistence.data_file)
             self.pixel_size = 3
         elif self.satellite_type == "sentinel-2":
-            self.api = SentinelAPI(self.config_file, self.data_file)
+            self.api = SentinelAPI(self.model.persistence, self.model.persistence.data_file)
             self.pixel_size = 10
 
         self.api.data_file = Model.convert_multipolygons_to_polygons(self.api.data_file)
@@ -81,9 +67,7 @@ class Process(object):
             return
 
         if self.download_init and self.download_update:
-            logging.error(
-                "cannot have download-init and download-update at the same time!"
-            )
+            logging.error("cannot have download-init and download-update at the same time!")
             return
 
         if not self.classify:
@@ -109,8 +93,8 @@ class Process(object):
 
         yesterday_str = Process.get_sys_date_str(difference=-1)
 
-        time_interval = self.config_file["first_sentinel-2_date"], yesterday_str
-        observation_max_span = int(self.config_file["observation_span_in_days"])
+        time_interval = self.model.persistence.first_sentinel_2_date, yesterday_str
+        observation_max_span = self.model.persistence.observation_span_in_days
 
         logging.info("Searching for earlier images.")
         self.api.search(time_interval, observation_max_span)
@@ -133,6 +117,7 @@ class Process(object):
 
         :return: None
         """
+
         logging.info("{} Estimating extent of polluted areas...")
         self.create_estimations()
         logging.info("{} Finished estimation...")
@@ -147,6 +132,7 @@ class Process(object):
 
         :return: None
         """
+
         sys_date_today = Process.get_sys_date_str()
         sys_date_yesterday = Process.get_sys_date_str(difference=-1)
         max_num_of_results = 1
@@ -184,15 +170,16 @@ class Process(object):
 
         :return: None
         """
+
         downloaded_images = self.get_satellite_images()
-        sentinel_path = self.join_path("workspace_root_dir", "result_dir_sentinel-2")
+        sentinel_path = self.join_path("workspace_root_dir", "result_dir_sentinel_2")
         planet_path = self.join_path("workspace_root_dir", "result_dir_planetscope")
         work_dir = sentinel_path if self.satellite_type == "sentinel-2" else planet_path
 
         for feature_id in downloaded_images.keys():
             for date in downloaded_images[feature_id].keys():
                 output_dir_path = "/".join([work_dir, feature_id, date])
-                masked_heatmap_postfix = self.config_file["masked_heatmap_postfix"]
+                masked_heatmap_postfix = self.model.persistence.masked_heatmap_postfix
 
                 processed = False
 
@@ -208,29 +195,32 @@ class Process(object):
                     continue
 
                 input_file_path = downloaded_images[feature_id][date]
-                indices_path = self.model.save_bands_indices(
-                    input_file_path, output_dir_path, "all", "all"
-                )
+                indices_path = self.model.save_bands_indices(input_file_path, "all", "all", output_dir_path)
 
                 (
                     classified,
                     heatmap,
                 ) = self.model.create_classification_and_heatmap_with_random_forest(
-                    indices_path, self.clf
+                    indices_path,
+                    self.model.persistence.clf,
+                    self.model.persistence.classification_postfix,
+                    self.model.persistence.heatmap_postfix,
                 )
 
                 (
                     masked_classified,
                     masked_heatmap,
                 ) = self.model.create_masked_classification_and_heatmap(
-                    indices_path, classified, heatmap
+                    indices_path,
+                    classified,
+                    heatmap,
+                    self.model.persistence.masked_classification_postfix,
+                    self.model.persistence.masked_heatmap_postfix,
                 )
 
                 Model.get_waste_geojson(
                     input_file=masked_classified,
-                    output_file="/".join(
-                        [work_dir, feature_id, date, "classified.geojson"]
-                    ),
+                    output_file="/".join([work_dir, feature_id, date, "classified.geojson"]),
                     search_value=100,
                 )
 
@@ -238,15 +228,11 @@ class Process(object):
                 for heatmap_type, value in heatmap_types:
                     Model.get_waste_geojson(
                         input_file=masked_heatmap,
-                        output_file="/".join(
-                            [work_dir, feature_id, date, heatmap_type + ".geojson"]
-                        ),
+                        output_file="/".join([work_dir, feature_id, date, heatmap_type + ".geojson"]),
                         search_value=value,
                     )
 
-                estimation = self.model.estimate_garbage_area(
-                    masked_classified, "classified"
-                )
+                estimation = self.model.estimate_garbage_area(masked_classified, "classified")
 
                 if feature_id not in self.estimations.keys():
                     self.estimations[feature_id] = dict()
@@ -261,20 +247,14 @@ class Process(object):
         """
 
         geojson_files_path = self.join_path("workspace_root_dir", "geojson_files_path")
-        satellite_images_path = self.join_path(
-            "workspace_root_dir", "satellite_images_path"
-        )
-        estimations_file_path = self.join_path(
-            "workspace_root_dir", "estimations_file_path"
-        )
+        satellite_images_path = self.join_path("workspace_root_dir", "satellite_images_path")
+        estimations_file_path = self.join_path("workspace_root_dir", "estimations_file_path")
 
         result_dir, image_files_abs, image_files_rel = None, None, None
 
         if self.satellite_type == "sentinel-2":
-            download_dir = self.join_path(
-                "workspace_root_dir", "download_dir_sentinel-2"
-            )
-            result_dir = self.join_path("workspace_root_dir", "result_dir_sentinel-2")
+            download_dir = self.join_path("workspace_root_dir", "download_dir_sentinel_2")
+            result_dir = self.join_path("workspace_root_dir", "result_dir_sentinel_2")
             image_files_abs = Process.find_files_absolute(download_dir, "response.tiff")
             image_files_rel = Process.find_files_relative(
                 download_dir,
@@ -282,13 +262,9 @@ class Process(object):
                 relative_to=os.path.dirname(satellite_images_path),
             )
         elif self.satellite_type == "planetscope":
-            download_dir = self.join_path(
-                "workspace_root_dir", "download_dir_planetscope"
-            )
+            download_dir = self.join_path("workspace_root_dir", "download_dir_planetscope")
             result_dir = self.join_path("workspace_root_dir", "result_dir_planetscope")
-            image_files_abs = Process.find_files_absolute(
-                download_dir, "*AnalyticMS_SR_clip_reproject.tif"
-            )
+            image_files_abs = Process.find_files_absolute(download_dir, "*AnalyticMS_SR_clip_reproject.tif")
             image_files_rel = Process.find_files_relative(
                 download_dir,
                 "*AnalyticMS_SR_clip_reproject.tif",
@@ -308,9 +284,7 @@ class Process(object):
             feature_id = rel_path_split[1]
             date = rel_path_split[2]
 
-            min_value, max_value = self.model.get_min_max_value_of_band(
-                image_files_abs[i], 3
-            )
+            min_value, max_value = self.model.get_min_max_value_of_band(image_files_abs[i], 3)
 
             if feature_id not in image_dict:
                 image_dict[feature_id] = OrderedDict()
@@ -342,9 +316,7 @@ class Process(object):
         self.add_model_data_to_json_file(geojson_files_path, geojson_dict)
         self.add_model_data_to_json_file(estimations_file_path, self.estimations)
 
-    def add_model_data_to_json_file(
-        self, file_path: str, model_data: OrderedDict
-    ) -> None:
+    def add_model_data_to_json_file(self, file_path: str, model_data: OrderedDict) -> None:
         """
         Adds data related to the model to the given json file.
         The key of the data will be the id of the classification model.
@@ -353,7 +325,8 @@ class Process(object):
         :param file_path: The path of the json file
         :param model_data: The dictionary that needs to be added to the json file.
         """
-        clf_id = self.config_file["clf_id"]
+
+        clf_id = self.model.persistence.clf_id
 
         # to prevent deleting the file's contents before reading, we need to use the "r" flag to read the contents.
         # This throws an exception when the file does not exist, thus we need to create an empty json file to prevent errors.
@@ -377,7 +350,7 @@ class Process(object):
         :return: The joined path.
         """
 
-        path = os.path.join(self.config_file[key_1], self.config_file[key_2]).replace(
+        path = os.path.join(getattr(self.model.persistence, key_1), getattr(self.model.persistence, key_2)).replace(
             "\\", "/"
         )
         return path
@@ -390,7 +363,7 @@ class Process(object):
         :return: None
         """
 
-        days = int(self.config_file["observation_span_in_days"])
+        days = self.model.persistence.observation_span_in_days
 
         for feature_id in self.estimations.keys():
             sorted_dates = sorted(self.estimations[feature_id].keys(), reverse=True)
@@ -412,17 +385,11 @@ class Process(object):
             logging.info(f"Mean of the previous {days - 1} acquired days: {mean}")
 
             if difference > 0:
-                logging.info(
-                    f"{difference}% more polluted area than the estimated mean."
-                )
+                logging.info(f"{difference}% more polluted area than the estimated mean.")
             elif difference < 0:
-                logging.info(
-                    f"{-1 * difference}% less polluted area than the estimated mean."
-                )
+                logging.info(f"{-1 * difference}% less polluted area than the estimated mean.")
             else:
-                logging.info(
-                    "Area of polluted area is exactly the same as the estimated mean."
-                )
+                logging.info("Area of polluted area is exactly the same as the estimated mean.")
 
         print()
 
@@ -438,9 +405,7 @@ class Process(object):
 
         for feature_id in downloaded_images.keys():
             print("{}:".format(feature_id))
-            for date in list(downloaded_images[feature_id].keys())[
-                -observation_max_span:
-            ]:
+            for date in list(downloaded_images[feature_id].keys())[-observation_max_span:]:
                 print(date)
             print()
 
@@ -451,17 +416,11 @@ class Process(object):
         :return: Dictionary containing the paths.
         """
 
-        sentinel_path = self.join_path("workspace_root_dir", "download_dir_sentinel-2")
+        sentinel_path = self.join_path("workspace_root_dir", "download_dir_sentinel_2")
         planet_path = self.join_path("workspace_root_dir", "download_dir_planetscope")
 
-        download_dir = (
-            sentinel_path if self.satellite_type == "sentinel-2" else planet_path
-        )
-        pattern = (
-            "response.tiff"
-            if self.satellite_type == "sentinel-2"
-            else "*AnalyticMS_SR_clip_reproject.tif"
-        )
+        download_dir = sentinel_path if self.satellite_type == "sentinel-2" else planet_path
+        pattern = "response.tiff" if self.satellite_type == "sentinel-2" else "*AnalyticMS_SR_clip_reproject.tif"
 
         files = Process.find_files_absolute(download_dir, pattern)
         images = OrderedDict()
@@ -479,47 +438,6 @@ class Process(object):
 
         return images
 
-    def load_config_file(self) -> Dict:
-        """
-        Loads config file for later use.
-
-        :return: The loaded config file in Dict form.
-        """
-
-        with open(self.config_sample_name, "r") as file:
-            config_sample = json.load(file)
-
-        if os.path.exists(self.config_local_name):
-            with open(self.config_local_name, "r") as file:
-                config_local = json.load(file)
-
-            config_file = jsonmerge.merge(config_sample, config_local)
-            return config_file
-        else:
-            return config_sample
-
-    def load_data_file(self) -> Dict:
-        """
-        Loads the data file (GeoJSON) that contains the AOIs for later use.
-
-        :return: The loaded data file in Dict form.
-        """
-
-        with open(self.config_file["data_file_path"], "r") as file:
-            geojson_file = geojson.load(file)
-        return geojson_file
-
-    def load_clf(self) -> RandomForestClassifier:
-        """
-        Loads the classifier for later use.
-
-        :return: The loaded classifier.
-        """
-
-        with open(self.config_file["clf_path"], "rb") as file:
-            clf = pickle.load(file)
-        return clf
-
     @staticmethod
     def find_files_absolute(root_dir: str, pattern: str) -> List[str]:
         """
@@ -530,12 +448,7 @@ class Process(object):
         :return: List of absolute paths.
         """
 
-        files = sorted(
-            [
-                os.path.abspath(path).replace("\\", "/")
-                for path in Path(root_dir).rglob(pattern)
-            ]
-        )
+        files = sorted([os.path.abspath(path).replace("\\", "/") for path in Path(root_dir).rglob(pattern)])
         return files
 
     @staticmethod
@@ -551,10 +464,7 @@ class Process(object):
         """
 
         files = Process.find_files_absolute(root_dir, pattern)
-        files = [
-            os.path.relpath(file, start=relative_to).replace("\\", "/")
-            for file in files
-        ]
+        files = [os.path.relpath(file, start=relative_to).replace("\\", "/") for file in files]
         return files
 
     @staticmethod

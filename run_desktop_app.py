@@ -3,15 +3,14 @@ import tkinter.messagebox
 import desktop_app.src.view as view
 import desktop_app.src.controller as controller
 
-from model import model, persistence
+from model import persistence
+from desktop_app.src.view_model import ViewModel
 
 
 if __name__ == "__main__":
-    CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/src/config.json"
+    CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/resources/config.sample.json"
     try:
-        model = model.Model(
-            persistence.Persistence(config_file_path=CONFIG_FILE_NAME_DESKTOP_APP)
-        )
+        model = ViewModel(persistence.Persistence(config_file_path=CONFIG_FILE_NAME_DESKTOP_APP))
         view = view.View()
         controller = controller.Controller(view, model)
         controller.mainloop()
