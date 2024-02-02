@@ -388,14 +388,14 @@ class PlanetAPI(BaseAPI):
 
         :param feature: The geojson of the feature that will be used for comparison.
         :param item: The item that we want to calculate the coverage of.
-        :return: The coverage of the item. A value between 0 and 1.
+        :return: The coverage of the item. A value between 0 and 100.
         """
         item_polygon = Polygon(item["geometry"]["coordinates"][0])
         feature_polygon = Polygon(feature["geometry"]["coordinates"][0])
 
         intersection = feature_polygon.intersection(item_polygon)
 
-        return intersection.area / feature_polygon.area
+        return (intersection.area / feature_polygon.area) * 100
 
     @staticmethod
     def get_image_ids(geojson: Dict) -> List[str]:
