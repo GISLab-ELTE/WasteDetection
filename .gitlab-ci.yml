@@ -62,7 +62,7 @@ model-unittest:
     - conda info
   script:
     # Activate environment
-    - conda activate WasteDetectionServerApp
+    - conda activate WasteDetection
     # Run unit tests
     - python unittest_model.py
 
