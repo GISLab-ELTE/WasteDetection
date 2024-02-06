@@ -350,9 +350,10 @@ class Process(object):
         :return: The joined path.
         """
 
-        path = os.path.join(getattr(self.model.persistence, key_1), getattr(self.model.persistence, key_2)).replace(
-            "\\", "/"
-        )
+        path = os.path.join(
+            getattr(self.model.persistence, key_1),
+            getattr(self.model.persistence, key_2),
+        ).replace("\\", "/")
         return path
 
     def analyze_estimations(self) -> None:

@@ -12,6 +12,7 @@ from requests.auth import HTTPBasicAuth
 from model.persistence import Persistence
 from server_app.src.baseapi import BaseAPI
 from typing import List, TypeVar, Tuple, Dict
+from shapely.geometry import Polygon
 
 
 TimeType = TypeVar("TimeType", dt.date, dt.datetime)
@@ -91,8 +92,22 @@ class PlanetAPI(BaseAPI):
                 "config": {"lte": float(self.settings.max_cloud_cover) / 100},
             }
 
-            geojson = self.start_search(self.item_type, geometry_filter, date_range_filter, cloud_cover_filter)
+            # Standard quality returns images that have a higher quality and a smaller rate of (missing) pixels
+            standard_quality_filter = {
+                "type": "StringInFilter",
+                "field_name": "quality_category",
+                "config": ["standard"],
+            }
 
+            geojson = self.start_search(
+                self.item_type,
+                geometry_filter,
+                date_range_filter,
+                cloud_cover_filter,
+                standard_quality_filter,
+            )
+
+            geojson["features"] = self.filter_by_coverage(feature, geojson["features"])
             feature_id = feature["properties"]["id"]
             time_difference = dt.timedelta(hours=12)
             image_ids = PlanetAPI.get_image_ids(geojson)
@@ -190,6 +205,7 @@ class PlanetAPI(BaseAPI):
         geometry_filter: Dict,
         date_range_filter: Dict,
         cloud_cover_filter: Dict,
+        standard_quality_filter: Dict,
     ) -> Dict:
         """
         Starts the search for images based on the set filters.
@@ -203,7 +219,12 @@ class PlanetAPI(BaseAPI):
 
         combined_filter = {
             "type": "AndFilter",
-            "config": [geometry_filter, date_range_filter, cloud_cover_filter],
+            "config": [
+                geometry_filter,
+                date_range_filter,
+                cloud_cover_filter,
+                standard_quality_filter,
+            ],
         }
 
         # API request object
@@ -251,6 +272,22 @@ class PlanetAPI(BaseAPI):
                     filtered_image_ids.remove(image_ids[index])
 
         return filtered_image_ids
+
+    def filter_by_coverage(self, feature: Dict, items: List[Dict]) -> List[Dict]:
+        """
+        Filters the images that match the coverage criteria.
+
+        :param feature: The feature that will be used to compare the coverage of the polygon.
+        :param items: A list that contains the metadata of the items.
+        :return: Items that match the coverage criteria given in the config file.
+        """
+
+        return list(
+            filter(
+                lambda item: PlanetAPI.calculate_coverage(feature, item) >= self.settings.min_coverage,
+                items,
+            )
+        )
 
     def place_order(self, request: Dict) -> str:
         """
@@ -343,6 +380,22 @@ class PlanetAPI(BaseAPI):
             time.sleep(2)
 
         return True
+
+    @staticmethod
+    def calculate_coverage(feature: Dict, item: Dict) -> float:
+        """
+        Calculates the coverage of the given item compared to the given feature.
+
+        :param feature: The geojson of the feature that will be used for comparison.
+        :param item: The item that we want to calculate the coverage of.
+        :return: The coverage of the item. A value between 0 and 100.
+        """
+        item_polygon = Polygon(item["geometry"]["coordinates"][0])
+        feature_polygon = Polygon(feature["geometry"]["coordinates"][0])
+
+        intersection = feature_polygon.intersection(item_polygon)
+
+        return (intersection.area / feature_polygon.area) * 100
 
     @staticmethod
     def get_image_ids(geojson: Dict) -> List[str]:
