@@ -15,6 +15,7 @@ dependencies:
   - python=3.8.12
   - rasterio=1.2.8
   - scikit-learn=0.24.2
+  - scikit-image=0.19.0
   - sentinelhub=3.4.4
   - shapely=1.7.1
   - tk=8.6.11 # for desktop_app
