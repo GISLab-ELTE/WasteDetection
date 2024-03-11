@@ -1,3 +1,4 @@
+import logging
 import os
 import copy
 import pyproj
@@ -12,6 +13,9 @@ import geopandas as gpd
 from math import ceil
 from osgeo import gdal, osr
 from itertools import compress
+from scipy.ndimage import median_filter
+from skimage.filters import threshold_minimum
+
 from model.exceptions import *
 from shapely.geometry import shape
 from shapely.geometry import Point
@@ -164,12 +168,48 @@ class Model(object):
 
             return Model.calculate_indices(get_list, {"blue": blue, "green": green, "red": red, "nir": nir})
 
+    def get_udm2_bands(
+            self,
+            udm2_input_path: str
+    ) ->np.ndarray:
+        """
+        Retrieve the clear band of the udm2 asset.
+        Values below the set min_udm2_confidence will be treated as clear pixels.
+
+        :param udm2_input_path: path of udm2 image
+        :get
+        :return: ndarray of clear pixels
+        """
+        with rasterio.open(udm2_input_path, "r") as img:
+            udm2_mask = None
+
+            for udm2_band_name in self.persistence.udm2_masking_bands:
+                ind = self.get_satellite_band("UDM2_" + udm2_band_name)
+                band = (img.read(ind)).astype(dtype="float32")
+                if udm2_mask is None:
+                    udm2_mask = band
+                else:
+                    udm2_mask = np.logical_or(udm2_mask, band)
+
+            minimum_confidence = self.persistence.minimum_confidence
+
+            if minimum_confidence >= 0 and udm2_mask is not None:
+                confidence_ind = self.get_satellite_band("UDM2_Confidence")
+                confidence_band = img.read(confidence_ind).astype(dtype="float32")
+                confidence_mask = np.where(confidence_band > minimum_confidence, 1, 0)
+
+                udm2_mask[confidence_mask == 0] = np.nan
+
+            return udm2_mask
+
+
     def save_bands_indices(
         self,
         input_path: str,
         save: str,
         postfix: str,
         working_dir: str,
+        udm2_input_path: str = None
     ) -> str:
         """
         Saves the specified band values and/or index values to a single- or multi-band tif file.
@@ -178,6 +218,7 @@ class Model(object):
         :param save: name of band/indices
         :param working_dir: path of the working directory
         :param postfix: file name postfix of the output image
+        :param udm2_input_path: path of the input image containing udm2 images
         :return: path of the output image
         """
 
@@ -185,6 +226,8 @@ class Model(object):
             input_path=input_path,
             get=save,
         )
+        
+        self.apply_water_and_udm2_masks(list_of_bands_and_indices, save, udm2_input_path)
 
         bands = len(list_of_bands_and_indices)
         output_path = Model.output_path([input_path], postfix, self.persistence.file_extension, working_dir)
@@ -551,6 +594,72 @@ class Model(object):
             return "", ""
         finally:
             del ds
+            
+    def apply_water_and_udm2_masks(
+            self,
+            list_of_bands_and_indices: List[np.ndarray],
+            save: str,
+            udm2_input_path: str
+    ):
+        """
+        Apply masking based on configuration parameters.
+    
+        :param list_of_bands_and_indices: list of bands and/or indices
+        :param save: name of band/indices
+        :param udm2_input_path: path of the UDM2 input image
+        """
+    
+        if self.persistence.masking:
+            ndwi = self.get_ndwi(list_of_bands_and_indices, save)
+            
+            if ndwi is None:
+                logging.warning("Skip masking. NDWI could not be retrieved.")
+                return
+    
+            if (self.persistence.satellite_type.lower() == "planetscope" and
+                    udm2_input_path is not None):
+                udm2_mask = self.get_udm2_bands(udm2_input_path)
+                ndwi[udm2_mask == self.persistence.udm2_eliminator] = np.nan
+    
+            water_mask = self.create_water_mask(ndwi, self.persistence.invert_water_mask)
+
+            water_mask = self.water_mask_morphological_transform(
+                water_mask,
+                self.persistence.open_kernel,
+                self.persistence.close_kernel,
+                self.persistence.dilute_kernel
+            )
+    
+            if water_mask is not None:
+                for bands_and_indices in list_of_bands_and_indices:
+                    bands_and_indices[water_mask == 0] = np.nan
+                    
+    def get_ndwi(
+            self,
+            list_of_bands_and_indices: List[np.ndarray],
+            training_labels: str
+    ) -> np.ndarray:
+        """
+        Retrieve or calculate NDWI values from bands and indices.
+
+        :param list_of_bands_and_indices: loaded bands
+        :param training_labels: name of band/indices
+
+        :return: ndarray ndwi values
+        """
+        ndwi = None
+
+        indices = self.resolve_bands_indices_string(training_labels)
+
+        if "ndwi" in indices:
+            ndwi = list_of_bands_and_indices[indices.index("ndwi")]
+
+        if ndwi is None and "green" and "nir" in indices:
+            green = list_of_bands_and_indices[indices.index("green")]
+            nir = list_of_bands_and_indices[indices.index("nir")]
+            ndwi = self.calculate_index(numerator=green - nir, denominator=green + nir)
+
+        return ndwi
 
     # Static public methods
     @staticmethod
@@ -1427,3 +1536,58 @@ class Model(object):
             return None
         finally:
             del dataset
+
+    @staticmethod
+    def create_water_mask(
+            ndwi: np.ndarray,
+            invert_mask: bool
+    ) -> np.ndarray:
+        """
+        Create water mask using ndwi values and minimum thresholding
+
+        :param ndwi: array of ndwi indices
+        :param invert_mask: inverts result of water masking
+
+        :return: created water masks
+        """
+        non_nan_ndwi = np.nan_to_num(ndwi, nan=np.nanmin(ndwi))
+        median_filtered = median_filter(non_nan_ndwi, size=3)
+        threshold = threshold_minimum(median_filtered)
+
+        mask_condition = invert_mask ^ (median_filtered > threshold)
+
+        return np.uint8(mask_condition) * 255
+
+    @staticmethod
+    def water_mask_morphological_transform(
+            water_mask: np.ndarray,
+            open_kernel: int,
+            close_kernel: int,
+            dilute_kernel: int
+    ) -> np.ndarray:
+        """
+        Transform water mask, applying opening closing and then diluting morphological transformations.
+
+        :param water_mask: ndarray of a water_mask
+        :param open_kernel: size of kernel used in opening
+        :param close_kernel: size of kernel used in closing
+        :param dilute_kernel: size of kernel used in diluting
+        """
+        try:
+            # Morphological open to reduce noise
+            kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (open_kernel, open_kernel))
+            opened_mask = cv.morphologyEx(water_mask, cv.MORPH_OPEN, kernel)
+
+            # Morphological close to connect gaps
+            kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (close_kernel, close_kernel))
+            closed = cv.morphologyEx(opened_mask, cv.MORPH_CLOSE, kernel)
+
+            # Dilate closed image
+            kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (dilute_kernel, dilute_kernel))
+            diluted = cv.dilate(closed, kernel)
+
+            return diluted
+
+        except Exception:
+            logging.warning('Error apply morphological transformation to the water mask: ')
+            traceback.print_exc()

@@ -172,6 +172,8 @@ class Process(object):
         """
 
         downloaded_images = self.get_satellite_images()
+        udm2_images = self.get_udm2_images()
+
         sentinel_path = self.join_path("workspace_root_dir", "result_dir_sentinel_2")
         planet_path = self.join_path("workspace_root_dir", "result_dir_planetscope")
         work_dir = sentinel_path if self.satellite_type == "sentinel-2" else planet_path
@@ -195,7 +197,10 @@ class Process(object):
                     continue
 
                 input_file_path = downloaded_images[feature_id][date]
-                indices_path = self.model.save_bands_indices(input_file_path, "all", "all", output_dir_path)
+                udm2_file_path = udm2_images[feature_id][date] if udm2_images is not None else None
+
+                indices_path = self.model.save_bands_indices(input_file_path, "all", "all",
+                                                             output_dir_path, udm2_file_path)
 
                 (
                     classified,
@@ -424,6 +429,31 @@ class Process(object):
         pattern = "response.tiff" if self.satellite_type == "sentinel-2" else "*AnalyticMS_SR_clip_reproject.tif"
 
         files = Process.find_files_absolute(download_dir, pattern)
+        return self.create_images_dict(download_dir, files)
+
+    def get_udm2_images(self) -> OrderedDict:
+        """
+        Returns the paths of downloaded udm2 images (PlanetScope)
+
+        :return: dictionary containing the paths. None if the satellite type is not PlanetScope
+        """
+
+        if self.satellite_type.lower() == "planetscope":
+            download_dir = self.join_path("workspace_root_dir", "download_dir_planetscope")
+            files = Process.find_files_absolute(download_dir, "*udm2_clip_reproject.tif")
+
+            return self.create_images_dict(download_dir, files)
+
+    def create_images_dict(self, download_dir: str, files: List[str]) -> OrderedDict:
+        """
+        Create an ordered dictionary representing a nested structure of images,
+        organized by feature ID and date.
+
+        :param: download_dir: The base directory where the image files are located.
+        :param: files: A list of file paths representing the image files.
+
+        :return: OrderedDict: An ordered dictionary containing images organized by feature ID and date.
+        """
         images = OrderedDict()
 
         for file in files:
