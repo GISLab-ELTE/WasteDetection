@@ -27,9 +27,12 @@
   <body>
     <div class="container-fluid">
       <div id="user-inputs" class="row">
-        <div id="header" class="col-12">
+        <div id="header" class="col-12 col-lg-11">
           <h2>Plastic Waste Monitoring</h2>
           <hr />
+        </div>
+        <div class="col-12 col-lg-1">
+          <button id="login-button" type="button" class="btn btn-primary btn-block">Login</button>
         </div>
         <div class="col-12 col-lg-2">
           <label for="location" class="form-label"><b>Location:</b></label>
@@ -74,10 +77,8 @@
                 class="form-select"
                 aria-label="annotation-type"
               >
-                <option selected value="TP">True Positive</option>
-                <option value="TN">True Negative</option>
-                <option value="FP">False Positive</option>
-                <option value="FN">False Negative</option>
+                <option selected value="1">Waste</option>
+                <option value="0">Not Waste</option>
               </select>
               <br />
               <button

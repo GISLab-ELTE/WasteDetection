@@ -61,3 +61,10 @@
 .ol-annotation-popup-closer:after {
   content: "✖";
 }
+
+#login-button {
+  margin: 0 auto;
+  display: block;
+  text-align: center;
+  margin-top: 10px;
+}
