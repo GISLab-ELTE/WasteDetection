@@ -171,13 +171,12 @@ class Model(object):
     def get_udm2_bands(
             self,
             udm2_input_path: str
-    ) ->np.ndarray:
+    ) -> np.ndarray:
         """
         Retrieve the clear band of the udm2 asset.
         Values below the set min_udm2_confidence will be treated as clear pixels.
 
         :param udm2_input_path: path of udm2 image
-        :get
         :return: ndarray of clear pixels
         """
         with rasterio.open(udm2_input_path, "r") as img:
@@ -1572,6 +1571,7 @@ class Model(object):
         :param open_kernel: size of kernel used in opening
         :param close_kernel: size of kernel used in closing
         :param dilute_kernel: size of kernel used in diluting
+        :return: transformed water mask after applying opening, closing, and dilating morphological operations.
         """
         try:
             # Morphological open to reduce noise
