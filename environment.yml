@@ -4,6 +4,7 @@ channels:
   - defaults
 dependencies:
   - black=23.3.0
+  - flask=2.2.5
   - gdal=3.3.2
   - geojson=2.5.0
   - geopandas=0.12.1
@@ -14,8 +15,8 @@ dependencies:
   - pip=21.2.4
   - python=3.8.12
   - rasterio=1.2.8
-  - scikit-learn=0.24.2
   - scikit-image=0.19.0
+  - scikit-learn=0.24.2
   - sentinelhub=3.4.4
   - shapely=1.7.1
   - tk=8.6.11 # for desktop_app
