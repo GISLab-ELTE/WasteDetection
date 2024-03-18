@@ -199,8 +199,9 @@ class Process(object):
                 input_file_path = downloaded_images[feature_id][date]
                 udm2_file_path = udm2_images[feature_id][date] if udm2_images is not None else None
 
-                indices_path = self.model.save_bands_indices(input_file_path, "all", "all",
-                                                             output_dir_path, udm2_file_path)
+                indices_path = self.model.save_bands_indices(
+                    input_file_path, "all", "all", output_dir_path, udm2_file_path
+                )
 
                 (
                     classified,

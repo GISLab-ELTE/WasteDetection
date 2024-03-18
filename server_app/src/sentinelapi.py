@@ -166,7 +166,7 @@ class SentinelAPI(BaseAPI):
         bands = '["B02", "B03", "B04", "B08"'
         if masking:
             bands += ', "CLM"'
-        bands += ']'
+        bands += "]"
         clm_check = """
                         if (sample.CLM == 1) {
                           return [NaN, NaN, NaN, NaN];
@@ -194,7 +194,6 @@ class SentinelAPI(BaseAPI):
                     }}
                 """
         return evalscript
-
 
     @staticmethod
     def get_bbox_of_polygon(polygon_coords: List[List[int]]) -> List[int]:
