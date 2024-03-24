@@ -19,6 +19,7 @@ dependencies:
   - scikit-learn=0.24.2
   - sentinelhub=3.4.4
   - shapely=1.7.1
+  - sqlalchemy=1.4.51
   - tk=8.6.11 # for desktop_app
   - pip:
       - jsonmerge==1.9.0
