@@ -5,13 +5,13 @@ from sqlalchemy.orm import declarative_base, relationship
 Base = declarative_base()
 
 
-class Users(Base):
-    __tablename__ = "users"
+class User(Base):
+    __tablename__ = "user"
 
     id = Column(Integer, primary_key=True)
-    annotations = relationship("Annotations")
+    annotations = relationship("Annotation")
 
     name = Column(String)
     email = Column(String)
     password = Column(String)
-    roles = Column(String)
+    role = Column(String)

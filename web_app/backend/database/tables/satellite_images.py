@@ -5,11 +5,11 @@ from sqlalchemy import Column, Date, Float, Integer, String
 Base = declarative_base()
 
 
-class SatelliteImages(Base):
-    __tablename__ = "satellite_images"
+class SatelliteImage(Base):
+    __tablename__ = "satellite_image"
 
     id = Column(Integer, primary_key=True)
-    annotations = relationship("Annotations")
+    annotations = relationship("Annotation")
 
     filename = Column(String)
     acquisition_data = Column(Date)
