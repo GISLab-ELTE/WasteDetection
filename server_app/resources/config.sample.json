@@ -47,5 +47,20 @@
   "planetscope_blue": 1,
   "planetscope_green": 2,
   "planetscope_red": 3,
-  "planetscope_nir": 4
+  "planetscope_nir": 4,
+  "masking": false,
+  "udm2_eliminator": 0,
+  "udm2_masking_bands": ["clear"],
+  "invert_water_mask": false,
+  "open_kernel": 15,
+  "close_kernel": 50,
+  "dilute_kernel": 20,
+  "minimum_confidence": 0,
+  "planetscope_udm2_clear": 1,
+  "planetscope_udm2_snow": 2,
+  "planetscope_udm2_cloud_shadow": 3,
+  "planetscope_udm2_light_haze": 4,
+  "planetscope_udm2_heavy_haze": 5,
+  "planetscope_udm2_cloud": 6,
+  "planetscope_udm2_confidence": 7
 }
