@@ -55,7 +55,7 @@ class Annotation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     satellite_image_id = db.Column(db.Integer, db.ForeignKey("satellite_image.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    # geom = db.Column(Geometry('POLYGON'), nullable=False)
+    geom = db.Column(Geometry("POLYGON"), nullable=False)
     waste = db.Column(db.Boolean, nullable=False)
 
     def to_dict(self):
@@ -63,6 +63,6 @@ class Annotation(db.Model):
             "id": self.id,
             "satellite_image_id": self.satellite_image_id,
             "user_id": self.user_id,
-            # 'geom': str(self.geom),
+            "geom": str(self.geom),
             "waste": self.waste,
         }

@@ -3,5 +3,7 @@ import os
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "asd123")  # Change 'your_secret_key' to a strong, random value
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    # SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    # SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "postgresql://postgres:admin@localhost:5432/waste_detection_database")
+    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:admin@localhost:5432/waste_detection_database"
     SQLALCHEMY_TRACK_MODIFICATIONS = False

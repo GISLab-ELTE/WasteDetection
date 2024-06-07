@@ -94,7 +94,7 @@ def create_annotation():
     annotation = Annotation(
         satellite_image_id=data["satellite_image_id"],
         user_id=data["user_id"],
-        # geom=data['geom'],
+        geom=data["geom"],
         waste=data["waste"],
     )
     try:
