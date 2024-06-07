@@ -5,6 +5,8 @@ channels:
 dependencies:
   - black=23.3.0
   - flask=2.2.5
+  - flask-bcrypt=1.0.1
+  - flask-login=0.6.3
   - flask-migrate=4.0.7
   - flask-sqlalchemy=2.5.1
   - gdal=3.3.2
