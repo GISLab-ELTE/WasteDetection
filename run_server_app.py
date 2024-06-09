@@ -1,7 +1,9 @@
 import logging
 import argparse
 
-from process import Process
+from model.model import Model
+from model.persistence import Persistence
+from server_app.src.process import Process
 
 
 def parse_args() -> argparse.Namespace:
@@ -61,5 +63,9 @@ if __name__ == "__main__":
 
     print("AUTOMATIC WASTE DETECTION")
 
-    process = Process(args.download_init, args.download_update, args.classify)
+    CONFIG_FILE_NAME_DESKTOP_APP = "server_app/resources/config.sample.json"
+
+    model = Model(Persistence(config_file_path=CONFIG_FILE_NAME_DESKTOP_APP))
+
+    process = Process(model, args.download_init, args.download_update, args.classify)
     process.mainloop()

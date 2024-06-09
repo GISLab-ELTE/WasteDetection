@@ -1,7 +1,8 @@
 import datetime as dt
 
-from baseapi import BaseAPI
+from server_app.src.baseapi import BaseAPI
 from typing import Dict, Tuple, List
+from model.persistence import Persistence
 
 from sentinelhub import (
     SHConfig,
@@ -22,15 +23,15 @@ class SentinelAPI(BaseAPI):
 
     """
 
-    def __init__(self, config_file: Dict, data_file: Dict) -> None:
+    def __init__(self, settings: Persistence, data_file: Dict) -> None:
         """
         Constructor of SentinelAPI class.
 
-        :param config_file: Dictionary containing the settings.
+        :param settings: Persistence object containing the settings.
         :param data_file: Dictionary containing the AOIs (GeoJSON).
         """
 
-        super(SentinelAPI, self).__init__(config_file, data_file)
+        super(SentinelAPI, self).__init__(settings, data_file)
 
         self.config = None
         self.catalog = None
@@ -42,25 +43,7 @@ class SentinelAPI(BaseAPI):
 
         self.requests = dict()
 
-        self.evalscript = """
-            //VERSION=3
-            function setup() {
-                return {
-                    input: [{
-                        bands: ["B02", "B03", "B04", "B08"],
-                        units: "DN"
-                    }],
-                    output: {
-                        bands: 4,
-                        sampleType: "INT16"
-                    }
-                };
-            }
-
-            function evaluatePixel(sample) {
-                return [sample.B02, sample.B03, sample.B04, sample.B08];
-            }
-        """
+        self.evalscript = self.generate_evalscript(settings.masking)
 
     def login(self) -> None:
         """
@@ -69,9 +52,9 @@ class SentinelAPI(BaseAPI):
         :return: None
         """
 
-        self.sh_client_id = self.config_file["sentinel_sh_client_id"]
-        self.instance_id = self.config_file["sentinel_instance_id"]
-        self.sh_client_secret = self.config_file["sentinel_sh_client_secret"]
+        self.sh_client_id = self.settings.sentinel_sh_client_id
+        self.instance_id = self.settings.sentinel_instance_id
+        self.sh_client_secret = self.settings.sentinel_sh_client_secret
 
         self.config = SHConfig()
         self.config.sh_client_id = self.sh_client_id
@@ -92,9 +75,7 @@ class SentinelAPI(BaseAPI):
         self.requests.clear()
 
         for feature in self.data_file["features"]:
-            bbox_coords = SentinelAPI.get_bbox_of_polygon(
-                feature["geometry"]["coordinates"][0]
-            )
+            bbox_coords = SentinelAPI.get_bbox_of_polygon(feature["geometry"]["coordinates"][0])
 
             bbox = BBox(bbox=bbox_coords, crs=CRS.POP_WEB)
 
@@ -102,9 +83,7 @@ class SentinelAPI(BaseAPI):
                 DataCollection.SENTINEL2_L2A,
                 bbox=bbox,
                 time=time_interval,
-                query={
-                    "eo:cloud_cover": {"lte": int(self.config_file["max_cloud_cover"])}
-                },
+                query={"eo:cloud_cover": {"lte": int(self.settings.max_cloud_cover)}},
                 fields={
                     "include": [
                         "id",
@@ -122,8 +101,8 @@ class SentinelAPI(BaseAPI):
             for timestamp in reversed(unique_acquisitions):
                 data_folder = "/".join(
                     [
-                        self.config_file["workspace_root_dir"],
-                        self.config_file["download_dir_sentinel-2"],
+                        self.settings.workspace_root_dir,
+                        self.settings.download_dir_sentinel_2,
                         str(feature["properties"]["id"]),
                         dt.datetime.strftime(timestamp, "%Y-%m-%d"),
                     ]
@@ -141,9 +120,7 @@ class SentinelAPI(BaseAPI):
                             ),
                         )
                     ],
-                    responses=[
-                        SentinelHubRequest.output_response("default", MimeType.TIFF)
-                    ],
+                    responses=[SentinelHubRequest.output_response("default", MimeType.TIFF)],
                     bbox=bbox,
                     size=bbox_to_dimensions(bbox, resolution=self.resolution),
                     config=self.config,
@@ -177,6 +154,46 @@ class SentinelAPI(BaseAPI):
                 acquisition[1].save_data()
                 print(feature_id)
                 print(acquisition[1].get_filename_list()[0].split("\\")[0])
+
+    @staticmethod
+    def generate_evalscript(masking: bool) -> str:
+        """
+        Generate evalscript. If masking is enabled, it downloads CLM band and evaluates the pixels based on its value
+
+        :param masking: masking enabled
+        :return: evalscipt to process sentinel data
+        """
+        bands = '["B02", "B03", "B04", "B08"'
+        if masking:
+            bands += ', "CLM"'
+        bands += "]"
+        clm_check = """
+                        if (sample.CLM == 1) {
+                          return [NaN, NaN, NaN, NaN];
+                        }
+                        """
+
+        evalscript = f"""
+                    //VERSION=3
+                    function setup() {{
+                        return {{
+                            input: [{{
+                                bands: {bands},
+                                units: "DN"
+                            }}],
+                            output: {{
+                                bands: 4,
+                                sampleType: "INT16"
+                            }}
+                        }};
+                    }}
+    
+                    function evaluatePixel(sample) {{
+                        { clm_check if masking else ''}
+                        return [sample.B02, sample.B03, sample.B04, sample.B08];
+                    }}
+                """
+        return evalscript
 
     @staticmethod
     def get_bbox_of_polygon(polygon_coords: List[List[int]]) -> List[int]:

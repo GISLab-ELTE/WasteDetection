@@ -2,18 +2,32 @@
 
 ## Running the application in Docker Container
 
-1. **Build image:** `docker build -t server_app .`
-2. **Run container:** `docker run -it --name server_app_container --mount type=bind,source="$(pwd)"/docker/config.docker.json,target=/mnt/config.docker.json,readonly --mount type=bind,source={YOUR OUTPUT DIRECTORY},target=/mnt/output server_app [startup] [sleep]`
-   - `startup`: Starts a startup process before the main loop.
-   - `sleep`: Sleeps after execution until the previously set local time.
+1. **Open CMD:** navigate to repository folder.
+2. **Build image:** `docker build -t server_app .`
+3. **Run container:**
+
+   ```bash
+      docker run -it --name server_app_container \
+        --mount type=bind,source="$(pwd)"/docker/config.docker.json,target=/mnt/config.docker.json,readonly \
+        --mount type=bind,source={YOUR OUTPUT DIRECTORY},target=/mnt/output \
+        server_app [download-init|download-update] [classify]
+   ```
+
+   Options:
+
+   - `download-init`: Initialize image database: Download all the images on the given time interval.
+   - `download-update`: Download new images. Cannot be used with `download-init`.
+   - `classify`: Execute classification (does not download images).
 
 ## Running the application
 
-1. **Create the virtual environment:** `conda env create -f environment.yml`. The name of the new environment will be `WasteDetectionServerApp`.
-2. **Activate environment:** `conda activate WasteDetectionServerApp`.
-3. **Run the application:** `python __main__.py (-st) (-s)` There are two flags that can be used optionally:
-   - `-st`: Starts a startup process before the main loop.
-   - `-s`: Sleeps after execution until the previously set local time.
+1. **Open _Anaconda Prompt_:** navigate to repository folder.
+2. **Create the virtual environment:** `conda env create -f environment.yml`. The name of the new environment will be `WasteDetection`.
+3. **Activate environment:** `conda activate WasteDetection`.
+4. **Run the application:** `python run_server_app.py [--download-init|--download-update] [--classify]` There are 3 flags that can be used, at least 1 must be given.
+   - `--download-init`: Initialize image database: Download all the images on the given time interval.
+   - `--download-update`: Download new images. Cannot be used with `--download-init`.
+   - `--classify`: Execute classification (does not download images).
 
 ## Configuration
 
@@ -21,9 +35,9 @@ Meaning of the parameters in `config.sample.json` file:
 
 - `workspace_root_dir`: Root directory of workspace.
 - `download_dir_planetscope`: Download destination of PlanetScope images. Relative to `workspace_root_dir`.
-- `download_dir_sentinel-2`: Download destination of Sentinel-2 images. Relative to `workspace_root_dir`.
+- `download_dir_sentinel_2`: Download destination of Sentinel-2 images. Relative to `workspace_root_dir`.
 - `result_dir_planetscope`: Output directory of result GeoJSON files created from PlanetScope images. Relative to `workspace_root_dir`.
-- `result_dir_sentinel-2`: Output directory of result GeoJSON files created from Sentinel-2 images. Relative to `workspace_root_dir`.
+- `result_dir_sentinel_2`: Output directory of result GeoJSON files created from Sentinel-2 images. Relative to `workspace_root_dir`.
 - `estimations_file_path`: Path of the file that will contain the estimation of the polluted areas' extension. Relative to `workspace_root_dir`.
 - `geojson_files_path`: Path of the dynamically produced JSON file that stores the location of the result GeoJSONs. Relative to `workspace_root_dir`.
 - `satellite_images_path`: Path of the dynamically produced JSON file that stores the location of the downloaded satellite images. Relative to `workspace_root_dir`.
@@ -35,6 +49,7 @@ Meaning of the parameters in `config.sample.json` file:
 - `data_file_path`: Path of the GeoJSON file containing the AOIs.
 - `observation_span_in_days`: Number of days to analyze.
 - `max_cloud_cover`: Cloud coverage in percentage.
+- `min_coverage`: Minimum image coverage in percentage.
 - `clf_path`: Path of Random Forest classifier.
 - `clf_id`: The Id of the Random Forest classifier.
 - `classification_postfix`: File name postfix of classified image.
@@ -62,5 +77,20 @@ Meaning of the parameters in `config.sample.json` file:
 - `planetscope_green`: The index of the Green band on the PlanetScope image.
 - `planetscope_red`: The index of the Red band on the PlanetScope image.
 - `planetscope_nir`: The index of the NIR band on the PlanetScope image.
+- `masking`: Turn water and cloud masking on.
+- `udm2_eliminator`: The value to mask out in UDM2 cloud masking.
+- `udm2_masking_bands`: List of UDM2 bands to use in cloud masking.
+- `invert_water_mask`: Inverts created water mask.
+- `open_kernel`: The size of the ellíptic kernel in pixel, used for morphologically opening the water mask.
+- `close_kernel`: The size of the ellíptic kernel in pixel. Used for morphologically closing the water mask.
+- `dilute_kernel`: The size of the ellíptic kernel in pixel. Used for morphologically diluting the water mask.
+- `minimum_confidence`: The minimum confidence above which the program accepts an udm2 mask value.
+- `planetscope_udm2_clear`: The index of the Clear band on the PlanetScope UDM2 image.
+- `planetscope_udm2_snow`: The index of the Snow band on the PlanetScope UDM2 image.
+- `planetscope_udm2_cloud_shadow`: The index of the Cloud Shadow band on the PlanetScope UDM2 image.
+- `planetscope_udm2_light_haze`: The index of the Light Haze band on the PlanetScope UDM2 image.
+- `planetscope_udm2_heavy_haze`: The index of the Heavy Haze band on the PlanetScope UDM2 image.
+- `planetscope_udm2_cloud`: The index of the Cloud band on the PlanetScope UDM2 image.
+- `planetscope_udm2_confidence`: The index of the Confidence band on the PlanetScope UDM2 image.
 
 These values can be overridden if you create a `config.local.json` file in the `resources` folder. In this it is enough to include the fields that you want to change the value of.

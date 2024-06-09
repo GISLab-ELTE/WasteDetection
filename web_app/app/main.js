@@ -22,11 +22,11 @@ import Overlay from "ol/Overlay.js";
 const baseUrl = import.meta.env.VITE_DATA_URL;
 const bingKey =
   "AgKv8E2vHuEwgddyzg_pRM6ycSRygeePXSFYTqc8jbikPT8ILyQxm1EF3YUmeRQ2";
-const kiskoreBbox = [2283300, 6021945, 2284684, 6023968];
-const kanyahazaBbox = [2588995, 6087354, 2597328, 6091368];
-const pusztazamorBbox = [2090012, 6002140, 2095385, 6005579];
-const rahobBox = [2693024, 6114066, 2693905, 6114776];
-const drawType = "Polygon";
+const kiskore_bbox = [2283300, 6021945, 2284684, 6023968];
+const kanyahaza_bbox = [2588995, 6087354, 2597328, 6091368];
+const pusztazamor_bbox = [2090012, 6002140, 2095385, 6005579];
+const raho_bbox = [2693024, 6114066, 2693905, 6114776];
+const drina_bbox = [2145189, 5426572, 2147977, 5430040];
 
 // Variables
 var geojsonLayerGroup;
@@ -315,13 +315,15 @@ const changeAOI = function () {
   setAOILayers();
 
   if (aoi == "Kiskore") {
-    aoiBbox = kiskoreBbox;
+    aoiBbox = kiskore_bbox;
   } else if (aoi == "Kanyahaza") {
-    aoiBbox = kanyahazaBbox;
+    aoiBbox = kanyahaza_bbox;
   } else if (aoi == "Pusztazamor") {
-    aoiBbox = pusztazamorBbox;
+    aoiBbox = pusztazamor_bbox;
   } else if (aoi == "Raho") {
-    aoiBbox = rahobBox;
+    aoiBbox = raho_bbox;
+  } else if (aoi == "Drina") {
+    aoiBbox = drina_bbox;
   } else {
     aoiBbox = null;
   }

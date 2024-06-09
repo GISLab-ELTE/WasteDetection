@@ -1,7 +1,6 @@
 import os
 import math
 import rasterio
-from model import model
 import traceback
 import threading
 import numpy as np
@@ -13,7 +12,7 @@ import desktop_app.src.view as view
 from osgeo import gdal
 from model import model
 from model.exceptions import *
-from tkinter import Image, filedialog as fd
+from tkinter import filedialog as fd
 from ttkbootstrap.constants import *
 from matplotlib.figure import Figure
 from typing import Union, List, TextIO, Tuple, Set
@@ -41,9 +40,7 @@ class Controller(object):
         self._view = view_instance
         self._model = model_instance
 
-        self._view.training_view.set_classification_mode(
-            self._model.classification_mode
-        )
+        self._view.training_view.set_classification_mode(self._model.classification_mode)
 
         self._bind_commands()
 
@@ -67,40 +64,18 @@ class Controller(object):
         :return: None
         """
 
-        self._sentinel_func = self._view.settings_view.register(
-            Controller._validate_sentinel_band
-        )
-        self._decision_tree_func = self._view.settings_view.register(
-            Controller._validate_decision_tree_number
-        )
-        self._morphology_func = self._view.settings_view.register(
-            Controller._validate_morphology
-        )
-        self._heatmap_func = self._view.settings_view.register(
-            Controller._validate_heatmap
-        )
-        self._settings_mc_id_func = self._view.settings_view.register(
-            Controller._validate_settings_mc_id
-        )
-        self._heatmap_section_func = self._view.settings_view.register(
-            Controller._validate_heatmap_sections
-        )
-        self._working_dir_func = self._view.settings_view.register(
-            Controller._validate_working_dir
-        )
-        self._file_path_func = self._view.settings_view.register(
-            Controller._validate_file_path
-        )
-        self._file_extension_func = self._view.settings_view.register(
-            Controller._validate_file_extension
-        )
-        self._postfix_func = self._view.settings_view.register(
-            Controller._validate_postfix
-        )
+        self._sentinel_func = self._view.settings_view.register(Controller._validate_sentinel_band)
+        self._decision_tree_func = self._view.settings_view.register(Controller._validate_decision_tree_number)
+        self._morphology_func = self._view.settings_view.register(Controller._validate_morphology)
+        self._heatmap_func = self._view.settings_view.register(Controller._validate_heatmap)
+        self._settings_c_id_func = self._view.settings_view.register(Controller._validate_settings_c_id)
+        self._heatmap_section_func = self._view.settings_view.register(Controller._validate_heatmap_sections)
+        self._working_dir_func = self._view.settings_view.register(Controller._validate_working_dir)
+        self._file_path_func = self._view.settings_view.register(Controller._validate_file_path)
+        self._file_extension_func = self._view.settings_view.register(Controller._validate_file_extension)
+        self._postfix_func = self._view.settings_view.register(Controller._validate_postfix)
         self._alpha_func = self._view.training_view.register(Controller._validate_alpha)
-        self._training_mc_id_func = self._view.training_view.register(
-            Controller._validate_training_mc_id
-        )
+        self._training_c_id_func = self._view.training_view.register(Controller._validate_training_c_id)
 
     def _register_invalidator_functions(self) -> None:
         """
@@ -109,39 +84,17 @@ class Controller(object):
         :return: None
         """
 
-        self._invalid_sentinel_band_func = self._view.settings_view.register(
-            self._invalid_sentinel_band
-        )
-        self._invalid_decision_tree_number_func = self._view.settings_view.register(
-            self._invalid_decision_tree_number
-        )
-        self._invalid_morphology_func = self._view.settings_view.register(
-            self._invalid_morphology
-        )
-        self._invalid_iterations_func = self._view.settings_view.register(
-            self._invalid_iterations
-        )
-        self._invalid_heatmap_sections_func = self._view.settings_view.register(
-            self._invalid_heatmap_sections
-        )
-        self._invalid_heatmap_func = self._view.settings_view.register(
-            self._invalid_heatmap
-        )
-        self._invalid_settings_mc_id_func = self._view.settings_view.register(
-            self._invalid_settings_mc_id
-        )
-        self._invalid_working_dir_func = self._view.settings_view.register(
-            self._invalid_working_dir
-        )
-        self._invalid_file_path_func = self._view.settings_view.register(
-            self._invalid_file_path
-        )
-        self._invalid_file_extension_func = self._view.settings_view.register(
-            self._invalid_file_extension
-        )
-        self._invalid_postfix_func = self._view.settings_view.register(
-            self._invalid_postfix
-        )
+        self._invalid_sentinel_band_func = self._view.settings_view.register(self._invalid_sentinel_band)
+        self._invalid_decision_tree_number_func = self._view.settings_view.register(self._invalid_decision_tree_number)
+        self._invalid_morphology_func = self._view.settings_view.register(self._invalid_morphology)
+        self._invalid_iterations_func = self._view.settings_view.register(self._invalid_iterations)
+        self._invalid_heatmap_sections_func = self._view.settings_view.register(self._invalid_heatmap_sections)
+        self._invalid_heatmap_func = self._view.settings_view.register(self._invalid_heatmap)
+        self._invalid_settings_c_id_func = self._view.settings_view.register(self._invalid_settings_c_id)
+        self._invalid_working_dir_func = self._view.settings_view.register(self._invalid_working_dir)
+        self._invalid_file_path_func = self._view.settings_view.register(self._invalid_file_path)
+        self._invalid_file_extension_func = self._view.settings_view.register(self._invalid_file_extension)
+        self._invalid_postfix_func = self._view.settings_view.register(self._invalid_postfix)
 
     def _view_bind_commands(self) -> None:
         """
@@ -152,64 +105,40 @@ class Controller(object):
 
         self._view.add_files_btn.configure(command=self._view_open_files)
         self._view.delete_files_btn.configure(command=self._view_delete_files)
-        self._view.start_process_btn.configure(
-            command=self._view_start_processing_on_separate_thread
-        )
+        self._view.start_process_btn.configure(command=self._view_start_processing_on_separate_thread)
         self._view.train_rf_btn.configure(command=self._view_open_train_rf_window)
         self._view.coord_btn.configure(command=self._view_save_coords)
         self._view.estimate_area_btn.configure(command=self._view_estimate_garbage_area)
         self._view.menubar.add_command(label="Settings", command=self._settings_show)
         self._view.menubar.add_command(label="About", command=self._show_about)
 
-        self._view.opened_files_lb.bind(
-            "<<ListboxSelect>>", self._view_listbox_item_selected
-        )
-        self._view.left_canvas.canvas.bind(
-            "<ButtonPress-3>", self._view_left_canvas_move_from
-        )
-        self._view.left_canvas.canvas.bind(
-            "<B3-Motion>", self._view_left_canvas_move_to
-        )
+        self._view.opened_files_lb.bind("<<ListboxSelect>>", self._view_listbox_item_selected)
+        self._view.left_canvas.canvas.bind("<ButtonPress-3>", self._view_left_canvas_move_from)
+        self._view.left_canvas.canvas.bind("<B3-Motion>", self._view_left_canvas_move_to)
         self._view.left_canvas.canvas.bind("<MouseWheel>", self._view_left_canvas_wheel)
-        self._view.right_canvas.canvas.bind(
-            "<ButtonPress-3>", self._view_right_canvas_move_from
-        )
-        self._view.right_canvas.canvas.bind(
-            "<B3-Motion>", self._view_right_canvas_move_to
-        )
-        self._view.right_canvas.canvas.bind(
-            "<MouseWheel>", self._view_right_canvas_wheel
-        )
+        self._view.right_canvas.canvas.bind("<ButtonPress-3>", self._view_right_canvas_move_from)
+        self._view.right_canvas.canvas.bind("<B3-Motion>", self._view_right_canvas_move_to)
+        self._view.right_canvas.canvas.bind("<MouseWheel>", self._view_right_canvas_wheel)
 
         self._view.vars["process_menu"].trace(
             "w",
-            lambda name, index, mode, sv=self._view.vars[
-                "process_menu"
-            ]: self._view_change_process_btn_text(),
+            lambda name, index, mode, sv=self._view.vars["process_menu"]: self._view_change_process_btn_text(),
         )
         self._view.vars["heatmap_toggle"].trace(
             "w",
-            lambda name, index, mode, sv=self._view.vars[
-                "heatmap_toggle"
-            ]: self._view_toggle_heatmap(),
+            lambda name, index, mode, sv=self._view.vars["heatmap_toggle"]: self._view_toggle_heatmap(),
         )
         self._view.vars["heatmap_high"].trace(
             "w",
-            lambda name, index, mode, sv=self._view.vars[
-                "heatmap_high"
-            ]: self._view_toggle_heatmap(),
+            lambda name, index, mode, sv=self._view.vars["heatmap_high"]: self._view_toggle_heatmap(),
         )
         self._view.vars["heatmap_medium"].trace(
             "w",
-            lambda name, index, mode, sv=self._view.vars[
-                "heatmap_medium"
-            ]: self._view_toggle_heatmap(),
+            lambda name, index, mode, sv=self._view.vars["heatmap_medium"]: self._view_toggle_heatmap(),
         )
         self._view.vars["heatmap_low"].trace(
             "w",
-            lambda name, index, mode, sv=self._view.vars[
-                "heatmap_low"
-            ]: self._view_toggle_heatmap(),
+            lambda name, index, mode, sv=self._view.vars["heatmap_low"]: self._view_toggle_heatmap(),
         )
 
     def _settings_bind_commands(self) -> None:
@@ -221,9 +150,7 @@ class Controller(object):
 
         for i in range(len(self._view.settings_view.color_buttons)):
             self._view.settings_view.color_buttons[i].configure(
-                command=lambda b=self._view.settings_view.color_buttons[
-                    i
-                ]: self._settings_color_btn_clicked(b)
+                command=lambda b=self._view.settings_view.color_buttons[i]: self._settings_color_btn_clicked(b)
             )
 
         self._view.settings_view.sentinel_blue_spinbox.configure(
@@ -292,16 +219,16 @@ class Controller(object):
             invalidcommand=self._invalid_heatmap_func,
         )
 
-        self._view.settings_view.garbage_mc_id_spinbox.configure(
+        self._view.settings_view.garbage_c_id_spinbox.configure(
             validate="focusout",
-            validatecommand=(self._settings_mc_id_func, "%P"),
-            invalidcommand=self._invalid_settings_mc_id_func,
+            validatecommand=(self._settings_c_id_func, "%P"),
+            invalidcommand=self._invalid_settings_c_id_func,
         )
 
-        self._view.settings_view.water_mc_id_spinbox.configure(
+        self._view.settings_view.water_c_id_spinbox.configure(
             validate="focusout",
-            validatecommand=(self._settings_mc_id_func, "%P"),
-            invalidcommand=self._invalid_settings_mc_id_func,
+            validatecommand=(self._settings_c_id_func, "%P"),
+            invalidcommand=self._invalid_settings_c_id_func,
         )
 
         self._view.settings_view.working_dir_entry.configure(
@@ -376,9 +303,7 @@ class Controller(object):
             invalidcommand=self._invalid_postfix_func,
         )
 
-        self._view.settings_view.working_dir_browse_btn.configure(
-            command=self._settings_working_dir_browse_directory
-        )
+        self._view.settings_view.working_dir_browse_btn.configure(command=self._settings_working_dir_browse_directory)
         self._view.settings_view.hotspot_rf_browse_btn.configure(
             command=lambda b="hotspot": self._settings_browse_file(b)
         )
@@ -386,13 +311,9 @@ class Controller(object):
             command=lambda b="floating": self._settings_browse_file(b)
         )
         self._view.settings_view.ok_btn.configure(command=self._settings_on_ok)
-        self._view.settings_view.cancel_btn.configure(
-            command=self._view.settings_view.hide
-        )
+        self._view.settings_view.cancel_btn.configure(command=self._view.settings_view.hide)
 
-        self._view.settings_view.protocol(
-            "WM_DELETE_WINDOW", self._view.settings_view.hide
-        )
+        self._view.settings_view.protocol("WM_DELETE_WINDOW", self._view.settings_view.hide)
 
     def _training_bind_commands(self) -> None:
         """
@@ -401,67 +322,33 @@ class Controller(object):
         :return: None
         """
 
-        self._view.training_view.classification_mode_btn.configure(
-            command=self._training_toggle_classification_mode
-        )
+        self._view.training_view.classification_mode_btn.configure(command=self._training_toggle_classification_mode)
         self._view.training_view.back_btn.configure(command=self._training_on_closing)
-        self._view.training_view.open_input_img_btn.configure(
-            command=self._training_open_files
-        )
-        self._view.training_view.delete_input_img_btn.configure(
-            command=self._training_delete_files
-        )
+        self._view.training_view.open_input_img_btn.configure(command=self._training_open_files)
+        self._view.training_view.delete_input_img_btn.configure(command=self._training_delete_files)
         self._view.training_view.add_btn.configure(command=self._training_add_new)
         self._view.training_view.delete_btn.configure(command=self._training_delete)
-        self._view.training_view.training_btn.configure(
-            command=self._training_start_on_separate_thread
-        )
-        self._view.training_view.color_btn.configure(
-            command=self._training_change_color_btn_color
-        )
-        self._view.training_view.save_btn.configure(
-            command=self._training_save_classification_data
-        )
+        self._view.training_view.training_btn.configure(command=self._training_start_on_separate_thread)
+        self._view.training_view.color_btn.configure(command=self._training_change_color_btn_color)
+        self._view.training_view.save_btn.configure(command=self._training_save_classification_data)
 
-        self._view.training_view.mc_input.configure(
-            validate="all", validatecommand=(self._alpha_func, "%P")
-        )
-        self._view.training_view.mc_spinbox.configure(
-            validate="all", validatecommand=(self._training_mc_id_func, "%P")
-        )
+        self._view.training_view.c_input.configure(validate="all", validatecommand=(self._alpha_func, "%P"))
+        self._view.training_view.c_spinbox.configure(validate="all", validatecommand=(self._training_c_id_func, "%P"))
 
         self._set_classification_mode_mouse_handlers(self._model.classification_mode)
-        self._view.training_view.zoom_canvas.canvas.bind(
-            "<ButtonPress-1>", self._training_place_point_on_canvas
-        )
-        self._view.training_view.zoom_canvas.canvas.bind(
-            "<ButtonPress-2>", self._training_place_polygon_on_canvas
-        )
-        self._view.training_view.zoom_canvas.canvas.bind(
-            "<ButtonPress-3>", self._training_canvas_move_from
-        )
-        self._view.training_view.zoom_canvas.canvas.bind(
-            "<B3-Motion>", self._training_canvas_move_to
-        )
-        self._view.training_view.zoom_canvas.canvas.bind(
-            "<MouseWheel>", self._training_canvas_wheel
-        )
+        self._view.training_view.zoom_canvas.canvas.bind("<ButtonPress-1>", self._training_place_point_on_canvas)
+        self._view.training_view.zoom_canvas.canvas.bind("<ButtonPress-2>", self._training_place_polygon_on_canvas)
+        self._view.training_view.zoom_canvas.canvas.bind("<ButtonPress-3>", self._training_canvas_move_from)
+        self._view.training_view.zoom_canvas.canvas.bind("<B3-Motion>", self._training_canvas_move_to)
+        self._view.training_view.zoom_canvas.canvas.bind("<MouseWheel>", self._training_canvas_wheel)
 
-        self._view.training_view.treeview.bind(
-            "<<TreeviewSelect>>", self._training_treeview_item_selected
-        )
+        self._view.training_view.treeview.bind("<<TreeviewSelect>>", self._training_treeview_item_selected)
         self._view.training_view.treeview.bind("<Motion>", lambda event: "break")
-        self._view.training_view.treeview.bind(
-            "<Button-1>", self._training_disable_treeview_column_resizing
-        )
-        self._view.training_view.treeview.bind(
-            "<Double-Button-1>", lambda event: "break"
-        )
+        self._view.training_view.treeview.bind("<Button-1>", self._training_disable_treeview_column_resizing)
+        self._view.training_view.treeview.bind("<Double-Button-1>", lambda event: "break")
         self._view.training_view.treeview.bind("<Key>", lambda event: "break")
         self._view.training_view.treeview.bind("<Return>", lambda event: "break")
-        self._view.training_view.opened_files_lb.bind(
-            "<<ListboxSelect>>", self._training_listbox_item_selected
-        )
+        self._view.training_view.opened_files_lb.bind("<<ListboxSelect>>", self._training_listbox_item_selected)
 
         self._view.training_view.protocol("WM_DELETE_WINDOW", self._training_on_closing)
 
@@ -471,6 +358,7 @@ class Controller(object):
 
         :return: None
         """
+
         self._register_validator_functions()
         self._register_invalidator_functions()
 
@@ -538,9 +426,7 @@ class Controller(object):
                         img_or_array=classification,
                         image_type="classified",
                         satellite_rgb=satellite_rgb,
-                        color_map=self._model.get_classification_color_map(
-                            classification
-                        ),
+                        color_map=self._model.get_classification_color_map(classification),
                     )
                     self._view.right_img_lf.configure(text="Classified image")
                 elif toggle_var == 1:
@@ -549,9 +435,7 @@ class Controller(object):
                         img_or_array=heatmap,
                         image_type="heatmap",
                         satellite_rgb=satellite_rgb,
-                        color_map=self._model.get_heatmap_color_map(
-                            heatmap, heatmap_color
-                        ),
+                        color_map=self._model.get_heatmap_color_map(heatmap, heatmap_color),
                     )
                     self._view.right_img_lf.configure(text="Heatmap image")
             else:
@@ -586,9 +470,7 @@ class Controller(object):
                         img_or_array=before,
                         image_type="heatmap",
                         satellite_rgb=satellite_rgb,
-                        color_map=self._model.get_heatmap_color_map(
-                            before, heatmap_color
-                        ),
+                        color_map=self._model.get_heatmap_color_map(before, heatmap_color),
                     )
                     self._view.left_img_lf.configure(text="Result image 1")
 
@@ -597,9 +479,7 @@ class Controller(object):
                         img_or_array=after,
                         image_type="heatmap",
                         satellite_rgb=satellite_rgb,
-                        color_map=self._model.get_heatmap_color_map(
-                            after, heatmap_color
-                        ),
+                        color_map=self._model.get_heatmap_color_map(after, heatmap_color),
                     )
                     self._view.right_img_lf.configure(text="Result image 2")
             else:
@@ -653,9 +533,7 @@ class Controller(object):
             tkinter.messagebox.showerror(
                 parent=self._view.opened_files_lb,
                 title="File opening",
-                message="There were too large images! The limit is "
-                + str(MAX_PIXEL_COUNT)
-                + " pixels. "
+                message="There were too large images! The limit is " + str(MAX_PIXEL_COUNT) + " pixels. "
                 "These were not added.",
             )
 
@@ -739,9 +617,7 @@ class Controller(object):
             )
             return
 
-        process_thread = threading.Thread(
-            target=self._view_start_processing, daemon=True
-        )
+        process_thread = threading.Thread(target=self._view_start_processing, daemon=True)
         process_thread.start()
 
     def _view_start_processing(self) -> None:
@@ -869,17 +745,13 @@ class Controller(object):
 
                     file = self._save_file("geojson")
                     if file:
-                        self._model.create_garbage_bbox_geojson(
-                            heatmap, file, search_values
-                        )
+                        self._model.create_garbage_bbox_geojson(heatmap, file, search_values)
                         file.close()
 
                 else:
                     file = self._save_file("geojson")
                     if file:
-                        self._model.create_garbage_bbox_geojson(
-                            classification, file, [100]
-                        )
+                        self._model.create_garbage_bbox_geojson(classification, file, [100])
                         file.close()
 
     def _view_estimate_garbage_area(self) -> None:
@@ -915,19 +787,10 @@ class Controller(object):
                     classification = model_result_files[index][0]
                     heatmap = model_result_files[index][1]
 
-                    garbage_c_id = self._model.persistence.garbage_mc_id
-                    classified_area = model.Model.estimate_garbage_area(
-                        classification, "classified", garbage_c_id
-                    )
-                    low_area = model.Model.estimate_garbage_area(
-                        heatmap, "heatmap", garbage_c_id, (True, False, False)
-                    )
-                    medium_area = model.Model.estimate_garbage_area(
-                        heatmap, "heatmap", garbage_c_id, (False, True, False)
-                    )
-                    high_area = model.Model.estimate_garbage_area(
-                        heatmap, "heatmap", garbage_c_id, (False, False, True)
-                    )
+                    classified_area = self._model.estimate_garbage_area(classification, "classified")
+                    low_area = self._model.estimate_garbage_area(heatmap, "heatmap", "low")
+                    medium_area = self._model.estimate_garbage_area(heatmap, "heatmap", "medium")
+                    high_area = self._model.estimate_garbage_area(heatmap, "heatmap", "high")
                     values = [classified_area, low_area, medium_area, high_area]
 
                     if all([not (val is None) for val in values]):
@@ -946,9 +809,7 @@ class Controller(object):
                         )
                         plot.bar_label(vals, padding=3)
                         plot.set_ymargin(0.125)
-                        x_label_prefix = (
-                            "..." if len(view_selected_files[i]) > 50 else ""
-                        )
+                        x_label_prefix = "..." if len(view_selected_files[i]) > 50 else ""
                         plot.set_xlabel(x_label_prefix + view_selected_files[i][-50:])
                         plot.set_ylabel("Area - m2 * 1000")
 
@@ -965,9 +826,7 @@ class Controller(object):
                 canvas.draw()
                 canvas.get_tk_widget().pack(fill="both", expand=True)
         elif file_count > 9:
-            tkinter.messagebox.showerror(
-                parent=self._view, title="Error", message="Too many images selected!"
-            )
+            tkinter.messagebox.showerror(parent=self._view, title="Error", message="Too many images selected!")
 
     def _view_open_train_rf_window(self) -> None:
         """
@@ -1017,19 +876,16 @@ class Controller(object):
                     index = model_source_files.index(selected_file)
                     classification = model_result_files[index][0]
 
+                    self._view.clear_canvas("right")
                     self._view.show_image_on_canvas(
                         canvas_name="right",
                         img_or_array=classification,
                         image_type="classified",
                         satellite_rgb=satellite_rgb,
-                        color_map=self._model.get_classification_color_map(
-                            classification
-                        ),
+                        color_map=self._model.get_classification_color_map(classification),
                     )
 
                     self._view.right_img_lf.configure(text="Classified image")
-                else:
-                    self._view.clear_canvas("right")
             else:
                 self._view.clear_canvas("left")
                 self._view.clear_canvas("right")
@@ -1041,6 +897,7 @@ class Controller(object):
                 selected_file_1 = view_selected_files[0]
                 selected_file_2 = view_selected_files[1]
 
+                self._view.clear_canvas("left")
                 self._view.show_image_on_canvas(
                     canvas_name="left",
                     img_or_array=selected_file_1,
@@ -1050,6 +907,7 @@ class Controller(object):
 
                 self._view.left_img_lf.configure(text="Source image 1")
 
+                self._view.clear_canvas("right")
                 self._view.show_image_on_canvas(
                     canvas_name="right",
                     img_or_array=selected_file_2,
@@ -1144,13 +1002,9 @@ class Controller(object):
         model_result_files = list()
 
         if process_id == 1 or process_id == 2:
-            model_source_files += [
-                source_file
-                for (source_file, classification, heatmap) in model_source_result_files
-            ]
+            model_source_files += [source_file for (source_file, classification, heatmap) in model_source_result_files]
             model_result_files += [
-                (classification, heatmap)
-                for (source_file, classification, heatmap) in model_source_result_files
+                (classification, heatmap) for (source_file, classification, heatmap) in model_source_result_files
             ]
         elif process_id == 3:
             model_source_files += [
@@ -1181,9 +1035,7 @@ class Controller(object):
         :return: None
         """
 
-        selected_folder = fd.askdirectory(
-            parent=self._view.settings_view, initialdir="./"
-        )
+        selected_folder = fd.askdirectory(parent=self._view.settings_view, initialdir="./")
 
         if len(selected_folder) > 0:
             self._view.settings_view.working_dir_entry.delete(0, END)
@@ -1221,9 +1073,7 @@ class Controller(object):
         :return: all valid
         """
 
-        settings_widgets = Controller._get_all_children_of_widget(
-            self._view.settings_view
-        )
+        settings_widgets = Controller._get_all_children_of_widget(self._view.settings_view)
 
         for widget in settings_widgets:
             if isinstance(widget, ttk.Spinbox) or isinstance(widget, ttk.Entry):
@@ -1254,8 +1104,8 @@ class Controller(object):
         heatmap_high = int(self._view.settings_view.heatmap_high_spinbox.get())
         heatmap_medium = int(self._view.settings_view.heatmap_medium_spinbox.get())
         heatmap_low = int(self._view.settings_view.heatmap_low_spinbox.get())
-        garbage_mc_id = int(self._view.settings_view.garbage_mc_id_spinbox.get())
-        water_mc_id = int(self._view.settings_view.water_mc_id_spinbox.get())
+        garbage_c_id = int(self._view.settings_view.garbage_c_id_spinbox.get())
+        water_c_id = int(self._view.settings_view.water_c_id_spinbox.get())
 
         bands_and_indices = [
             "blue",
@@ -1280,12 +1130,10 @@ class Controller(object):
         if not (satellite_type in [1, 2]):
             error_message += "The Satellite type must be set!"
         elif len(np.unique([blue_value, green_value, red_value, nir_value])) != 4:
-            error_message += (
-                "The Sentinel-2 settings must not contain identical values!"
-            )
+            error_message += "The Sentinel-2 settings must not contain identical values!"
         elif not (heatmap_low < heatmap_medium < heatmap_high):
             error_message += "The Heatmap probabilities must be in ascending order: low < medium < high!"
-        elif garbage_mc_id == water_mc_id:
+        elif garbage_c_id == water_c_id:
             error_message += "Garbage Class ID must not be equal to Water Class ID!"
         elif sum(values) == 0:
             error_message += "There must be at least one Training label selected!"
@@ -1299,9 +1147,7 @@ class Controller(object):
         if self._view.settings_view.state() != "normal" and len(error_message) > 0:
             return False
         elif self._view.settings_view.state() == "normal" and len(error_message) > 0:
-            tkinter.messagebox.showerror(
-                "Settings value error", error_message, parent=self._view.settings_view
-            )
+            tkinter.messagebox.showerror("Settings value error", error_message, parent=self._view.settings_view)
             return False
         else:
             return True
@@ -1324,20 +1170,14 @@ class Controller(object):
 
         # Value settings
         n_estimators = int(self._view.settings_view.training_estimators_entry.get())
-        morphology_matrix_size = int(
-            self._view.settings_view.morphology_matrix_spinbox.get()
-        )
-        morphology_iterations = int(
-            self._view.settings_view.morphology_iterations_spinbox.get()
-        )
-        washed_up_heatmap_sections = int(
-            self._view.settings_view.washed_up_heatmap_sections_spinbox.get()
-        )
+        morphology_matrix_size = int(self._view.settings_view.morphology_matrix_spinbox.get())
+        morphology_iterations = int(self._view.settings_view.morphology_iterations_spinbox.get())
+        washed_up_heatmap_sections = int(self._view.settings_view.washed_up_heatmap_sections_spinbox.get())
         heatmap_high = int(self._view.settings_view.heatmap_high_spinbox.get())
         heatmap_medium = int(self._view.settings_view.heatmap_medium_spinbox.get())
         heatmap_low = int(self._view.settings_view.heatmap_low_spinbox.get())
-        garbage_mc_id = int(self._view.settings_view.garbage_mc_id_spinbox.get())
-        water_mc_id = int(self._view.settings_view.water_mc_id_spinbox.get())
+        garbage_c_id = int(self._view.settings_view.garbage_c_id_spinbox.get())
+        water_c_id = int(self._view.settings_view.water_c_id_spinbox.get())
 
         # Path settings
         working_dir = self._view.settings_view.working_dir_entry.get()
@@ -1346,30 +1186,14 @@ class Controller(object):
 
         # File settings
         file_extension = self._view.settings_view.file_extension_entry.get()
-        hotspot_classified_postfix = (
-            self._view.settings_view.hotspot_classified_postfix_entry.get()
-        )
-        hotspot_heatmap_postfix = (
-            self._view.settings_view.hotspot_heatmap_postfix_entry.get()
-        )
-        floating_classified_postfix = (
-            self._view.settings_view.floating_classified_postfix_entry.get()
-        )
-        floating_heatmap_postfix = (
-            self._view.settings_view.floating_heatmap_postfix_entry.get()
-        )
-        floating_masked_classified_postfix = (
-            self._view.settings_view.floating_masked_classified_postfix_entry.get()
-        )
-        floating_masked_heatmap_postfix = (
-            self._view.settings_view.floating_masked_heatmap_postfix_entry.get()
-        )
-        washed_up_before_postfix = (
-            self._view.settings_view.washed_up_before_postfix_entry.get()
-        )
-        washed_up_after_postfix = (
-            self._view.settings_view.washed_up_after_postfix_entry.get()
-        )
+        hotspot_classified_postfix = self._view.settings_view.hotspot_classified_postfix_entry.get()
+        hotspot_heatmap_postfix = self._view.settings_view.hotspot_heatmap_postfix_entry.get()
+        floating_classified_postfix = self._view.settings_view.floating_classified_postfix_entry.get()
+        floating_heatmap_postfix = self._view.settings_view.floating_heatmap_postfix_entry.get()
+        floating_masked_classified_postfix = self._view.settings_view.floating_masked_classified_postfix_entry.get()
+        floating_masked_heatmap_postfix = self._view.settings_view.floating_masked_heatmap_postfix_entry.get()
+        washed_up_before_postfix = self._view.settings_view.washed_up_before_postfix_entry.get()
+        washed_up_after_postfix = self._view.settings_view.washed_up_after_postfix_entry.get()
 
         # Training labels
         bands_and_indices = [
@@ -1394,15 +1218,15 @@ class Controller(object):
 
         # Satellite type
         if self._view.settings_view.vars["satellite_rb"].get() == 1:
-            self._model.persistence.satellite_type = "Planet"
+            self._model.persistence.satellite_type = "planetscope"
         elif self._view.settings_view.vars["satellite_rb"].get() == 2:
-            self._model.persistence.satellite_type = "Sentinel-2"
+            self._model.persistence.satellite_type = "sentinel-2"
 
         # Sentinel-2 settings
-        self._model.persistence.sentinel_blue_band = blue_value
-        self._model.persistence.sentinel_green_band = green_value
-        self._model.persistence.sentinel_red_band = red_value
-        self._model.persistence.sentinel_nir_band = nir_value
+        self._model.persistence.sentinel_2_blue = blue_value
+        self._model.persistence.sentinel_2_green = green_value
+        self._model.persistence.sentinel_2_red = red_value
+        self._model.persistence.sentinel_2_nir = nir_value
 
         # Value settings
         self._model.persistence.training_estimators = n_estimators
@@ -1412,8 +1236,8 @@ class Controller(object):
         self._model.persistence.heatmap_high_prob = heatmap_high
         self._model.persistence.heatmap_medium_prob = heatmap_medium
         self._model.persistence.heatmap_low_prob = heatmap_low
-        self._model.persistence.garbage_mc_id = garbage_mc_id
-        self._model.persistence.water_mc_id = water_mc_id
+        self._model.persistence.garbage_c_id = garbage_c_id
+        self._model.persistence.water_c_id = water_c_id
 
         # Path settings
         self._model.persistence.working_dir = working_dir
@@ -1426,16 +1250,10 @@ class Controller(object):
         self._model.persistence.file_extension = file_extension
         self._model.persistence.hotspot_classified_postfix = hotspot_classified_postfix
         self._model.persistence.hotspot_heatmap_postfix = hotspot_heatmap_postfix
-        self._model.persistence.floating_classified_postfix = (
-            floating_classified_postfix
-        )
+        self._model.persistence.floating_classified_postfix = floating_classified_postfix
         self._model.persistence.floating_heatmap_postfix = floating_heatmap_postfix
-        self._model.persistence.floating_masked_classified_postfix = (
-            floating_masked_classified_postfix
-        )
-        self._model.persistence.floating_masked_heatmap_postfix = (
-            floating_masked_heatmap_postfix
-        )
+        self._model.persistence.floating_masked_classified_postfix = floating_masked_classified_postfix
+        self._model.persistence.floating_masked_heatmap_postfix = floating_masked_heatmap_postfix
         self._model.persistence.washed_up_before_postfix = washed_up_before_postfix
         self._model.persistence.washed_up_after_postfix = washed_up_after_postfix
 
@@ -1450,14 +1268,13 @@ class Controller(object):
             self._model.persistence.colors[i] = color
 
         # Save changes
-        self._model.persistence.save_constants()
+        self._model.persistence.save()
         try:
             self._model.load_random_forests()
         except HotspotRandomForestFileException:
             self._view.settings_view.hotspot_rf_entry.delete(0, END)
             self._view.settings_view.hotspot_rf_entry.insert(0, prev_hotspot_rf_path)
             self._model.persistence.hotspot_rf_path = prev_hotspot_rf_path
-            self._model.persistence.save_constants()
             tkinter.messagebox.showerror(
                 parent=self._view.settings_view,
                 message="Could not load Random Forest for Hot-spot detection!\nLoading previous classifier!",
@@ -1467,7 +1284,6 @@ class Controller(object):
             self._view.settings_view.floating_rf_entry.delete(0, END)
             self._view.settings_view.floating_rf_entry.insert(0, prev_floating_rf_path)
             self._model.persistence.floating_rf_path = prev_floating_rf_path
-            self._model.persistence.save_constants()
             tkinter.messagebox.showerror(
                 parent=self._view.settings_view,
                 message="Could not load Random Forest for Floating waste detection!\nLoading previous classifier!",
@@ -1489,27 +1305,27 @@ class Controller(object):
         :return: None
         """
 
-        self._model.persistence.load_constants()
+        self._model.persistence.load()
 
         # Satellite type
-        if self._model.persistence.satellite_type == "Planet":
+        if self._model.persistence.satellite_type.lower() == "planetscope":
             self._view.settings_view.vars["satellite_rb"].set(1)
-        elif self._model.persistence.satellite_type == "Sentinel-2":
+        elif self._model.persistence.satellite_type.lower() == "sentinel-2":
             self._view.settings_view.vars["satellite_rb"].set(2)
         else:
             self._view.settings_view.vars["satellite_rb"].set(0)
 
         # Sentinel-2 settings
-        blue_value = self._model.persistence.sentinel_blue_band
+        blue_value = self._model.persistence.sentinel_2_blue
         self._view.settings_view.sentinel_blue_spinbox.set(blue_value)
 
-        green_value = self._model.persistence.sentinel_green_band
+        green_value = self._model.persistence.sentinel_2_green
         self._view.settings_view.sentinel_green_spinbox.set(green_value)
 
-        red_value = self._model.persistence.sentinel_red_band
+        red_value = self._model.persistence.sentinel_2_red
         self._view.settings_view.sentinel_red_spinbox.set(red_value)
 
-        nir_value = self._model.persistence.sentinel_nir_band
+        nir_value = self._model.persistence.sentinel_2_nir
         self._view.settings_view.sentinel_nir_spinbox.set(nir_value)
 
         # Value settings
@@ -1521,14 +1337,10 @@ class Controller(object):
         self._view.settings_view.morphology_matrix_spinbox.set(morphology_matrix_size)
 
         morphology_iterations = self._model.persistence.morphology_iterations
-        self._view.settings_view.morphology_iterations_spinbox.set(
-            morphology_iterations
-        )
+        self._view.settings_view.morphology_iterations_spinbox.set(morphology_iterations)
 
         washed_up_heatmap_sections = self._model.persistence.washed_up_heatmap_sections
-        self._view.settings_view.washed_up_heatmap_sections_spinbox.set(
-            washed_up_heatmap_sections
-        )
+        self._view.settings_view.washed_up_heatmap_sections_spinbox.set(washed_up_heatmap_sections)
 
         heatmap_high = self._model.persistence.heatmap_high_prob
         self._view.settings_view.heatmap_high_spinbox.set(heatmap_high)
@@ -1539,11 +1351,11 @@ class Controller(object):
         heatmap_low = self._model.persistence.heatmap_low_prob
         self._view.settings_view.heatmap_low_spinbox.set(heatmap_low)
 
-        garbage_mc_id = self._model.persistence.garbage_mc_id
-        self._view.settings_view.garbage_mc_id_spinbox.set(garbage_mc_id)
+        garbage_c_id = self._model.persistence.garbage_c_id
+        self._view.settings_view.garbage_c_id_spinbox.set(garbage_c_id)
 
-        water_mc_id = self._model.persistence.water_mc_id
-        self._view.settings_view.water_mc_id_spinbox.set(water_mc_id)
+        water_c_id = self._model.persistence.water_c_id
+        self._view.settings_view.water_c_id_spinbox.set(water_c_id)
 
         # Path settings
         working_dir = self._model.persistence.working_dir
@@ -1565,97 +1377,53 @@ class Controller(object):
 
         hotspot_classified_postfix = self._model.persistence.hotspot_classified_postfix
         self._view.settings_view.hotspot_classified_postfix_entry.delete(0, END)
-        self._view.settings_view.hotspot_classified_postfix_entry.insert(
-            0, hotspot_classified_postfix
-        )
+        self._view.settings_view.hotspot_classified_postfix_entry.insert(0, hotspot_classified_postfix)
 
         hotspot_heatmap_postfix = self._model.persistence.hotspot_heatmap_postfix
         self._view.settings_view.hotspot_heatmap_postfix_entry.delete(0, END)
-        self._view.settings_view.hotspot_heatmap_postfix_entry.insert(
-            0, hotspot_heatmap_postfix
-        )
+        self._view.settings_view.hotspot_heatmap_postfix_entry.insert(0, hotspot_heatmap_postfix)
 
-        floating_classified_postfix = (
-            self._model.persistence.floating_classified_postfix
-        )
+        floating_classified_postfix = self._model.persistence.floating_classified_postfix
         self._view.settings_view.floating_classified_postfix_entry.delete(0, END)
-        self._view.settings_view.floating_classified_postfix_entry.insert(
-            0, floating_classified_postfix
-        )
+        self._view.settings_view.floating_classified_postfix_entry.insert(0, floating_classified_postfix)
 
         floating_heatmap_postfix = self._model.persistence.floating_heatmap_postfix
         self._view.settings_view.floating_heatmap_postfix_entry.delete(0, END)
-        self._view.settings_view.floating_heatmap_postfix_entry.insert(
-            0, floating_heatmap_postfix
-        )
+        self._view.settings_view.floating_heatmap_postfix_entry.insert(0, floating_heatmap_postfix)
 
-        floating_masked_classified_postfix = (
-            self._model.persistence.floating_masked_classified_postfix
-        )
+        floating_masked_classified_postfix = self._model.persistence.floating_masked_classified_postfix
         self._view.settings_view.floating_masked_classified_postfix_entry.delete(0, END)
-        self._view.settings_view.floating_masked_classified_postfix_entry.insert(
-            0, floating_masked_classified_postfix
-        )
+        self._view.settings_view.floating_masked_classified_postfix_entry.insert(0, floating_masked_classified_postfix)
 
-        floating_masked_heatmap_postfix = (
-            self._model.persistence.floating_masked_heatmap_postfix
-        )
+        floating_masked_heatmap_postfix = self._model.persistence.floating_masked_heatmap_postfix
         self._view.settings_view.floating_masked_heatmap_postfix_entry.delete(0, END)
-        self._view.settings_view.floating_masked_heatmap_postfix_entry.insert(
-            0, floating_masked_heatmap_postfix
-        )
+        self._view.settings_view.floating_masked_heatmap_postfix_entry.insert(0, floating_masked_heatmap_postfix)
 
         washed_up_below_postfix = self._model.persistence.washed_up_before_postfix
         self._view.settings_view.washed_up_before_postfix_entry.delete(0, END)
-        self._view.settings_view.washed_up_before_postfix_entry.insert(
-            0, washed_up_below_postfix
-        )
+        self._view.settings_view.washed_up_before_postfix_entry.insert(0, washed_up_below_postfix)
 
         washed_up_above_postfix = self._model.persistence.washed_up_after_postfix
         self._view.settings_view.washed_up_after_postfix_entry.delete(0, END)
-        self._view.settings_view.washed_up_after_postfix_entry.insert(
-            0, washed_up_above_postfix
-        )
+        self._view.settings_view.washed_up_after_postfix_entry.insert(0, washed_up_above_postfix)
 
         # Training labels
-        self._view.settings_view.vars["training_blue"].set(
-            1 if self._model.persistence.training_label_blue else 0
-        )
-        self._view.settings_view.vars["training_green"].set(
-            1 if self._model.persistence.training_label_green else 0
-        )
-        self._view.settings_view.vars["training_red"].set(
-            1 if self._model.persistence.training_label_red else 0
-        )
-        self._view.settings_view.vars["training_nir"].set(
-            1 if self._model.persistence.training_label_nir else 0
-        )
-        self._view.settings_view.vars["training_pi"].set(
-            1 if self._model.persistence.training_label_pi else 0
-        )
-        self._view.settings_view.vars["training_ndwi"].set(
-            1 if self._model.persistence.training_label_ndwi else 0
-        )
-        self._view.settings_view.vars["training_ndvi"].set(
-            1 if self._model.persistence.training_label_ndvi else 0
-        )
-        self._view.settings_view.vars["training_rndvi"].set(
-            1 if self._model.persistence.training_label_rndvi else 0
-        )
-        self._view.settings_view.vars["training_sr"].set(
-            1 if self._model.persistence.training_label_sr else 0
-        )
-        self._view.settings_view.vars["training_apwi"].set(
-            1 if self._model.persistence.training_label_apwi else 0
-        )
+        self._view.settings_view.vars["training_blue"].set(1 if self._model.persistence.training_label_blue else 0)
+        self._view.settings_view.vars["training_green"].set(1 if self._model.persistence.training_label_green else 0)
+        self._view.settings_view.vars["training_red"].set(1 if self._model.persistence.training_label_red else 0)
+        self._view.settings_view.vars["training_nir"].set(1 if self._model.persistence.training_label_nir else 0)
+        self._view.settings_view.vars["training_pi"].set(1 if self._model.persistence.training_label_pi else 0)
+        self._view.settings_view.vars["training_ndwi"].set(1 if self._model.persistence.training_label_ndwi else 0)
+        self._view.settings_view.vars["training_ndvi"].set(1 if self._model.persistence.training_label_ndvi else 0)
+        self._view.settings_view.vars["training_rndvi"].set(1 if self._model.persistence.training_label_rndvi else 0)
+        self._view.settings_view.vars["training_sr"].set(1 if self._model.persistence.training_label_sr else 0)
+        self._view.settings_view.vars["training_apwi"].set(1 if self._model.persistence.training_label_apwi else 0)
 
         # Color settings
         for i in range(len(self._view.settings_view.color_buttons)):
             color = self._model.persistence.colors[i]
             try:
-                self._view.settings_view.color_buttons[i].configure(
-                    bg=color, activebackground=color, text=""
-                )
+                self._view.settings_view.color_buttons[i].configure(bg=color, activebackground=color, text="")
             except Exception:
                 self._view.settings_view.color_buttons[i].configure(
                     bg="#ffffff",
@@ -1717,9 +1485,7 @@ class Controller(object):
 
                     classification_file = name + "_classified" + extension
                     if os.path.exists(classification_file):
-                        with rasterio.open(
-                            classification_file, "r"
-                        ) as classification_dataset:
+                        with rasterio.open(classification_file, "r") as classification_dataset:
                             classification_data = classification_dataset.read(1)
                     else:
                         classification_data = np.zeros(shape=(rows, cols), dtype=int)
@@ -1738,9 +1504,7 @@ class Controller(object):
             tkinter.messagebox.showerror(
                 parent=self._view.training_view.opened_files_lb,
                 title="File opening",
-                message="There were too large images! The limit is "
-                + str(MAX_PIXEL_COUNT)
-                + " pixels. "
+                message="There were too large images! The limit is " + str(MAX_PIXEL_COUNT) + " pixels. "
                 "These were not added.",
             )
         if not_valid_extension:
@@ -1776,13 +1540,9 @@ class Controller(object):
 
         for tag_id in tag_ids:
             if self._view.training_view.zoom_canvas.is_point_or_polygon(tag_id):
-                state = self._view.training_view.zoom_canvas.canvas.itemcget(
-                    tag_id, "state"
-                )
+                state = self._view.training_view.zoom_canvas.canvas.itemcget(tag_id, "state")
                 if state == "normal":
-                    self._view.training_view.zoom_canvas.delete_polygon_from_canvas(
-                        [tag_id]
-                    )
+                    self._view.training_view.zoom_canvas.delete_polygon_from_canvas([tag_id])
 
         self._view.training_view.remove_file_from_listbox(selected_index)
 
@@ -1808,30 +1568,24 @@ class Controller(object):
 
         for tag_id in tag_ids:
             if self._view.training_view.zoom_canvas.is_point_or_polygon(tag_id):
-                state = self._view.training_view.zoom_canvas.canvas.itemcget(
-                    tag_id, "state"
-                )
+                state = self._view.training_view.zoom_canvas.canvas.itemcget(tag_id, "state")
                 if state == "normal":
                     self._view.training_view.zoom_canvas.hide_shape(tag_id)
 
         satellite_rgb = self._get_satellite_rgb()
 
         self._view.training_view.zoom_canvas.delete_image()
-        self._view.training_view.zoom_canvas.open_image(
-            selected_file, "rgb", satellite_rgb
-        )
+        self._view.training_view.zoom_canvas.open_image(selected_file, "rgb", satellite_rgb)
 
         layer_data = self._model.get_classification_layer_data(selected_file)
 
         self._view.training_view.zoom_canvas.open_classification_layer(
             dataset=layer_data,
-            color_map=self._model.get_classification_color_map_from_layer(
-                layer_data, True
-            ),
+            color_map=self._model.get_classification_color_map_from_layer(layer_data, True),
         )
 
-        for mc_id in self._model.tag_ids[selected_file].keys():
-            for tag_id in self._model.tag_ids[selected_file][mc_id][2]:
+        for c_id in self._model.tag_ids[selected_file].keys():
+            for tag_id in self._model.tag_ids[selected_file][c_id][2]:
                 self._view.training_view.zoom_canvas.show_shape(tag_id)
 
         self._training_build_treeview()
@@ -1848,29 +1602,23 @@ class Controller(object):
         if selected_file is None:
             return
 
-        mc_id = self._view.training_view.get_mc_id()
-        mc_name = self._view.training_view.get_mc_name()
-        mc_color = self._view.training_view.get_mc_color()
-        mc_ids = list(self._model.tag_ids[selected_file].keys())
-        mc_names = [
-            value[0].lower() for value in self._model.tag_ids[selected_file].values()
-        ]
+        c_id = self._view.training_view.get_c_id()
+        c_name = self._view.training_view.get_c_name()
+        c_color = self._view.training_view.get_c_color()
+        c_ids = list(self._model.tag_ids[selected_file].keys())
+        c_names = [value[0].lower() for value in self._model.tag_ids[selected_file].values()]
 
-        if len(mc_name) == 0:
-            message = "Invalid MC Name!"
-            tkinter.messagebox.showerror(
-                parent=self._view.training_view, title="Error", message=message
-            )
+        if len(c_name) == 0:
+            message = "Invalid C Name!"
+            tkinter.messagebox.showerror(parent=self._view.training_view, title="Error", message=message)
             return
 
-        if (mc_id in mc_ids) or (mc_name in mc_names):
-            message = "MC ID or MC Name already in use!"
-            tkinter.messagebox.showerror(
-                parent=self._view.training_view, title="Error", message=message
-            )
+        if (c_id in c_ids) or (c_name in c_names):
+            message = "C ID or C Name already in use!"
+            tkinter.messagebox.showerror(parent=self._view.training_view, title="Error", message=message)
             return
 
-        self._model.save_new_mc(selected_file, mc_id, mc_name, mc_color)
+        self._model.save_new_c(selected_file, c_id, c_name, c_color)
 
         self._training_build_treeview()
 
@@ -1888,14 +1636,14 @@ class Controller(object):
             return
 
         selected_item = self._view.training_view.treeview.item(selection[0])
-        mc_id = selected_item["values"][1]
+        c_id = selected_item["values"][1]
 
-        if len(str(mc_id)) == 0:
+        if len(str(c_id)) == 0:
             tag_id = int(selected_item["values"][2])
             self._model.delete_tag_id(selected_file, tag_id)
             self._view.training_view.zoom_canvas.delete_polygon_from_canvas([tag_id])
         else:
-            tag_ids = self._model.delete_mc(selected_file, int(mc_id))
+            tag_ids = self._model.delete_c(selected_file, int(c_id))
             self._view.training_view.zoom_canvas.delete_polygon_from_canvas(tag_ids)
 
         self._training_build_treeview()
@@ -1908,10 +1656,7 @@ class Controller(object):
         :return: "break" string to cancel resizing
         """
 
-        if (
-            self._view.training_view.treeview.identify_region(event.x, event.y)
-            != "cell"
-        ):
+        if self._view.training_view.treeview.identify_region(event.x, event.y) != "cell":
             return "break"
 
     def _training_treeview_item_selected(self, event) -> None:
@@ -1926,17 +1671,17 @@ class Controller(object):
         selection = self._view.training_view.get_selection_treeview()[0]
         selected_item = self._view.training_view.treeview.item(selection)
 
-        mc_name = selected_item["values"][0]
-        mc_id = selected_item["values"][1]
+        c_name = selected_item["values"][0]
+        c_id = selected_item["values"][1]
 
-        if len(mc_name) == 0:
+        if len(c_name) == 0:
             return
 
-        mc_color = self._model.tag_ids[selected_file][mc_id][1]
+        c_color = self._model.tag_ids[selected_file][c_id][1]
 
-        self._view.training_view.set_mc_id(int(mc_id))
-        self._view.training_view.set_mc_name(mc_name)
-        self._view.training_view.set_color_btn_bg(mc_color)
+        self._view.training_view.set_c_id(int(c_id))
+        self._view.training_view.set_c_name(c_name)
+        self._view.training_view.set_color_btn_bg(c_color)
 
     def _training_change_color_btn_color(self) -> None:
         """
@@ -2009,9 +1754,7 @@ class Controller(object):
                 file.close()
                 df.to_csv(name + ".csv", sep=";", index_label="FID")
                 self._model.save_classification_images(labeled_images)
-                self._model.create_and_save_random_forest(
-                    name + ".csv", name + extension
-                )
+                self._model.create_and_save_random_forest(name + ".csv", name + extension)
 
                 tkinter.messagebox.showinfo(
                     parent=self._view.training_view.zoom_canvas,
@@ -2031,9 +1774,7 @@ class Controller(object):
             tkinter.messagebox.showerror(title="Error", message=message)
         finally:
             self._enable_all_children(self._view)
-            self._view.training_view.opened_files_lb.bind(
-                "<<ListboxSelect>>", self._training_listbox_item_selected
-            )
+            self._view.training_view.opened_files_lb.bind("<<ListboxSelect>>", self._training_listbox_item_selected)
             self._view.training_view.opened_files_lb.selection_clear(0, END)
             if selected_index:
                 self._view.training_view.opened_files_lb.selection_set(selected_index)
@@ -2042,24 +1783,16 @@ class Controller(object):
             self._view.training_view.process_pb.configure(value=0, mode="determinate")
 
     def _training_draw_on_canvas(self, event) -> None:
-        mc_id = self._view.training_view.draw_pixel_on_canvas(event)
+        c_id = self._view.training_view.draw_pixel_on_canvas(event)
         selected_file = self._view.training_view.get_curselection_value_listbox()
-        x, y = self._view.training_view.zoom_canvas.get_event_coordinates_on_image(
-            event
-        )
-        self._model.set_classification_pixel_of_layer(
-            selected_file, (int(y), int(x)), mc_id
-        )
+        x, y = self._view.training_view.zoom_canvas.get_event_coordinates_on_image(event)
+        self._model.set_classification_pixel_of_layer(selected_file, (int(y), int(x)), c_id)
 
     def _training_remove_pixel_from_canvas(self, event) -> None:
         self._view.training_view.remove_pixel_from_canvas(event)
         selected_file = self._view.training_view.get_curselection_value_listbox()
-        x, y = self._view.training_view.zoom_canvas.get_event_coordinates_on_image(
-            event
-        )
-        self._model.set_classification_pixel_of_layer(
-            selected_file, (int(y), int(x)), 0
-        )
+        x, y = self._view.training_view.zoom_canvas.get_event_coordinates_on_image(event)
+        self._model.set_classification_pixel_of_layer(selected_file, (int(y), int(x)), 0)
 
     def _training_save_classification_data(self) -> None:
         self._training_save_coords_of_tag_ids()
@@ -2070,17 +1803,13 @@ class Controller(object):
             self._view.training_view.opened_files_lb.selection_clear(0, END)
 
             message = "Not enough training data!"
-            tkinter.messagebox.showerror(
-                title="Training error", message=message, parent=self._view.training_view
-            )
+            tkinter.messagebox.showerror(title="Training error", message=message, parent=self._view.training_view)
 
             return
 
         _, labeled_images = self._model.create_training_df(usable_data)
         self._model.save_classification_images(labeled_images)
-        self._view.training_view.opened_files_lb.bind(
-            "<<ListboxSelect>>", self._training_listbox_item_selected
-        )
+        self._view.training_view.opened_files_lb.bind("<<ListboxSelect>>", self._training_listbox_item_selected)
         tkinter.messagebox.showinfo(
             parent=self._view.training_view.zoom_canvas,
             title="Saving info",
@@ -2107,18 +1836,16 @@ class Controller(object):
         :return: None
         """
 
-        selected_training_file = (
-            self._view.training_view.get_curselection_value_listbox()
-        )
-        selected_mc = self._view.training_view.get_selection_treeview()
+        selected_training_file = self._view.training_view.get_curselection_value_listbox()
+        selected_c = self._view.training_view.get_selection_treeview()
 
-        if (selected_training_file is None) or (len(selected_mc) == 0):
+        if (selected_training_file is None) or (len(selected_c) == 0):
             return
 
-        selected_mc_item = self._view.training_view.treeview.item(selected_mc[0])
-        mc_id = str(selected_mc_item["values"][1])
+        selected_c_item = self._view.training_view.treeview.item(selected_c[0])
+        c_id = str(selected_c_item["values"][1])
 
-        if len(mc_id) == 0:
+        if len(c_id) == 0:
             return
 
         tag_ids = self._model.place_polygon_on_canvas()
@@ -2126,14 +1853,12 @@ class Controller(object):
 
         if coords:
             (
-                mc_id,
-                mc_name,
+                c_id,
+                c_name,
                 color,
                 tag_id,
             ) = self._view.training_view.place_polygon_on_canvas(coords)
-            self._model.save_tag_id(
-                selected_training_file, mc_id, mc_name, color, tag_id
-            )
+            self._model.save_tag_id(selected_training_file, c_id, c_name, color, tag_id)
             self._training_build_treeview()
             self._view.training_view.zoom_canvas.delete_points_from_canvas(tag_ids)
 
@@ -2173,9 +1898,7 @@ class Controller(object):
         :return: None
         """
         self._model.toggle_classification_mode()
-        self._view.training_view.set_classification_mode(
-            self._model.classification_mode
-        )
+        self._view.training_view.set_classification_mode(self._model.classification_mode)
         self._set_classification_mode_mouse_handlers(self._model.classification_mode)
 
     def _set_classification_mode_mouse_handlers(self, classification_mode: str) -> None:
@@ -2188,20 +1911,12 @@ class Controller(object):
             self._view.training_view.zoom_canvas.canvas.unbind("<B1-Motion>")
             self._view.training_view.zoom_canvas.canvas.unbind("<Shift-1>")
             self._view.training_view.zoom_canvas.canvas.unbind("<Shift-B1-Motion>")
-            self._view.training_view.zoom_canvas.canvas.bind(
-                "<ButtonPress-1>", self._training_place_point_on_canvas
-            )
+            self._view.training_view.zoom_canvas.canvas.bind("<ButtonPress-1>", self._training_place_point_on_canvas)
         elif classification_mode == "freehand":
             self._view.training_view.zoom_canvas.canvas.unbind("<ButtonPress-1>")
-            self._view.training_view.zoom_canvas.canvas.bind(
-                "<ButtonPress-1>", self._training_draw_on_canvas
-            )
-            self._view.training_view.zoom_canvas.canvas.bind(
-                "<B1-Motion>", self._training_draw_on_canvas
-            )
-            self._view.training_view.zoom_canvas.canvas.bind(
-                "<Shift-1>", self._training_remove_pixel_from_canvas
-            )
+            self._view.training_view.zoom_canvas.canvas.bind("<ButtonPress-1>", self._training_draw_on_canvas)
+            self._view.training_view.zoom_canvas.canvas.bind("<B1-Motion>", self._training_draw_on_canvas)
+            self._view.training_view.zoom_canvas.canvas.bind("<Shift-1>", self._training_remove_pixel_from_canvas)
             self._view.training_view.zoom_canvas.canvas.bind(
                 "<Shift-B1-Motion>", self._training_remove_pixel_from_canvas
             )
@@ -2231,14 +1946,12 @@ class Controller(object):
             return
 
         tag_ids = self._model.tag_ids
-        for mc_id in tag_ids[selected_file].keys():
-            mc_name, color, tags = tag_ids[selected_file][mc_id]
-            self._view.training_view.insert_into_treeview(
-                parent="", index=mc_id, iid=mc_id, values=(mc_name, mc_id, "")
-            )
+        for c_id in tag_ids[selected_file].keys():
+            c_name, color, tags = tag_ids[selected_file][c_id]
+            self._view.training_view.insert_into_treeview(parent="", index=c_id, iid=c_id, values=(c_name, c_id, ""))
             for tag in tags:
                 self._view.training_view.insert_into_treeview(
-                    parent=str(mc_id), index=tag, iid=None, values=("", "", tag)
+                    parent=str(c_id), index=tag, iid=None, values=("", "", tag)
                 )
 
     def _training_save_coords_of_tag_ids(self) -> None:
@@ -2252,23 +1965,19 @@ class Controller(object):
         tag_ids = self._model.tag_ids
 
         for i in range(self._view.training_view.opened_files_lb.size()):
-            self._view.training_view.opened_files_lb.bind(
-                "<<ListboxSelect>>", self._training_listbox_item_selected
-            )
+            self._view.training_view.opened_files_lb.bind("<<ListboxSelect>>", self._training_listbox_item_selected)
             self._view.training_view.opened_files_lb.selection_clear(0, END)
             self._view.training_view.opened_files_lb.selection_set(i)
             self._view.training_view.opened_files_lb.event_generate("<<ListboxSelect>>")
             selected_file = self._view.training_view.get_curselection_value_listbox()
             self._view.training_view.opened_files_lb.unbind("<<ListboxSelect>>")
-            for mc_id in tag_ids[selected_file].keys():
-                mc_name, color, tags = tag_ids[selected_file][mc_id]
+            for c_id in tag_ids[selected_file].keys():
+                c_name, color, tags = tag_ids[selected_file][c_id]
                 (
                     coords,
                     bbox_coords,
                 ) = self._view.training_view.get_coords_of_tag_id_on_canvas(tags)
-                self._model.save_tag_id_coords(
-                    selected_file, mc_id, mc_name, coords, bbox_coords
-                )
+                self._model.save_tag_id_coords(selected_file, c_id, c_name, coords, bbox_coords)
 
     def _get_satellite_rgb(self) -> List[int]:
         """
@@ -2278,15 +1987,15 @@ class Controller(object):
         """
 
         satellite_rgb = list()
-        if self._model.persistence.satellite_type == "Planet":
-            red = self._model.persistence.planet_red_band
-            green = self._model.persistence.planet_green_band
-            blue = self._model.persistence.planet_blue_band
+        if self._model.persistence.satellite_type.lower() == "planetscope":
+            red = self._model.persistence.planetscope_red
+            green = self._model.persistence.planetscope_green
+            blue = self._model.persistence.planetscope_blue
             satellite_rgb += [red, green, blue]
-        elif self._model.persistence.satellite_type == "Sentinel-2":
-            red = self._model.persistence.sentinel_red_band
-            green = self._model.persistence.sentinel_green_band
-            blue = self._model.persistence.sentinel_blue_band
+        elif self._model.persistence.satellite_type.lower() == "sentinel-2":
+            red = self._model.persistence.sentinel_2_red
+            green = self._model.persistence.sentinel_2_green
+            blue = self._model.persistence.sentinel_2_blue
             satellite_rgb += [red, green, blue]
         return satellite_rgb
 
@@ -2297,7 +2006,7 @@ class Controller(object):
         :return: None
         """
 
-        with open("desktop_app/src/about.txt", mode="r") as file:
+        with open("desktop_app/resources/about.txt", mode="r") as file:
             text = file.read()
             tkinter.messagebox.showinfo(parent=self._view, title="About", message=text)
 
@@ -2374,9 +2083,7 @@ class Controller(object):
     # Methods for invalid input handling in SettingsView
     def _invalid_sentinel_band(self) -> None:
         if self._view.settings_view.state() == "normal":
-            message = (
-                "Values in the Sentinel-2 settings must be numbers between 1 and 13!"
-            )
+            message = "Values in the Sentinel-2 settings must be numbers between 1 and 13!"
             tkinter.messagebox.showerror(
                 "Sentinel-2 settings value error",
                 message,
@@ -2428,11 +2135,9 @@ class Controller(object):
                 parent=self._view.settings_view,
             )
 
-    def _invalid_settings_mc_id(self) -> None:
+    def _invalid_settings_c_id(self) -> None:
         if self._view.settings_view.state() == "normal":
-            message = (
-                "Garbage Class ID and Water Class ID must be a number between 1 and 15!"
-            )
+            message = "Garbage Class ID and Water Class ID must be a number between 1 and 15!"
             tkinter.messagebox.showerror(
                 "Garbage Class ID and Water Class ID value error",
                 message,
@@ -2442,9 +2147,7 @@ class Controller(object):
     def _invalid_working_dir(self) -> None:
         if self._view.settings_view.state() == "normal":
             message = "Working directory does not exist!"
-            tkinter.messagebox.showerror(
-                "Working directory path error", message, parent=self._view.settings_view
-            )
+            tkinter.messagebox.showerror("Working directory path error", message, parent=self._view.settings_view)
 
     def _invalid_file_path(self) -> None:
         if self._view.settings_view.state() == "normal":
@@ -2458,16 +2161,12 @@ class Controller(object):
     def _invalid_file_extension(self) -> None:
         if self._view.settings_view.state() == "normal":
             message = 'Incorrect file extension! It must not contain the following characters: < > : " / \\ | ? * .'
-            tkinter.messagebox.showerror(
-                "File extension value error", message, parent=self._view.settings_view
-            )
+            tkinter.messagebox.showerror("File extension value error", message, parent=self._view.settings_view)
 
     def _invalid_postfix(self) -> None:
         if self._view.settings_view.state() == "normal":
             message = 'Incorrect postfix! It must not contain the following characters: < > : " / \\ | ? *'
-            tkinter.messagebox.showerror(
-                "File postfix value error", message, parent=self._view.settings_view
-            )
+            tkinter.messagebox.showerror("File postfix value error", message, parent=self._view.settings_view)
 
     # Static protected methods
     @staticmethod
@@ -2585,7 +2284,7 @@ class Controller(object):
         return x.isdigit() and 1 <= int(x) <= 100
 
     @staticmethod
-    def _validate_settings_mc_id(x: str) -> bool:
+    def _validate_settings_c_id(x: str) -> bool:
         """
         Validates Garbage and Water Class ID in SettingsView.
 
@@ -2596,7 +2295,7 @@ class Controller(object):
         return x.isdigit() and 1 <= int(x) <= 15
 
     @staticmethod
-    def _validate_training_mc_id(x: str) -> bool:
+    def _validate_training_c_id(x: str) -> bool:
         """
         Validates Garbage and Water Class ID in TrainingView.
 
@@ -2676,7 +2375,7 @@ class Controller(object):
     @staticmethod
     def _validate_alpha(x) -> bool:
         """
-        Validates the MC NAME entry value in TrainingView.
+        Validates the C NAME entry value in TrainingView.
 
         :param x: entry input
         :return: valid or not
