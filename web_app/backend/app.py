@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from flask import Flask, jsonify, request, redirect, url_for, session
 from flask_migrate import Migrate
+from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from config import Config
@@ -17,6 +18,7 @@ app.config.from_object(Config)
 
 db.init_app(app)
 migrate = Migrate(app, db)
+CORS(app)
 
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
