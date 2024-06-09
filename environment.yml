@@ -25,6 +25,7 @@ dependencies:
   - shapely=1.7.1
   - tk=8.6.11 # for desktop_app
   - pip:
+      - flask-cors==4.0.1
       - geoalchemy2==0.14.6
       - jsonmerge==1.9.0
       - opencv-python-headless==4.5.3.56
