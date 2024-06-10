@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_migrate import Migrate
 from config import Config
 from models import db, User, SatelliteImage, Annotation
@@ -15,10 +15,16 @@ from models import db, User, SatelliteImage, Annotation
 
 app = Flask(__name__)
 app.config.from_object(Config)
+CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+
+# Set SameSite attribute for session cookies
+app.config.update(
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_SECURE=True
+)
 
 db.init_app(app)
 migrate = Migrate(app, db)
-CORS(app)
 
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
@@ -41,16 +47,32 @@ def create_user():
     return jsonify({"id": user.id}), 201
 
 
-@app.route("/login", methods=["POST"])
-def login():
-    data = request.get_json()
-    user = User.query.filter_by(email=data["email"]).first()
-    if user and user.check_password(data["password"]):
-        login_user(user)
-        return jsonify({"message": "Logged in successfully"}), 200
-    else:
-        return jsonify({"error": "Invalid credentials"}), 401
+# @app.route("/login", methods=["POST"])
+# def login():
+#     data = request.get_json()
+#     user = User.query.filter_by(email=data["email"]).first()
+#     if user and user.check_password(data["password"]):
+#         login_user(user)
+#         return jsonify({"message": "Logged in successfully"}), 200
+#     else:
+#         return jsonify({"error": "Invalid credentials"}), 401
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        data = request.get_json()
+        user = User.query.filter_by(email=data['email']).first()
+        if user and user.check_password(data['password']):  # Verify the password
+            login_user(user)
+            next_page = request.args.get('next')
+            if next_page:
+                return jsonify({'message': 'Logged in successfully', 'next': next_page}), 200
+            else:
+                return jsonify({'message': 'Logged in successfully'}), 200
+        else:
+            return jsonify({'error': 'Invalid credentials'}), 401
+    else:
+        return send_from_directory('app', 'login.html')
 
 @app.route("/logout", methods=["POST"])
 @login_required
