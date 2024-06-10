@@ -81,6 +81,14 @@ def logout():
     return jsonify({"message": "Logged out successfully"}), 200
 
 
+@app.route('/check-login', methods=['GET'])
+def check_login():
+    if current_user.is_authenticated:
+        return jsonify({'logged_in': True, 'user_id': current_user.id, 'email': current_user.email}), 200
+    else:
+        return jsonify({'logged_in': False}), 200
+
+
 @app.route("/protected", methods=["GET"])
 @login_required
 def protected():
