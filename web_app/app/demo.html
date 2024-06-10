@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -16,6 +16,7 @@
       type="image/x-icon"
       href="https://openlayers.org/favicon.ico"
     />
+
     <link
       rel="stylesheet"
       href="https://unpkg.com/ol-layerswitcher@4.1.0/dist/ol-layerswitcher.css"
@@ -32,94 +33,14 @@
           <hr />
         </div>
         <div class="col-12 col-lg-1">
-          <button id="login-button" type="button" class="btn btn-primary btn-block"></button>
+          <button
+            id="login-button"
+            type="button"
+            class="btn btn-primary btn-block"
+          >
+            Login
+          </button>
         </div>
-        <!-- <script>
-          document.getElementById('login-button').addEventListener('click', function() {
-              window.location.href = 'login.html';
-          });
-      </script> -->
-      <script>
-        function checkLoginStatus() {
-            fetch('http://127.0.0.1:5000/check-login', {
-                method: 'GET',
-                credentials: 'include'
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                // const loginStatusDiv = document.getElementById('login-status');
-                const loginLogoutButton = document.getElementById('login-button');
-                if (data.logged_in) {
-                    // loginStatusDiv.innerHTML = `Logged in as ${data.email}`;
-                    loginLogoutButton.innerHTML = 'Logout';
-                    loginLogoutButton.onclick = logout;
-                } else {
-                    // loginStatusDiv.innerHTML = 'Not logged in';
-                    loginLogoutButton.innerHTML = 'Login';
-                    loginLogoutButton.onclick = () => window.location.href = 'login.html';
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        function logout() {
-            fetch('http://127.0.0.1:5000/logout', {
-                method: 'POST',
-                credentials: 'include'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message === 'Logged out successfully') {
-                    window.location.reload();
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            checkLoginStatus();
-        });
-    </script>
-      <div class="col-12 col-lg-1">
-        <button id="test-button" type="button" class="btn btn-primary btn-block">Test</button>
-      </div>
-      <script>
-        document.getElementById('test-button').addEventListener('click', function() {
-            fetch('http://127.0.0.1:5000/users', {
-                method: 'GET',
-                credentials: 'include'
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                // Process and display the data
-            })
-            .catch(error => console.error('Error:', error));
-            
-            fetch('http://127.0.0.1:5000/check-login', {
-                method: 'GET',
-                credentials: 'include'
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                // Process and display the data
-            })
-            .catch(error => console.error('Error:', error));
-
-            // fetch('http://127.0.0.1:5000/logout', {
-            //     method: 'POST',
-            //     credentials: 'include'
-            // })
-            // .then(response => response.json())
-            // .then(data => {
-            //     console.log(data);
-            //     // Process and display the data
-            // })
-            // .catch(error => console.error('Error:', error));
-        });
-    </script>
         <div class="col-12 col-lg-2">
           <label for="location" class="form-label"><b>Location:</b></label>
           <select id="location" class="form-select" aria-label="location">
@@ -134,8 +55,10 @@
           <label for="model" class="form-label"><b>Model:</b></label>
           <select id="model" class="form-select" aria-label="model"></select>
         </div>
-        <div class="col-12 col-lg-12">
+        <div class="col-12 col-lg-2">
           <label id="date" class="form-label" for="swipe"><b>Date:</b></label>
+        </div>
+        <div class="col-12 col-lg-12">
           <input
             id="swipe"
             class="form-range"
