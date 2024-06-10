@@ -62,9 +62,19 @@
   content: "✖";
 }
 
+.form-label {
+  font-size: larger;
+}
+
 #login-button {
   margin: 0 auto;
   display: block;
   text-align: center;
   margin-top: 10px;
+}
+
+#date {
+  margin: 0 auto;
+  display: inline-block;
+  display: block;
 }

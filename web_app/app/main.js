@@ -20,6 +20,7 @@ import Overlay from "ol/Overlay.js";
 
 // Constant values
 const baseUrl = import.meta.env.VITE_DATA_URL;
+const flaskUrl = import.meta.env.VITE_FLASK_URL;
 const bingKey =
   "AgKv8E2vHuEwgddyzg_pRM6ycSRygeePXSFYTqc8jbikPT8ILyQxm1EF3YUmeRQ2";
 const kiskore_bbox = [2283300, 6021945, 2284684, 6023968];
@@ -41,7 +42,6 @@ const selectedAOI = document.getElementById("location");
 const selectedModel = document.getElementById("model");
 const swipe = document.getElementById("swipe");
 const annotationContainer = document.getElementById("annotation-popup");
-const annotationContent = document.getElementById("annotation-popup-content");
 const annotationCloser = document.getElementById("annotation-popup-closer");
 const annotationSave = document.getElementById("annotation-save");
 const annotationCancel = document.getElementById("annotation-cancel");
@@ -224,10 +224,6 @@ const map = new Map({
         }),
       ],
     }),
-    new LayerGroup({
-      title: "Manual annotation",
-      layers: [layerDraw],
-    }),
   ],
   overlays: [overlay],
   view: new View({
@@ -236,6 +232,11 @@ const map = new Map({
     maxZoom: 19,
   }),
   controls: defaults({ attribution: false }).extend([new ZoomSlider()]),
+});
+
+var layerAnnotation = new LayerGroup({
+  title: "Manual annotation",
+  layers: [layerDraw],
 });
 
 // Layer Switcher
@@ -259,7 +260,7 @@ const changeDate = function (newDate) {
   var dateArray = newDate.split("-");
   dateArray.reverse();
   document.getElementById("date").innerHTML =
-    "<b>Date:</b> " + dateArray.join("/");
+    "<b>Date:</b> <br>" + dateArray.join("/");
 };
 
 const setAOILayers = function () {
@@ -283,7 +284,7 @@ const setAOILayers = function () {
         },
       ],
       transition: 0,
-    })
+    }),
   );
   layers[0] = layerGeoTiff;
 
@@ -375,7 +376,7 @@ const fetchGeojsonPaths = async function () {
 
   swipe.max =
     Object.keys(
-      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]]
+      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]],
     ).length - 1;
 };
 
@@ -392,6 +393,159 @@ const addDrawInteraction = function () {
 };
 const removeDrawInteraction = function () {
   map.removeInteraction(draw);
+};
+
+const annotationContainerClose = function () {
+  hideAnnotationPopup();
+  removeLastDrawnFeature();
+  return false;
+};
+
+const annotationContainerSave = async function () {
+  hideAnnotationPopup();
+  const lastDrawnFeature = sourceDraw.getFeatures().slice(-1)[0];
+  const coordinates = lastDrawnFeature.getGeometry().getCoordinates();
+  const annotationTypeValue = document.getElementById(
+    "annotation-type-select",
+  ).value;
+
+  const satellite_image_id = await getSatelliteImageId(
+    layerGeoTiff.getSource().key_,
+  );
+  const user_id = await getUserId();
+  const geom = createWKTPolygon(coordinates);
+  const waste = Boolean(annotationTypeValue);
+
+  postAnnotation(satellite_image_id, user_id, geom, waste);
+
+  return true;
+};
+
+const removeLastDrawnFeature = function () {
+  sourceDraw.removeFeature(sourceDraw.getFeatures().slice(-1)[0]);
+};
+
+const hideAnnotationPopup = function () {
+  overlay.setPosition(undefined);
+  annotationCloser.blur();
+};
+
+const addAnnotation = function () {
+  map.addLayer(layerAnnotation);
+};
+
+const removeAnnotation = function () {
+  map.removeLayer(layerAnnotation);
+};
+
+const checkLoginStatus = function () {
+  fetch(flaskUrl + "check-login", {
+    method: "GET",
+    credentials: "include",
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data);
+      const loginLogoutButton = document.getElementById("login-button");
+      if (data.logged_in) {
+        loginLogoutButton.innerHTML = "Logout";
+        loginLogoutButton.onclick = logout;
+        addAnnotation();
+      } else {
+        loginLogoutButton.innerHTML = "Login";
+        loginLogoutButton.onclick = () => (window.location.href = "login.html");
+        removeAnnotation();
+      }
+    })
+    .catch((error) => console.error("Error:", error));
+};
+
+const getUserId = async function () {
+  try {
+    const response = await fetch(flaskUrl + "check-login", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.user_id;
+    } else {
+      console.error("Failed to fetch user ID:", response.statusText);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user ID:", error);
+    return null;
+  }
+};
+
+const getFilenameFromSrc = function (src) {
+  const parts = src.split("/");
+  const lastElement = parts[parts.length - 1];
+  return lastElement;
+};
+
+const getSatelliteImageId = async function (src) {
+  const filename = getFilenameFromSrc(src);
+
+  try {
+    const response = await fetch(flaskUrl + "get-satellite-image-id", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ filename }),
+      credentials: "include",
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.satellite_image_id;
+    } else {
+      console.error("Failed to fetch user ID:", response.statusText);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user ID:", error);
+    return null;
+  }
+};
+
+const logout = function () {
+  fetch(flaskUrl + "logout", {
+    method: "POST",
+    credentials: "include",
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.message === "Logged out successfully") {
+        window.location.reload();
+      }
+    })
+    .catch((error) => console.error("Error:", error));
+};
+
+const createWKTPolygon = function (coordinates) {
+  const coordinatesString = coordinates.map((coordPair) =>
+    coordPair.map((coord) => coord.join(" ")).join(", "),
+  );
+  const wktPolygon = `POLYGON((${coordinatesString}))`;
+  return wktPolygon;
+};
+
+const postAnnotation = function (satellite_image_id, user_id, geom, waste) {
+  fetch(flaskUrl + "annotations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ satellite_image_id, user_id, geom, waste }),
+    credentials: "include",
+  })
+    .then((response) => response.json())
+    .catch((error) => console.error("Error:", error));
 };
 
 // Events
@@ -415,42 +569,18 @@ layerDraw.on("change:visible", function () {
 });
 
 draw.on("drawend", function (evt) {
-  // console.log(evt.feature.getGeometry().getCoordinates());
   const polygon = evt.feature;
   const coordinate = polygon.getGeometry().getInteriorPoint().getCoordinates();
   overlay.setPosition(coordinate);
 });
 
-const annotationContainerClose = function () {
-  hideAnnotationPopup();
-  removeLastDrawnFeature();
-  return false;
-};
-
-const annotationContainerSave = function () {
-  hideAnnotationPopup();
-  const lastDrawnFeature = sourceDraw.getFeatures().slice(-1)[0];
-  const coordinates = lastDrawnFeature.getGeometry().getCoordinates();
-  const annotationTypeValue = document.getElementById(
-    "annotation-type-select"
-  ).value;
-  console.log(coordinates);
-  console.log(annotationTypeValue);
-  return true;
-};
-
-const removeLastDrawnFeature = function () {
-  sourceDraw.removeFeature(sourceDraw.getFeatures().slice(-1)[0]);
-};
-
-const hideAnnotationPopup = function () {
-  overlay.setPosition(undefined);
-  annotationCloser.blur();
-};
-
 annotationCloser.onclick = annotationContainerClose;
 annotationCancel.onclick = annotationContainerClose;
 annotationSave.onclick = annotationContainerSave;
+
+document.addEventListener("DOMContentLoaded", function () {
+  checkLoginStatus();
+});
 
 await fetchSatelliteImagePaths();
 await fetchGeojsonPaths();
