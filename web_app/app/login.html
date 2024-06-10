@@ -1,91 +1,52 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login</title>
     <link
-    rel="icon"
-    type="image/x-icon"
-    href="https://openlayers.org/favicon.ico"
+      rel="icon"
+      type="image/x-icon"
+      href="https://openlayers.org/favicon.ico"
     />
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .form-signin {
-            width: 100%;
-            max-width: 400px; /* Increased max-width */
-            min-width: 300px;
-            padding: 15px;
-            margin: auto;
-        }
-        .form-signin .form-control {
-            position: relative;
-            box-sizing: border-box;
-            height: auto;
-            padding: 10px;
-            font-size: 16px;
-        }
-        .form-signin .form-control:focus {
-            z-index: 2;
-        }
-        .form-signin input[type="email"] {
-            margin-bottom: -1px;
-            border-bottom-right-radius: 0;
-            border-bottom-left-radius: 0;
-        }
-        .form-signin input[type="password"] {
-            margin-bottom: 10px;
-            border-top-left-radius: 0;
-            border-top-right-radius: 0;
-        }
-    </style>
-</head>
-<body>
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
     <div class="container login-container">
-        <div class="row">
-            <div class="col-md-3 offset-md-0">
-                <form id="login-form" class="form-signin">
-                    <h1 class="h3 mb-3 font-weight-normal text-center">Please sign in</h1>
-                    <label for="email" class="sr-only">Email address</label>
-                    <input type="email" id="email" class="form-control" placeholder="Email address" required autofocus>
-                    <label for="password" class="sr-only">Password</label>
-                    <input type="password" id="password" class="form-control" placeholder="Password" required>
-                    <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-                </form>
-            </div>
+      <div class="row">
+        <div class="col-md-3 offset-md-0">
+          <form id="login-form" class="form-signin">
+            <h1 class="h3 mb-3 font-weight-normal text-center">
+              Please sign in
+            </h1>
+            <label for="email" class="sr-only">Email address</label>
+            <input
+              type="email"
+              id="email"
+              class="form-control"
+              placeholder="Email address"
+              required
+              autofocus
+            />
+            <label for="password" class="sr-only">Password</label>
+            <input
+              type="password"
+              id="password"
+              class="form-control"
+              placeholder="Password"
+              required
+            />
+            <button class="btn btn-lg btn-primary btn-block" type="submit">
+              Sign in
+            </button>
+          </form>
         </div>
+      </div>
     </div>
-    <script>
-        document.getElementById('login-form').addEventListener('submit', (event) => {
-            event.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
 
-            fetch('http://127.0.0.1:5000/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email, password }),
-                credentials: 'include'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message === 'Logged in successfully') {
-                    console.log(data);
-                    window.location.href = '/demo.html'; // Redirect to the main page
-                } else {
-                    alert('Login failed: ' + data.error);
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        });
-    </script>
-</body>
+    <script type="module" src="./login.js"></script>
+  </body>
 </html>
