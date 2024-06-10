@@ -605,10 +605,7 @@ class ViewModel(Model):
 
             clf = self._hotspot_rf if hotspot else self._floating_rf
 
-            (
-                classification,
-                heatmap,
-            ) = self.create_classification_and_heatmap_with_random_forest(
+            (classification, heatmap) = self.create_classification_and_heatmap_with_random_forest(
                 input_path=tmp_file,
                 clf=clf,
                 classification_postfix=self.persistence.hotspot_classified_postfix,
@@ -620,10 +617,7 @@ class ViewModel(Model):
                     if not ((file, classification, heatmap) in self._result_files_hotspot):
                         self._result_files_hotspot.append((file, classification, heatmap))
                 else:
-                    (
-                        masked_classification,
-                        masked_heatmap,
-                    ) = self.create_masked_classification_and_heatmap(
+                    (masked_classification, masked_heatmap) = self.create_masked_classification_and_heatmap(
                         original_input_path=tmp_file,
                         classification_path=classification,
                         heatmap_path=heatmap,
