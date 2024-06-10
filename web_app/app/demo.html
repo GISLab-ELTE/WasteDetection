@@ -32,19 +32,61 @@
           <hr />
         </div>
         <div class="col-12 col-lg-1">
-          <button id="login-button" type="button" class="btn btn-primary btn-block">Login</button>
+          <button id="login-button" type="button" class="btn btn-primary btn-block"></button>
         </div>
-        <script>
+        <!-- <script>
           document.getElementById('login-button').addEventListener('click', function() {
               window.location.href = 'login.html';
           });
-      </script>
+      </script> -->
+      <script>
+        function checkLoginStatus() {
+            fetch('http://127.0.0.1:5000/check-login', {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                // const loginStatusDiv = document.getElementById('login-status');
+                const loginLogoutButton = document.getElementById('login-button');
+                if (data.logged_in) {
+                    // loginStatusDiv.innerHTML = `Logged in as ${data.email}`;
+                    loginLogoutButton.innerHTML = 'Logout';
+                    loginLogoutButton.onclick = logout;
+                } else {
+                    // loginStatusDiv.innerHTML = 'Not logged in';
+                    loginLogoutButton.innerHTML = 'Login';
+                    loginLogoutButton.onclick = () => window.location.href = 'login.html';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function logout() {
+            fetch('http://127.0.0.1:5000/logout', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Logged out successfully') {
+                    window.location.reload();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginStatus();
+        });
+    </script>
       <div class="col-12 col-lg-1">
         <button id="test-button" type="button" class="btn btn-primary btn-block">Test</button>
       </div>
       <script>
         document.getElementById('test-button').addEventListener('click', function() {
-            fetch('http://localhost:5000/users', {
+            fetch('http://127.0.0.1:5000/users', {
                 method: 'GET',
                 credentials: 'include'
             })
@@ -54,6 +96,28 @@
                 // Process and display the data
             })
             .catch(error => console.error('Error:', error));
+            
+            fetch('http://127.0.0.1:5000/check-login', {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                // Process and display the data
+            })
+            .catch(error => console.error('Error:', error));
+
+            // fetch('http://127.0.0.1:5000/logout', {
+            //     method: 'POST',
+            //     credentials: 'include'
+            // })
+            // .then(response => response.json())
+            // .then(data => {
+            //     console.log(data);
+            //     // Process and display the data
+            // })
+            // .catch(error => console.error('Error:', error));
         });
     </script>
         <div class="col-12 col-lg-2">

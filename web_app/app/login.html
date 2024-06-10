@@ -78,6 +78,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.message === 'Logged in successfully') {
+                    console.log(data);
                     window.location.href = '/demo.html'; // Redirect to the main page
                 } else {
                     alert('Login failed: ' + data.error);

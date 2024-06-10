@@ -452,7 +452,7 @@ annotationCloser.onclick = annotationContainerClose;
 annotationCancel.onclick = annotationContainerClose;
 annotationSave.onclick = annotationContainerSave;
 
-// await fetchSatelliteImagePaths();
-// await fetchGeojsonPaths();
-// resizeMap();
-// changeAOI();
+await fetchSatelliteImagePaths();
+await fetchGeojsonPaths();
+resizeMap();
+changeAOI();
