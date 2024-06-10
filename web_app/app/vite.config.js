@@ -11,6 +11,7 @@ export default {
       input: {
         main: resolve(__dirname, "index.html"),
         demo: resolve(__dirname, "demo.html"),
+        login: resolve(__dirname, "login.html")
       },
     },
   },

@@ -27,6 +27,7 @@ const kanyahaza_bbox = [2588995, 6087354, 2597328, 6091368];
 const pusztazamor_bbox = [2090012, 6002140, 2095385, 6005579];
 const raho_bbox = [2693024, 6114066, 2693905, 6114776];
 const drina_bbox = [2145189, 5426572, 2147977, 5430040];
+const drawType = "Polygon";
 
 // Variables
 var geojsonLayerGroup;
@@ -451,7 +452,7 @@ annotationCloser.onclick = annotationContainerClose;
 annotationCancel.onclick = annotationContainerClose;
 annotationSave.onclick = annotationContainerSave;
 
-await fetchSatelliteImagePaths();
-await fetchGeojsonPaths();
-resizeMap();
-changeAOI();
+// await fetchSatelliteImagePaths();
+// await fetchGeojsonPaths();
+// resizeMap();
+// changeAOI();

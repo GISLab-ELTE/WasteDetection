@@ -34,6 +34,28 @@
         <div class="col-12 col-lg-1">
           <button id="login-button" type="button" class="btn btn-primary btn-block">Login</button>
         </div>
+        <script>
+          document.getElementById('login-button').addEventListener('click', function() {
+              window.location.href = 'login.html';
+          });
+      </script>
+      <div class="col-12 col-lg-1">
+        <button id="test-button" type="button" class="btn btn-primary btn-block">Test</button>
+      </div>
+      <script>
+        document.getElementById('test-button').addEventListener('click', function() {
+            fetch('http://localhost:5000/users', {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                // Process and display the data
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
         <div class="col-12 col-lg-2">
           <label for="location" class="form-label"><b>Location:</b></label>
           <select id="location" class="form-select" aria-label="location">
