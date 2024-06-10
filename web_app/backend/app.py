@@ -1,27 +1,19 @@
-from flask import Flask, jsonify, request, send_from_directory
-from flask_migrate import Migrate
 from config import Config
-from models import db, User, SatelliteImage, Annotation
-from datetime import datetime
-from sqlalchemy.exc import IntegrityError
-
-from flask import Flask, jsonify, request, redirect, url_for, session
-from flask_migrate import Migrate
 from flask_cors import CORS
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from datetime import datetime
+from flask_migrate import Migrate
 from sqlalchemy.exc import IntegrityError
-from config import Config
+from flask import Flask, jsonify, request
 from models import db, User, SatelliteImage, Annotation
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
 CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 
 # Set SameSite attribute for session cookies
-app.config.update(
-    SESSION_COOKIE_SAMESITE="None",
-    SESSION_COOKIE_SECURE=True
-)
+app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -47,32 +39,20 @@ def create_user():
     return jsonify({"id": user.id}), 201
 
 
-# @app.route("/login", methods=["POST"])
-# def login():
-#     data = request.get_json()
-#     user = User.query.filter_by(email=data["email"]).first()
-#     if user and user.check_password(data["password"]):
-#         login_user(user)
-#         return jsonify({"message": "Logged in successfully"}), 200
-#     else:
-#         return jsonify({"error": "Invalid credentials"}), 401
-
-@app.route('/login', methods=['GET', 'POST'])
+@app.route("/login", methods=["POST"])
 def login():
-    if request.method == 'POST':
-        data = request.get_json()
-        user = User.query.filter_by(email=data['email']).first()
-        if user and user.check_password(data['password']):  # Verify the password
-            login_user(user)
-            next_page = request.args.get('next')
-            if next_page:
-                return jsonify({'message': 'Logged in successfully', 'next': next_page}), 200
-            else:
-                return jsonify({'message': 'Logged in successfully'}), 200
+    data = request.get_json()
+    user = User.query.filter_by(email=data["email"]).first()
+    if user and user.check_password(data["password"]):
+        login_user(user)
+        next_page = request.args.get("next")
+        if next_page:
+            return jsonify({"message": "Logged in successfully", "next": next_page}), 200
         else:
-            return jsonify({'error': 'Invalid credentials'}), 401
+            return jsonify({"message": "Logged in successfully"}), 200
     else:
-        return send_from_directory('app', 'login.html')
+        return jsonify({"error": "Invalid credentials"}), 401
+
 
 @app.route("/logout", methods=["POST"])
 @login_required
@@ -81,18 +61,12 @@ def logout():
     return jsonify({"message": "Logged out successfully"}), 200
 
 
-@app.route('/check-login', methods=['GET'])
+@app.route("/check-login", methods=["GET"])
 def check_login():
     if current_user.is_authenticated:
-        return jsonify({'logged_in': True, 'user_id': current_user.id, 'email': current_user.email}), 200
+        return jsonify({"logged_in": True, "user_id": current_user.id, "email": current_user.email}), 200
     else:
-        return jsonify({'logged_in': False}), 200
-
-
-@app.route("/protected", methods=["GET"])
-@login_required
-def protected():
-    return jsonify(current_user.to_dict()), 200
+        return jsonify({"logged_in": False}), 200
 
 
 @app.route("/current_user", methods=["GET"])
@@ -107,7 +81,6 @@ def create_satellite_image():
     data = request.get_json()
     image = SatelliteImage(
         filename=data["filename"],
-        # acquisition_date=data['acquisition_date'],
         acquisition_date=datetime.strptime(data["acquisition_date"], "%Y-%m-%d"),
         satellite_type=data["satellite_type"],
         src=data["src"],
@@ -126,7 +99,7 @@ def create_annotation():
     annotation = Annotation(
         satellite_image_id=data["satellite_image_id"],
         user_id=data["user_id"],
-        geom=data["geom"],
+        geom=f'SRID=3857;{data["geom"]}',
         waste=data["waste"],
     )
     try:
@@ -205,6 +178,22 @@ def get_satellite_image(image_id):
 def get_annotation(annotation_id):
     annotation = Annotation.query.get_or_404(annotation_id)
     return jsonify(annotation.to_dict()), 200
+
+
+@app.route("/get-satellite-image-id", methods=["POST"])
+@login_required
+def get_satellite_image_id():
+    filename = request.get_json()["filename"]
+
+    if not filename:
+        return jsonify({"error": "Missing filename parameter"}), 400
+
+    satellite_image = SatelliteImage.query.filter_by(filename=filename).first()
+
+    if satellite_image:
+        return jsonify({"satellite_image_id": satellite_image.id}), 200
+    else:
+        return jsonify({"error": "Satellite image not found"}), 404
 
 
 if __name__ == "__main__":
