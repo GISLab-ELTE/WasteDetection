@@ -69,13 +69,13 @@ def check_login():
         return jsonify({"logged_in": False}), 200
 
 
-@app.route("/current_user", methods=["GET"])
+@app.route("/current-user", methods=["GET"])
 @login_required
 def get_current_user():
     return jsonify(current_user.to_dict()), 200
 
 
-@app.route("/satellite_images", methods=["POST"])
+@app.route("/satellite-images", methods=["POST"])
 @login_required
 def create_satellite_image():
     data = request.get_json()
@@ -120,7 +120,7 @@ def delete_user(user_id):
     return jsonify({"result": "success"}), 200
 
 
-@app.route("/satellite_images/<int:image_id>", methods=["DELETE"])
+@app.route("/satellite-images/<int:image_id>", methods=["DELETE"])
 @login_required
 def delete_satellite_image(image_id):
     image = SatelliteImage.query.get_or_404(image_id)
@@ -145,7 +145,7 @@ def get_users():
     return jsonify([user.to_dict() for user in users]), 200
 
 
-@app.route("/satellite_images", methods=["GET"])
+@app.route("/satellite-images", methods=["GET"])
 @login_required
 def get_satellite_images():
     images = SatelliteImage.query.all()
@@ -166,7 +166,7 @@ def get_user(user_id):
     return jsonify(user.to_dict()), 200
 
 
-@app.route("/satellite_images/<int:image_id>", methods=["GET"])
+@app.route("/satellite-images/<int:image_id>", methods=["GET"])
 @login_required
 def get_satellite_image(image_id):
     image = SatelliteImage.query.get_or_404(image_id)
@@ -178,6 +178,22 @@ def get_satellite_image(image_id):
 def get_annotation(annotation_id):
     annotation = Annotation.query.get_or_404(annotation_id)
     return jsonify(annotation.to_dict()), 200
+
+
+@app.route("/get-annotations-for-current-user-and-current-satellite-image", methods=["POST"])
+@login_required
+def get_annotations_for_current_user_and_current_satellite_image():
+    user_id = current_user.id
+    satellite_image_id = request.get_json()["satellite_image_id"]
+
+    annotations = Annotation.query.filter_by(user_id=user_id, satellite_image_id=satellite_image_id).all()
+
+    coordinates_query = [
+        f"SELECT ST_AsGeoJSON(geom) FROM annotation WHERE id = {annotation.id}" for annotation in annotations
+    ]
+    coordinates = [db.session.execute(query).fetchone()[0] for query in coordinates_query]
+
+    return jsonify(coordinates), 200
 
 
 @app.route("/get-satellite-image-id", methods=["POST"])
