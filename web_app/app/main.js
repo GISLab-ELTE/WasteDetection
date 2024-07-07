@@ -23,11 +23,11 @@ const baseUrl = import.meta.env.VITE_DATA_URL;
 const flaskUrl = import.meta.env.VITE_FLASK_URL;
 const bingKey =
   "AgKv8E2vHuEwgddyzg_pRM6ycSRygeePXSFYTqc8jbikPT8ILyQxm1EF3YUmeRQ2";
-const kiskore_bbox = [2283300, 6021945, 2284684, 6023968];
-const kanyahaza_bbox = [2588995, 6087354, 2597328, 6091368];
-const pusztazamor_bbox = [2090012, 6002140, 2095385, 6005579];
-const raho_bbox = [2693024, 6114066, 2693905, 6114776];
-const drina_bbox = [2145189, 5426572, 2147977, 5430040];
+const kiskoreBbox = [2283300, 6021945, 2284684, 6023968];
+const kanyahazaBbox = [2588995, 6087354, 2597328, 6091368];
+const pusztazamorBbox = [2090012, 6002140, 2095385, 6005579];
+const rahoBbox = [2693024, 6114066, 2693905, 6114776];
+const drinaBbox = [2145189, 5426572, 2147977, 5430040];
 const drawType = "Polygon";
 
 // Variables
@@ -317,15 +317,15 @@ const changeAOI = function () {
   setAOILayers();
 
   if (aoi == "Kiskore") {
-    aoiBbox = kiskore_bbox;
+    aoiBbox = kiskoreBbox;
   } else if (aoi == "Kanyahaza") {
-    aoiBbox = kanyahaza_bbox;
+    aoiBbox = kanyahazaBbox;
   } else if (aoi == "Pusztazamor") {
-    aoiBbox = pusztazamor_bbox;
+    aoiBbox = pusztazamorBbox;
   } else if (aoi == "Raho") {
-    aoiBbox = raho_bbox;
+    aoiBbox = rahoBbox;
   } else if (aoi == "Drina") {
-    aoiBbox = drina_bbox;
+    aoiBbox = drinaBbox;
   } else {
     aoiBbox = null;
   }
@@ -346,10 +346,10 @@ const fetchSatelliteImagePaths = async function () {
   const res = await fetch(baseUrl + "satellite_images.json");
   satelliteImagesPaths = await res.json();
 
-  for (var out_key of Object.keys(satelliteImagesPaths)) {
-    for (var in_key of Object.keys(satelliteImagesPaths[out_key])) {
-      satelliteImagesPaths[out_key][in_key]["src"] =
-        baseUrl + satelliteImagesPaths[out_key][in_key]["src"];
+  for (var outKey of Object.keys(satelliteImagesPaths)) {
+    for (var inKey of Object.keys(satelliteImagesPaths[outKey])) {
+      satelliteImagesPaths[outKey][inKey]["src"] =
+        baseUrl + satelliteImagesPaths[outKey][inKey]["src"];
     }
   }
 };
@@ -358,34 +358,34 @@ const fetchGeojsonPaths = async function () {
   const res = await fetch(baseUrl + "geojson_files.json");
   aoisWithDates = await res.json();
 
-  for (var model_id of Object.keys(aoisWithDates)) {
+  for (var modelId of Object.keys(aoisWithDates)) {
     const option = document.createElement("option");
-    option.text = model_id;
-    option.value = model_id;
+    option.text = modelId;
+    option.value = modelId;
 
     selectedModel.add(option);
-    for (var out_key of Object.keys(aoisWithDates[model_id])) {
-      for (var in_key of Object.keys(aoisWithDates[model_id][out_key])) {
+    for (var outKey of Object.keys(aoisWithDates[modelId])) {
+      for (var inKey of Object.keys(aoisWithDates[modelId][outKey])) {
         for (let i = 0; i < 4; i++) {
-          aoisWithDates[model_id][out_key][in_key][i] =
-            baseUrl + aoisWithDates[model_id][out_key][in_key][i];
+          aoisWithDates[modelId][outKey][inKey][i] =
+            baseUrl + aoisWithDates[modelId][outKey][inKey][i];
         }
       }
     }
   }
 
   swipe.max =
-    Object.keys(
-      aoisWithDates[model_id][Object.keys(aoisWithDates[model_id])[0]],
-    ).length - 1;
+    Object.keys(aoisWithDates[modelId][Object.keys(aoisWithDates[modelId])[0]])
+      .length - 1;
 };
 
-const updateClassification = function () {
+const updateClassification = async function () {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
   const swipeValue = swipe.value;
   changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
   setAOILayers(aoi);
+  await displayExistingAnnotations();
 };
 
 const addDrawInteraction = function () {
@@ -409,16 +409,56 @@ const annotationContainerSave = async function () {
     "annotation-type-select",
   ).value;
 
-  const satellite_image_id = await getSatelliteImageId(
+  const satelliteImageId = await getSatelliteImageId(
     layerGeoTiff.getSource().key_,
   );
-  const user_id = await getUserId();
+  const userId = await getUserId();
   const geom = createWKTPolygon(coordinates);
   const waste = Boolean(annotationTypeValue);
 
-  postAnnotation(satellite_image_id, user_id, geom, waste);
+  postAnnotation(satelliteImageId, userId, geom, waste);
 
   return true;
+};
+
+const displayExistingAnnotations = async function () {
+  var loginStatus = await checkLoginStatus();
+  if (!loginStatus.logged_in) {
+    return;
+  }
+
+  const satellite_image_id = await getSatelliteImageId(
+    layerGeoTiff.getSource().key_,
+  );
+
+  try {
+    const response = await fetch(
+      flaskUrl + "get-annotations-for-current-user-and-current-satellite-image",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ satellite_image_id }),
+        credentials: "include",
+      },
+    );
+    if (response.ok) {
+      const data = await response.json();
+      sourceDraw
+        .getFeatures()
+        .forEach((feature) => sourceDraw.removeFeature(feature));
+      data.forEach((feature) =>
+        sourceDraw.addFeature(new GeoJSON().readFeatures(feature)[0]),
+      );
+    } else {
+      console.error("Failed to fetch user ID:", response.statusText);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user ID:", error);
+    return null;
+  }
 };
 
 const removeLastDrawnFeature = function () {
@@ -438,26 +478,38 @@ const removeAnnotation = function () {
   map.removeLayer(layerAnnotation);
 };
 
-const checkLoginStatus = function () {
-  fetch(flaskUrl + "check-login", {
-    method: "GET",
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log(data);
-      const loginLogoutButton = document.getElementById("login-button");
-      if (data.logged_in) {
-        loginLogoutButton.innerHTML = "Logout";
-        loginLogoutButton.onclick = logout;
-        addAnnotation();
-      } else {
-        loginLogoutButton.innerHTML = "Login";
-        loginLogoutButton.onclick = () => (window.location.href = "login.html");
-        removeAnnotation();
-      }
-    })
-    .catch((error) => console.error("Error:", error));
+const checkLoginStatus = async function () {
+  try {
+    const response = await fetch(flaskUrl + "check-login", {
+      method: "GET",
+      credentials: "include",
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data;
+    } else {
+      console.error("Failed to fetch login status:", response.statusText);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching login status:", error);
+    return null;
+  }
+};
+
+const changeElemsBasedOnLoginStatus = async function () {
+  var loginStatus = await checkLoginStatus();
+  const loginLogoutButton = document.getElementById("login-button");
+
+  if (loginStatus.logged_in) {
+    loginLogoutButton.innerHTML = "Logout";
+    loginLogoutButton.onclick = logout;
+    addAnnotation();
+  } else {
+    loginLogoutButton.innerHTML = "Login";
+    loginLogoutButton.onclick = () => (window.location.href = "login.html");
+    removeAnnotation();
+  }
 };
 
 const getUserId = async function () {
@@ -578,11 +630,12 @@ annotationCloser.onclick = annotationContainerClose;
 annotationCancel.onclick = annotationContainerClose;
 annotationSave.onclick = annotationContainerSave;
 
-document.addEventListener("DOMContentLoaded", function () {
-  checkLoginStatus();
+document.addEventListener("DOMContentLoaded", async function () {
+  await changeElemsBasedOnLoginStatus();
 });
 
 await fetchSatelliteImagePaths();
 await fetchGeojsonPaths();
 resizeMap();
 changeAOI();
+await displayExistingAnnotations();
