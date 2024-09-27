@@ -40,5 +40,5 @@ The goal of our research is to develop an accurate classification method for pla
 
 # Publications
 
-1. **Waste Detection and Change Analysis based on Multispectral Satellite Imagery**<br>Dávid Magyar, Máté Cserép, Zoltán Vincellér, Attila D. Molnár<br>In Proceedings of KEPAF, art. 53., p. 18., 2023. DOI: [10.48550/arXiv.2303.14521](https://doi.org/10.48550/arXiv.2303.14521)
+1. **Waste Detection and Change Analysis based on Multispectral Satellite Imagery**<br>Dávid Magyar, Máté Cserép, Zoltán Vincellér, Attila D. Molnár<br>In Proceedings of KEPAF, art. 53., p. 18., 2023. DOI: [10.48550/arXiv.2303.14521](https://doi.org/10.48550/arXiv.2303.14521), [PDF](https://kepaf.njszt.hu/kepaf2023/papers/Magyar_ea_kepaf2023.pdf).
 2. **Comparative Analysis of Riverine Plastic Pollution Combining Citizen Science, Remote Sensing and Water Quality Monitoring Techniques**<br>Attila D. Molnár, Kristóf Málnás, Sára Bőhm, Miklós Gyalai-Korpos, Máté Cserép, Tímea Kiss<br>Sustainability, vol. 16 (12), art. 5040, 2024. DOI: [10.3390/su16125040](https://doi.org/10.3390/su16125040)
