@@ -19,5 +19,11 @@ ENTRYPOINT ["server_app/docker/start_server.sh"]
 FROM base AS web_app_backend
 
 ADD web_app/backend flask_app
-
-CMD ["bash", "-c", "source /opt/conda/etc/profile.d/conda.sh && conda activate WasteDetection && flask db upgrade && python $FLASK_APP"]
+ENV FLASK_APP=app.py
+CMD ["bash", \ 
+     "-c", \
+     "source /opt/conda/etc/profile.d/conda.sh && \
+     conda activate WasteDetection && \
+     cd flask_app && \
+     flask db upgrade && \
+     flask run"]
