@@ -20,6 +20,7 @@ FROM base AS web_app_backend
 
 ADD web_app/backend flask_app
 ENV FLASK_APP=app.py
+EXPOSE 5000
 CMD ["bash", \ 
      "-c", \
      "source /opt/conda/etc/profile.d/conda.sh && \
