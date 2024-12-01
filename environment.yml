@@ -30,4 +30,5 @@ dependencies:
       - jsonmerge==1.9.0
       - opencv-python-headless==4.5.3.56
       - psycopg2-binary==2.9.9
+      - sqlalchemy==1.4.53
       - ttkbootstrap==1.7.3 # for desktop_app
