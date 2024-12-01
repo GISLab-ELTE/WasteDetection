@@ -1,8 +1,8 @@
 """Initial migration.
 
-Revision ID: ea35b161eb13
+Revision ID: c7ecb95f0e17
 Revises: 
-Create Date: 2024-06-07 18:24:47.845213
+Create Date: 2024-06-10 13:21:10.837534
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import geoalchemy2
 
 
 # revision identifiers, used by Alembic.
-revision = "ea35b161eb13"
+revision = "c7ecb95f0e17"
 down_revision = None
 branch_labels = None
 depends_on = None
