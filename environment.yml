@@ -2,7 +2,10 @@ name: WasteDetection
 channels:
   - conda-forge
   - defaults
+  - pytorch
+  - nvidia
 dependencies:
+  - pytorch=2.4.0
   - black=23.3.0
   - flask=2.2.5
   - flask-bcrypt=1.0.1

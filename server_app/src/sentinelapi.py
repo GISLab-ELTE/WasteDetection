@@ -43,25 +43,7 @@ class SentinelAPI(BaseAPI):
 
         self.requests = dict()
 
-        self.evalscript = """
-            //VERSION=3
-            function setup() {
-                return {
-                    input: [{
-                        bands: ["B02", "B03", "B04", "B08"],
-                        units: "DN"
-                    }],
-                    output: {
-                        bands: 4,
-                        sampleType: "INT16"
-                    }
-                };
-            }
-
-            function evaluatePixel(sample) {
-                return [sample.B02, sample.B03, sample.B04, sample.B08];
-            }
-        """
+        self.evalscript = self.generate_evalscript(settings.masking)
 
     def login(self) -> None:
         """
@@ -172,6 +154,46 @@ class SentinelAPI(BaseAPI):
                 acquisition[1].save_data()
                 print(feature_id)
                 print(acquisition[1].get_filename_list()[0].split("\\")[0])
+
+    @staticmethod
+    def generate_evalscript(masking: bool) -> str:
+        """
+        Generate evalscript. If masking is enabled, it downloads CLM band and evaluates the pixels based on its value
+
+        :param masking: masking enabled
+        :return: evalscipt to process sentinel data
+        """
+        bands = '["B02", "B03", "B04", "B08"'
+        if masking:
+            bands += ', "CLM"'
+        bands += "]"
+        clm_check = """
+                        if (sample.CLM == 1) {
+                          return [NaN, NaN, NaN, NaN];
+                        }
+                        """
+
+        evalscript = f"""
+                    //VERSION=3
+                    function setup() {{
+                        return {{
+                            input: [{{
+                                bands: {bands},
+                                units: "DN"
+                            }}],
+                            output: {{
+                                bands: 4,
+                                sampleType: "INT16"
+                            }}
+                        }};
+                    }}
+    
+                    function evaluatePixel(sample) {{
+                        { clm_check if masking else ''}
+                        return [sample.B02, sample.B03, sample.B04, sample.B08];
+                    }}
+                """
+        return evalscript
 
     @staticmethod
     def get_bbox_of_polygon(polygon_coords: List[List[int]]) -> List[int]:
