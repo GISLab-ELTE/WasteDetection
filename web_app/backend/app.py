@@ -261,10 +261,11 @@ def get_satellite_image_id():
         return jsonify({"error": "Satellite image not found"}), 404
 
 
-# if __name__ == "__main__":
-#     args = parse_args()
+if __name__ == "__main__":
+    args = parse_args()
 
-#     app.run(host=args.host, port=args.port, debug=args.debug)
+    if args.debug:
+        app.run(host=args.host, port=args.port, debug=True)
 
 if __name__ != "__main__":
     gunicorn_logger = logging.getLogger("gunicorn.error")
