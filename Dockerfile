@@ -1,16 +1,18 @@
 # syntax=docker/dockerfile:1
 
-FROM continuumio/miniconda3 AS base
+FROM continuumio/miniconda3:latest AS base
 
-WORKDIR /workspace
 COPY environment.yml .
-RUN conda env create -f environment.yml -q && conda clean --all -q
+RUN conda env create -f environment.yml -q && \
+    conda clean --all -q && \
+    rm environment.yml
+WORKDIR /workspace
 
 
 FROM base AS server_app
 
-ADD server_app server_app
-ADD model model
+COPY server_app/ server_app/
+COPY model/ model/
 COPY run_server_app.py .
 RUN chmod 755 server_app/docker/start_server.sh
 ENTRYPOINT ["server_app/docker/start_server.sh"]
@@ -18,16 +20,16 @@ ENTRYPOINT ["server_app/docker/start_server.sh"]
 
 FROM base AS web_app_backend
 
-ADD web_app/backend flask_app
+WORKDIR /workspace/flask_app
+COPY web_app/backend/ ./
 ENV FLASK_APP=app.py
+ENV FLASK_DEBUG=False
 EXPOSE 5000
-CMD ["bash", \ 
-     "-c", \
-     "source /opt/conda/etc/profile.d/conda.sh && \
-     conda activate WasteDetection && \
-     cd flask_app && \
-     flask db upgrade && \
-     python $FLASK_APP"]
-
-# TODO: Add flag for debug mode
-# TODO: Use production version
+RUN useradd -m flaskuser
+USER flaskuser
+ENTRYPOINT ["bash", \
+            "-c", \
+            "source /opt/conda/etc/profile.d/conda.sh && \
+            conda activate WasteDetection && \
+            flask db upgrade && \
+            exec gunicorn -w 4 -b 0.0.0.0:5000 app:app $@"]
