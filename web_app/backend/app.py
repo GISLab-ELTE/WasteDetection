@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 from config import Config
 from flask_cors import CORS
@@ -64,6 +65,17 @@ login_manager.login_message_category = "info"
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+
+@app.before_request
+def log_request_info():
+    app.logger.info("Request: %s %s", request.method, request.url)
+
+
+@app.after_request
+def log_response_info(response):
+    app.logger.info("Response: %s %s %s", request.method, request.url, response.status)
+    return response
 
 
 @app.route("/users", methods=["POST"])
@@ -249,7 +261,12 @@ def get_satellite_image_id():
         return jsonify({"error": "Satellite image not found"}), 404
 
 
-if __name__ == "__main__":
-    args = parse_args()
+# if __name__ == "__main__":
+#     args = parse_args()
 
-    app.run(host=args.host, port=args.port, debug=args.debug)
+#     app.run(host=args.host, port=args.port, debug=args.debug)
+
+if __name__ != "__main__":
+    gunicorn_logger = logging.getLogger("gunicorn.error")
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
