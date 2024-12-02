@@ -27,4 +27,7 @@ CMD ["bash", \
      conda activate WasteDetection && \
      cd flask_app && \
      flask db upgrade && \
-     flask run"]
+     python $FLASK_APP"]
+
+# TODO: Add flag for debug mode
+# TODO: Use production version
