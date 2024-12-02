@@ -556,11 +556,11 @@ const getSatelliteImageId = async function (src) {
       const data = await response.json();
       return data.satellite_image_id;
     } else {
-      console.error("Failed to fetch user ID:", response.statusText);
+      console.error("Failed to fetch satellite image ID:", response.statusText);
       return null;
     }
   } catch (error) {
-    console.error("Error fetching user ID:", error);
+    console.error("Error fetching satellite image ID:", error);
     return null;
   }
 };
