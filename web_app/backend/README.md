@@ -1,13 +1,70 @@
-1. `set FLASK_APP=app.py`
-2. `flask db init`
-3. `flask db migrate -m "Initial migration."`
-4. `flask db upgrade`
-5. `flask run`
+# Dockerized Flask Application Backend
 
-- `CREATE DATABASE waste_detection_database;`
-- `\c waste_detection_database;`
-- `CREATE EXTENSION postgis;`
+## `ENV` variables
 
-- `psql -U postgres`
-- `\q`
-- `DROP DATABASE waste_detection_database;`
+In the [`Dockerfile`](../../Dockerfile), several environment variables (`ENV`) are configured, each serving a specific purpose:
+- Required `ENV` variables:
+    - `FLASK_SECRET_KEY`: It is used to secure sessions, protect against CSRF attacks, and ensure data integrity through cryptographic signing.
+    - `PSQL_DATABASE_URL`: URL for PosgreSQL database.
+        - Example: `postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}`
+- Optional `ENV` variables:
+    - `FLASK_APP`: Specifies the relative path to the `app.py` file that contains the Flask application.
+        - Default: `app.py`
+    - `FLASK_APP_HOST`: Defines the host address for the Flask application within the container.
+        - Default: `0.0.0.0`
+    - `FLASK_APP_PORT`: Determines the port on which the Flask application will run inside the container.
+        - Default: `5000`
+    - `FLASK_DEBUG`: Enables CORS override if set to `True`.
+        - Default: `False`
+    - `FLASK_CORS_ORIGIN`: Specifies the origin allowed for requests when `FLASK_DEBUG` is set to `True`.
+        - Default: `http://localhost:5173`
+    - `GUNICORN_WORKERS`: Specifies the number of worker processes to handle multiple requests concurrently.
+        - Default: `5`
+
+## Running the container
+
+1. **Open CMD:** navigate to repository folder.
+2. **Build image:** 
+
+   ```bash
+      docker build . --target web_app_backend -t web_app_backend
+   ```
+
+3. **Run container:**
+
+   ```bash
+      docker run --rm -it --name web_app_backend_container \
+        -e FLASK_SECRET_KEY={YOUR_SECRET_KEY} \
+        -e PSQL_DATABASE_URL=postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME} \
+        -p 5000:5000 \
+        web_app_backend
+   ```
+
+4. **Run container locally (development only):**
+
+- **Create PostgreSQL Database with PostGIS Extension:**
+   
+   ```bash
+      psql -U postgres
+
+      CREATE DATABASE waste_detection_database;
+
+      \c waste_detection_database;
+
+      CREATE EXTENSION postgis;
+
+      \q
+
+      # DROP DATABASE waste_detection_database;
+   ```
+- **Run container:**
+
+    Be sure to verify the values of the other `ENV` variables listed above.
+
+   ```bash
+      docker run --rm -it --name web_app_backend_container \
+        -e FLASK_SECRET_KEY=secret_key \
+        -e PSQL_DATABASE_URL=postgresql://postgres:admin@192.168.1.118:5432/waste_detection_database \
+        -p 5000:5000 \
+        web_app_backend
+   ```

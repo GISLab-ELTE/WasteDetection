@@ -3,7 +3,7 @@
 ## Running the application in Docker Container
 
 1. **Open CMD:** navigate to repository folder.
-2. **Build image:** `docker build -t server_app .`
+2. **Build image:** `docker build . --target server_app -t server_app`
 3. **Run container:**
 
    ```bash
