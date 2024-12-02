@@ -26,6 +26,7 @@ ENV FLASK_APP_HOST=0.0.0.0
 ENV FLASK_APP_PORT=5000
 ENV FLASK_APP=app.py
 ENV FLASK_DEBUG=False
+ENV FLASK_CORS_ORIGIN=http://localhost:5173
 ENV WORKERS=4
 EXPOSE 5000
 RUN useradd -m flaskuser
@@ -35,4 +36,4 @@ ENTRYPOINT ["bash", \
             "source /opt/conda/etc/profile.d/conda.sh && \
             conda activate WasteDetection && \
             flask db upgrade && \
-            exec gunicorn --workers $WORKERS --bind $FLASK_APP_HOST:$FLASK_APP_PORT --access-logfile '-' --log-level info app:app $@"]
+            exec gunicorn --workers $WORKERS --bind $FLASK_APP_HOST:$FLASK_APP_PORT --access-logfile '-' --log-level info app:app"]

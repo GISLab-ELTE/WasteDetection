@@ -1,5 +1,5 @@
-import argparse
 import logging
+import os
 
 from config import Config
 from flask_cors import CORS
@@ -11,51 +11,24 @@ from models import db, User, SatelliteImage, Annotation
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 
-def parse_args() -> argparse.Namespace:
-    """
-    Parse command line arguments.
-
-    :return: Parsed arguments.
-    """
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-d",
-        "--debug",
-        action="store_true",
-        default=False,
-        help="Starts the Flask app in debug mode.",
-    )
-    parser.add_argument(
-        "--host",
-        type=str,
-        default="0.0.0.0",
-        required=False,
-        help="Specifies the host address for the Flask application.",
-    )
-    parser.add_argument(
-        "--port",
-        type=str,
-        default="5000",
-        required=False,
-        help="Specifies the port on which the Flask application will run.",
-    )
-    parsed_args = parser.parse_args()
-
-    return parsed_args
-
-
+# Create app
 app = Flask(__name__)
+
+# Configure application and logger
 Config.check_env_variables()
 app.config.from_object(Config)
-CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
-
-# Set SameSite attribute for session cookies
 app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
+gunicorn_logger = logging.getLogger("gunicorn.error")
+app.logger.handlers = gunicorn_logger.handlers
+app.logger.setLevel(gunicorn_logger.level)
 
+# Enable CORS override when debugging
+if os.getenv("FLASK_DEBUG") == "True":
+    CORS(app, supports_credentials=True, origins=[os.getenv("FLASK_CORS_ORIGIN")])
+
+# Initialize db communication
 db.init_app(app)
 migrate = Migrate(app, db)
-
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 login_manager.login_message = "Please log in to access this page."
@@ -259,15 +232,3 @@ def get_satellite_image_id():
         return jsonify({"satellite_image_id": satellite_image.id}), 200
     else:
         return jsonify({"error": "Satellite image not found"}), 404
-
-
-if __name__ == "__main__":
-    args = parse_args()
-
-    if args.debug:
-        app.run(host=args.host, port=args.port, debug=True)
-
-if __name__ != "__main__":
-    gunicorn_logger = logging.getLogger("gunicorn.error")
-    app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)
