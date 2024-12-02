@@ -1,3 +1,5 @@
+import argparse
+
 from config import Config
 from flask_cors import CORS
 from datetime import datetime
@@ -8,7 +10,42 @@ from models import db, User, SatelliteImage, Annotation
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 
+def parse_args() -> argparse.Namespace:
+    """
+    Parse command line arguments.
+
+    :return: Parsed arguments.
+    """
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Starts the Flask app in debug mode.",
+    )
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="0.0.0.0",
+        required=False,
+        help="Specifies the host address for the Flask application.",
+    )
+    parser.add_argument(
+        "--port",
+        type=str,
+        default="5000",
+        required=False,
+        help="Specifies the port on which the Flask application will run.",
+    )
+    parsed_args = parser.parse_args()
+
+    return parsed_args
+
+
 app = Flask(__name__)
+Config.check_env_variables()
 app.config.from_object(Config)
 CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 
@@ -213,4 +250,6 @@ def get_satellite_image_id():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    args = parse_args()
+
+    app.run(host=args.host, port=args.port, debug=args.debug)
