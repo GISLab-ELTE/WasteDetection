@@ -4,11 +4,11 @@
 
 In the [`Dockerfile`](../../Dockerfile), several environment variables (`ENV`) are configured, each serving a specific purpose:
 
-- Required `ENV` variables:
+- Required `ENV` variables for `docker run`:
   - `FLASK_SECRET_KEY`: It is used to secure sessions, protect against CSRF attacks, and ensure data integrity through cryptographic signing.
   - `PSQL_DATABASE_URL`: URL for PosgreSQL database.
     - Example: `postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}`
-- Optional `ENV` variables:
+- Optional `ENV` variables for `docker run`:
   - `FLASK_APP`: Specifies the relative path to the `app.py` file that contains the Flask application.
     - Default: `app.py`
   - `FLASK_APP_HOST`: Defines the host address for the Flask application within the container.
@@ -34,11 +34,12 @@ In the [`Dockerfile`](../../Dockerfile), several environment variables (`ENV`) a
 3. **Run container:**
 
    ```bash
-      docker run --rm -it --name web_app_backend_container \
-        -e FLASK_SECRET_KEY={YOUR_SECRET_KEY} \
+      docker run -d --name web_app_backend_container \
+        -e FLASK_SECRET_KEY={SECRET_KEY} \
         -e PSQL_DATABASE_URL=postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME} \
-        -p 5000:5000 \
-        web_app_backend
+        --net=host \
+        --restart always \
+        gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
    ```
 
 4. **Run container locally (development only):**
