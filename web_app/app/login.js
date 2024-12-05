@@ -19,7 +19,7 @@ document.getElementById("login-form").addEventListener("submit", (event) => {
     .then((data) => {
       if (data.message === "Logged in successfully") {
         console.log(data);
-        window.location.href = "/demo.html";
+        window.location.href = "demo.html";
       } else {
         alert("Login failed: " + data.error);
       }
