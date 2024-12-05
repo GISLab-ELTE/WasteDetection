@@ -71,3 +71,18 @@ In the [`Dockerfile`](../../Dockerfile), several environment variables (`ENV`) a
        -p 5000:5000 \
        web_app_backend
   ```
+
+## `curl` commands for endpoints:
+
+- Login:
+  ```bash
+    curl -c cookies.txt -X POST http://127.0.0.1:5000/login -H "Content-Type: application/json" -d "{\"email\": \"john@example.com\", \"password\": \"password123\"}"
+  ```
+- Add user:
+  ```bash
+    curl -X POST http://127.0.0.1:5000/users -H "Content-Type: application/json" -d "{\"name\": \"John Doe\", \"email\": \"john@example.com\", \"password\": \"password123\", \"role\": \"admin\"}"
+  ```
+- Add satellite image:
+  ```bash
+    curl -b cookies.txt -X POST http://127.0.0.1:5000/satellite-images -H "Content-Type: application/json" -d "{\"filename\": \"image1.tif\", \"acquisition_date\": \"2023-06-01\", \"satellite_type\": \"Landsat\", \"src\": \"NASA\", \"min\": 0.0, \"max\": 255.0}"
+  ```
