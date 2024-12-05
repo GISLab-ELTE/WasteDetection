@@ -185,7 +185,7 @@ webapp_backend:
     # Push Docker images to registries
     - docker push "$IMAGE_NAME_WEB_BACKEND:latest"
     # Kill, then remove running container if it exists
-    - > 
+    - >
       if docker ps --format "{{.Names}}" | grep -q $CONTAINER_NAME_WEB_BACKEND; then
         docker rm $(docker container kill $CONTAINER_NAME_WEB_BACKEND)
       fi
@@ -197,8 +197,8 @@ webapp_backend:
       fi
     # Run new image in background
     - docker run -d --name $CONTAINER_NAME_WEB_BACKEND -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL --net=host --restart always gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
-  # rules:
-  #   - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-  #     changes:
-  #       - web_app/backend/**/*
-  #       - .gitlab-ci.yml
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        - web_app/backend/**/*
+        - .gitlab-ci.yml
