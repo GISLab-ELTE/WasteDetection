@@ -183,13 +183,15 @@ webapp_backend:
     - docker build $IMAGE_FOLDER --pull --target web_app_backend -t "$IMAGE_NAME_WEB_BACKEND:latest"
     # Push Docker images to registries
     - docker push "$IMAGE_NAME_WEB_BACKEND:latest"
+    # Kill, then remove running container
+    - docker rm $(docker container kill web_app_backend_container)
     # Remove old, now dangling versions of the image
     - DANGLING_NUMBER=$(docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_WEB_BACKEND"  --format "{{.ID}}" | wc -l)
     - >
       if [ $DANGLING_NUMBER -gt 0 ]; then
          docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_WEB_BACKEND" --format "{{.ID}}" | xargs docker image rm
       fi
-    - docker rm $(docker container kill web_app_backend_container)
+    # Run new image in background
     - docker run -d --name web_app_backend_container \
         -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY \
         -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL \
