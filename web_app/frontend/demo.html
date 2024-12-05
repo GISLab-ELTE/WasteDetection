@@ -16,6 +16,7 @@
       type="image/x-icon"
       href="https://openlayers.org/favicon.ico"
     />
+
     <link
       rel="stylesheet"
       href="https://unpkg.com/ol-layerswitcher@4.1.0/dist/ol-layerswitcher.css"
@@ -27,13 +28,22 @@
   <body>
     <div class="container-fluid">
       <div id="user-inputs" class="row">
-        <div id="header" class="col-12">
+        <div id="header" class="col-12 col-lg-11">
           <h2>Plastic Waste Monitoring</h2>
           <hr />
         </div>
+        <div class="col-12 col-lg-1">
+          <button
+            id="login-button"
+            type="button"
+            class="btn btn-primary btn-block"
+          >
+            Login
+          </button>
+        </div>
         <div class="col-12 col-lg-2">
-          <label for="type" class="form-label"><b>Location:</b></label>
-          <select id="type" class="form-select" aria-label="Location">
+          <label for="location" class="form-label"><b>Location:</b></label>
+          <select id="location" class="form-select" aria-label="location">
             <option selected value="Kiskore">Kisköre</option>
             <option value="Kanyahaza">Lake Călinești</option>
             <option value="Pusztazamor">Pusztazámor</option>
@@ -43,10 +53,12 @@
         </div>
         <div class="col-12 col-lg-2">
           <label for="model" class="form-label"><b>Model:</b></label>
-          <select id="model" class="form-select" aria-label="Location"></select>
+          <select id="model" class="form-select" aria-label="model"></select>
         </div>
-        <div class="col-12 col-lg-10">
+        <div class="col-12 col-lg-2">
           <label id="date" class="form-label" for="swipe"><b>Date:</b></label>
+        </div>
+        <div class="col-12 col-lg-12">
           <input
             id="swipe"
             class="form-range"
@@ -60,6 +72,41 @@
       <div class="row">
         <div class="col-12">
           <div id="map"></div>
+          <div id="annotation-popup" class="ol-annotation-popup">
+            <a
+              href="#"
+              id="annotation-popup-closer"
+              class="ol-annotation-popup-closer"
+            ></a>
+            <div id="annotation-popup-content">
+              <label for="annotation-type-select" class="form-label"
+                ><b>Annotation Type</b></label
+              >
+              <select
+                id="annotation-type-select"
+                class="form-select"
+                aria-label="annotation-type"
+              >
+                <option selected value="1">Waste</option>
+                <option value="0">Not Waste</option>
+              </select>
+              <br />
+              <button
+                id="annotation-save"
+                type="button"
+                class="btn btn-primary"
+              >
+                Save
+              </button>
+              <button
+                id="annotation-cancel"
+                type="button"
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
