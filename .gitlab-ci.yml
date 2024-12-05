@@ -133,12 +133,12 @@ baseimage:
       if [ $DANGLING_NUMBER -gt 0 ]; then
          docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_BASE" --format "{{.ID}}" | xargs docker image rm
       fi
-  # rules:
-  #   - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-  #     changes:
-  #       - Dockerfile
-  #       - environment.yml
-  #       - .gitlab-ci.yml
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        - Dockerfile
+        - environment.yml
+        - .gitlab-ci.yml
 
 serverapp:
   stage: deploy
@@ -192,12 +192,7 @@ webapp_backend:
          docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_WEB_BACKEND" --format "{{.ID}}" | xargs docker image rm
       fi
     # Run new image in background
-    - docker run -d --name web_app_backend_container \
-        -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY \
-        -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL \
-        --net=host \
-        --restart always \
-        gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
+    - docker run -d --name web_app_backend_container -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL -net=host --restart always gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
   # rules:
   #   - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
   #     changes:
