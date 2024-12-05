@@ -183,8 +183,11 @@ webapp_backend:
     - docker build $IMAGE_FOLDER --pull --target web_app_backend -t "$IMAGE_NAME_WEB_BACKEND:latest"
     # Push Docker images to registries
     - docker push "$IMAGE_NAME_WEB_BACKEND:latest"
-    # Kill, then remove running container
-    - docker rm $(docker container kill web_app_backend_container)
+    # Kill, then remove running container if it exists
+    - > 
+      if docker ps --format "{{.Names}}" | grep -q "web_app_backend_container"; then
+        docker rm $(docker container kill web_app_backend_container)
+      fi
     # Remove old, now dangling versions of the image
     - DANGLING_NUMBER=$(docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_WEB_BACKEND"  --format "{{.ID}}" | wc -l)
     - >
