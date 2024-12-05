@@ -3,6 +3,7 @@ variables:
   IMAGE_NAME_BASE: "$CI_REGISTRY_IMAGE/base"
   IMAGE_NAME_SERVER: "$CI_REGISTRY_IMAGE/server_app"
   IMAGE_NAME_WEB_BACKEND: "$CI_REGISTRY_IMAGE/web_app_backend"
+  CONTAINER_NAME_WEB_BACKEND: "web_app_backend_container"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 include:
@@ -185,8 +186,8 @@ webapp_backend:
     - docker push "$IMAGE_NAME_WEB_BACKEND:latest"
     # Kill, then remove running container if it exists
     - > 
-      if docker ps --format "{{.Names}}" | grep -q "web_app_backend_container"; then
-        docker rm $(docker container kill web_app_backend_container)
+      if docker ps --format "{{.Names}}" | grep -q $CONTAINER_NAME_WEB_BACKEND; then
+        docker rm $(docker container kill $CONTAINER_NAME_WEB_BACKEND)
       fi
     # Remove old, now dangling versions of the image
     - DANGLING_NUMBER=$(docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_WEB_BACKEND"  --format "{{.ID}}" | wc -l)
@@ -195,7 +196,7 @@ webapp_backend:
          docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_WEB_BACKEND" --format "{{.ID}}" | xargs docker image rm
       fi
     # Run new image in background
-    - docker run -d --name web_app_backend_container -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL -net=host --restart always gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
+    - docker run -d --name $CONTAINER_NAME_WEB_BACKEND -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL --net=host --restart always gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
   # rules:
   #   - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
   #     changes:
