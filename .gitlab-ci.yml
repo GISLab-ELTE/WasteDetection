@@ -169,7 +169,7 @@ serverapp:
         - model/**/*
         - .gitlab-ci.yml
 
-webapp_backend:
+webapp-backend:
   stage: deploy
   image: docker:latest
   tags:
