@@ -203,20 +203,14 @@ class Process(object):
                     input_file_path, "all", "all", output_dir_path, udm2_file_path
                 )
 
-                (
-                    classified,
-                    heatmap,
-                ) = self.model.create_classification_and_heatmap_with_random_forest(
+                (classified, heatmap) = self.model.create_classification_and_heatmap_with_random_forest(
                     indices_path,
                     self.model.persistence.clf,
                     self.model.persistence.classification_postfix,
                     self.model.persistence.heatmap_postfix,
                 )
 
-                (
-                    masked_classified,
-                    masked_heatmap,
-                ) = self.model.create_masked_classification_and_heatmap(
+                (masked_classified, masked_heatmap) = self.model.create_masked_classification_and_heatmap(
                     indices_path,
                     classified,
                     heatmap,

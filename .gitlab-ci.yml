@@ -2,6 +2,8 @@ variables:
   DS_EXCLUDED_ANALYZERS: gemnasium-python
   IMAGE_NAME_BASE: "$CI_REGISTRY_IMAGE/base"
   IMAGE_NAME_SERVER: "$CI_REGISTRY_IMAGE/server_app"
+  IMAGE_NAME_WEB_BACKEND: "$CI_REGISTRY_IMAGE/web_app_backend"
+  CONTAINER_NAME_WEB_BACKEND: "web_app_backend_container"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 include:
@@ -40,10 +42,10 @@ lint:prettier:
   cache:
     key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
     paths:
-      - web_app/app/node_modules/
+      - web_app/frontend/node_modules/
   before_script:
     - cat /etc/os-release
-    - cd web_app/app/
+    - cd web_app/frontend/
     - npm ci
     - npm list
     - cd ../..
@@ -71,16 +73,16 @@ webapp-build:
   image: node:18-bullseye
   stage: build
   script:
-    - cd web_app/app/
+    - cd web_app/frontend/
     - npm ci
     - npm run build
   cache:
     key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
     paths:
-      - web_app/app/node_modules/
+      - web_app/frontend/node_modules/
   artifacts:
     paths:
-      - web_app/app/dist/
+      - web_app/frontend/dist/
     expire_in: 1 week
 
 webapp-deploy:
@@ -96,7 +98,7 @@ webapp-deploy:
   script:
     - ssh-add <(echo "$CD_PRIVATE_KEY")
     - ssh -P22 gitlab-deployer@gis.inf.elte.hu "rm -r /var/www/gis/waste-detection/*"
-    - scp -P22 -r web_app/app/dist/* gitlab-deployer@gis.inf.elte.hu:/var/www/gis/waste-detection/
+    - scp -P22 -r web_app/frontend/dist/* gitlab-deployer@gis.inf.elte.hu:/var/www/gis/waste-detection/
   environment:
     name: production
     url: https://gis.inf.elte.hu/waste-detection/
@@ -151,7 +153,7 @@ serverapp:
     - *docker-login
   script:
     # Build Docker images
-    - docker build $IMAGE_FOLDER --pull -t "$IMAGE_NAME_SERVER:latest"
+    - docker build $IMAGE_FOLDER --pull --target server_app -t "$IMAGE_NAME_SERVER:latest"
     # Push Docker images to registries
     - docker push "$IMAGE_NAME_SERVER:latest"
     # Remove old, now dangling versions of the image
@@ -165,4 +167,38 @@ serverapp:
       changes:
         - server_app/**/*
         - model/**/*
+        - .gitlab-ci.yml
+
+webapp_backend:
+  stage: deploy
+  image: docker:latest
+  tags:
+    - docker
+    - docker-socket
+  variables:
+    IMAGE_FOLDER: .
+  before_script:
+    - *docker-login
+  script:
+    # Build Docker images
+    - docker build $IMAGE_FOLDER --pull --target web_app_backend -t "$IMAGE_NAME_WEB_BACKEND:latest"
+    # Push Docker images to registries
+    - docker push "$IMAGE_NAME_WEB_BACKEND:latest"
+    # Kill, then remove running container if it exists
+    - >
+      if docker ps --format "{{.Names}}" | grep -q $CONTAINER_NAME_WEB_BACKEND; then
+        docker rm $(docker container kill $CONTAINER_NAME_WEB_BACKEND)
+      fi
+    # Remove old, now dangling versions of the image
+    - DANGLING_NUMBER=$(docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_WEB_BACKEND"  --format "{{.ID}}" | wc -l)
+    - >
+      if [ $DANGLING_NUMBER -gt 0 ]; then
+         docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_WEB_BACKEND" --format "{{.ID}}" | xargs docker image rm
+      fi
+    # Run new image in background
+    - docker run -d --name $CONTAINER_NAME_WEB_BACKEND -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL --net=host --restart always gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        - web_app/backend/**/*
         - .gitlab-ci.yml
