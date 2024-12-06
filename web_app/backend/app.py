@@ -52,6 +52,7 @@ def log_response_info(response):
 
 
 @app.route("/users", methods=["POST"])
+@login_required
 def create_user():
     data = request.get_json()
     user = User(name=data["name"], email=data["email"], role=data["role"])
