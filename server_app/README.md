@@ -66,6 +66,7 @@ Meaning of the parameters in `config.sample.json` file:
 - `planet_search_url`: URL for searching images using Planet API.
 - `download_start_time`: Start time of downloading.
 - `first_sentinel-2_date`: Date of first ever acquisition of Sentinel-2.
+- `minimum_image_age`: The minimum age of an image in days. The server app will search for images that are atleast as old as the minimum age.
 - `low_prob_percent`: Threshold percentage of the classifier's prediction confidence for low probability.
 - `medium_prob_percent`: Threshold percentage of the classifier's prediction confidence for medium probability.
 - `high_prob_percent`: Threshold percentage of the classifier's prediction confidence for high probability.

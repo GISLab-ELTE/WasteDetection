@@ -91,9 +91,8 @@ class Process(object):
 
         logging.info("Startup process started.")
 
-        yesterday_str = Process.get_sys_date_str(difference=-1)
-
-        time_interval = self.model.persistence.first_sentinel_2_date, yesterday_str
+        interval_end = Process.get_sys_date_str(difference=-self.model.persistence.minimum_image_age + 1)
+        time_interval = self.model.persistence.first_sentinel_2_date, interval_end
         observation_max_span = self.model.persistence.observation_span_in_days
 
         logging.info("Searching for earlier images.")
@@ -133,11 +132,10 @@ class Process(object):
         :return: None
         """
 
-        sys_date_today = Process.get_sys_date_str()
-        sys_date_yesterday = Process.get_sys_date_str(difference=-1)
+        interval_start = Process.get_sys_date_str(difference=-self.model.persistence.minimum_image_age)
+        interval_end = Process.get_sys_date_str(difference=-self.model.persistence.minimum_image_age + 1)
         max_num_of_results = 1
-
-        time_interval = sys_date_yesterday, sys_date_today
+        time_interval = interval_start, interval_end
 
         logging.info("Main process started.")
 

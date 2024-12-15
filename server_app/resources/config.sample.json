@@ -32,6 +32,7 @@
   "planet_search_url": "https://api.planet.com/data/v1/quick-search",
   "download_start_time": "08:00:00",
   "first_sentinel_2_date": "2016-01-01",
+  "minimum_image_age": 1,
   "max_class_count": 15,
   "max_class_value_count": 10000000,
   "low_prob_percent": 1,
