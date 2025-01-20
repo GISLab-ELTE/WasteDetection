@@ -37,6 +37,13 @@ def parse_args() -> argparse.Namespace:
         default=False,
         help="Execute classification (does not download images).",
     )
+    parser.add_argument(
+        "-un",
+        "--classify-unet",
+        action="store_true",
+        default=False,
+        help="Execute classification with UNET or UNETPP (does not download images).",
+    )
 
     parsed_args = parser.parse_args()
 
@@ -67,5 +74,11 @@ if __name__ == "__main__":
 
     model = Model(Persistence(config_file_path=CONFIG_FILE_NAME_DESKTOP_APP))
 
-    process = Process(model, args.download_init, args.download_update, args.classify)
+    process = Process(
+        model,
+        args.download_init,
+        args.download_update,
+        args.classify,
+        args.classify_unet,
+    )
     process.mainloop()

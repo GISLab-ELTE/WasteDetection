@@ -59,6 +59,17 @@ class PictureDoesNotExistException(Exception):
         super(PictureDoesNotExistException, self).__init__(message)
 
 
+class UNETFileException(Exception):
+    """
+    Incorrect UNET (.sav) file.
+
+    """
+
+    def __init__(self, unet_model: str):
+        message = f"{unet_model} architecture -> Wrong UNET file"
+        super(UNETFileException, self).__init__(message)
+
+
 class RandomForestFileException(Exception):
     """
     Incorrect Random Forest (.sav) file.

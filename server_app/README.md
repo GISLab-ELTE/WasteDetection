@@ -18,6 +18,7 @@
    - `download-init`: Initialize image database: Download all the images on the given time interval.
    - `download-update`: Download new images. Cannot be used with `download-init`.
    - `classify`: Execute classification (does not download images).
+   - `classify-unet`: Execute classification using UNET (does not download images).
 
 ## Running the application
 
@@ -28,6 +29,7 @@
    - `--download-init`: Initialize image database: Download all the images on the given time interval.
    - `--download-update`: Download new images. Cannot be used with `--download-init`.
    - `--classify`: Execute classification (does not download images).
+   - `--classify-unet`: Execute classification using UNET (does not download images).
 
 ## Configuration
 
@@ -52,10 +54,15 @@ Meaning of the parameters in `config.sample.json` file:
 - `min_coverage`: Minimum image coverage in percentage.
 - `clf_path`: Path of Random Forest classifier.
 - `clf_id`: The Id of the Random Forest classifier.
+- `unet_path`: Path of UNET classifier.
+- `unet_id`: The Id of the UNET classifier.
+- `unet_type`: The type of architecture the model is, either `unet` or `unetpp`
 - `classification_postfix`: File name postfix of classified image.
 - `heatmap_postfix`: File name postfix of heatmap image.
 - `masked_classification_postfix`: File name postfix of masked classified image.
 - `masked_heatmap_postfix`: File name postfix of masked heatmap image.
+- `unet_classification_postfix`: File name postfix of image classified with UNET.
+- `unet_heatmap_postfix`: File name postfix of heatmap image created with UNET.
 - `file_extension`: Extension of result images.
 - `garbage_c_id`: Class ID of garbage class.
 - `water_c_id`: Class ID of water class.

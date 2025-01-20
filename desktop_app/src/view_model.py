@@ -5,6 +5,9 @@ import numpy as np
 import pandas as pd
 
 from matplotlib import cm
+
+from model.unet import UNET, UNETPP
+
 from PIL import ImageColor
 from model.model import Model
 from model.exceptions import *
@@ -12,7 +15,7 @@ from model.persistence import Persistence
 from matplotlib.colors import ListedColormap
 from typing import List, Tuple, Callable, Dict
 from sklearn.ensemble import RandomForestClassifier
-
+import torch
 
 HEATMAP_COLORS = {0: "#000000", 1: "#1fff00", 2: "#fff300", 3: "#ff0000"}
 
@@ -33,6 +36,7 @@ class ViewModel(Model):
         self._classification_mode = None
         self._hotspot_rf = None
         self._floating_rf = None
+        self._unet = None
 
         self._initialize_data_members()
 
@@ -44,6 +48,10 @@ class ViewModel(Model):
     @property
     def result_files_floating(self) -> List[Tuple[str, str]]:
         return list(self._result_files_floating)
+
+    @property
+    def result_files_unet(self) -> List[Tuple[str, str]]:
+        return list(self._result_files_unet)
 
     @property
     def result_files_washed_up(self) -> List[Tuple[str, str]]:
@@ -119,6 +127,38 @@ class ViewModel(Model):
             self._floating_rf = None
             raise FloatingRandomForestFileException()
 
+    def load_unet(self) -> None:
+        """
+        Tries to load UNET classifier.
+
+        :return: None
+        :raise UNETFileException: if UNET file is incorrect
+        """
+        try:
+            self._unet = UNET()
+            unet_state_dict = torch.load(self.persistence.unet_path, weights_only=True)
+            self._unet.load_state_dict(unet_state_dict["model_state_dict"])
+        except Exception:
+            raise UNETFileException("unet")
+
+    def load_unetpp(self) -> None:
+        """
+        Tries to load UNET++ classifier.
+
+        :return: None
+        :raise UNETFileException: if UNET++ file is incorrect
+        """
+        try:
+            unet_state_dict = torch.load(self.persistence.unet_path, weights_only=True)
+            if unet_state_dict["pretrained"]:
+                base_unet = UNET()
+            else:
+                base_unet = None
+            self._unet = UNETPP(pretrained_unet=base_unet, deep_vision=unet_state_dict["deep_vision"])
+            self._unet.load_state_dict(unet_state_dict["model_state_dict"])
+        except Exception:
+            raise UNETFileException("unet++")
+
     def add_files(self, files: List[str], callback: Callable[[str], None]) -> None:
         """
         Adds new file path to Model, and notifies Controller if new file should be added to View.
@@ -156,7 +196,10 @@ class ViewModel(Model):
 
         if (self._hotspot_rf is None) or (self._floating_rf is None):
             self.load_random_forests()
-
+        if self.persistence.unet_type == "unet":
+            self.load_unet()
+        elif self.persistence.unet_type == "unetpp":
+            self.load_unetpp()
         if process_id == 1:
             if self._hotspot_rf is None:
                 raise RandomForestFileException("Hot-spot")
@@ -167,6 +210,8 @@ class ViewModel(Model):
             return self._process_hotspot_floating(hotspot=False)
         elif process_id == 3:
             return self._process_washed_up()
+        elif process_id == 4:
+            return self._process_with_unet()
 
     def save_training_input_file(self, path: str) -> None:
         """
@@ -576,6 +621,7 @@ class ViewModel(Model):
         self._result_files_hotspot = list()
         self._result_files_floating = list()
         self._result_files_washed_up = list()
+        self._result_files_unet = list()
         self._point_tag_ids = list()
         self._tag_ids = dict()
         self._tag_id_coords = dict()
@@ -600,7 +646,10 @@ class ViewModel(Model):
                 were_wrong_pictures = True
                 continue
             tmp_file = self.save_bands_indices(
-                input_path=file, save=training_labels, postfix=training_labels, working_dir=self.persistence.working_dir
+                input_path=file,
+                save=training_labels,
+                postfix=training_labels,
+                working_dir=self.persistence.working_dir,
             )
 
             clf = self._hotspot_rf if hotspot else self._floating_rf
@@ -627,6 +676,48 @@ class ViewModel(Model):
 
                     if not ((file, masked_classification, masked_heatmap) in self._result_files_floating):
                         self._result_files_floating.append((file, masked_classification, masked_heatmap))
+            else:
+                were_wrong_labels = True
+
+            if os.path.exists(tmp_file):
+                os.remove(tmp_file)
+
+        return were_wrong_labels, were_wrong_pictures
+
+    def _process_with_unet(self) -> Tuple[bool, bool]:
+        """
+        Creates the output images of UNET waste detection processes.
+
+        :return: process successful or not
+        """
+        training_labels = self.get_training_labels()
+
+        were_wrong_labels = False
+        were_wrong_pictures = False
+
+        for file in self._opened_files:
+            if not os.path.exists(file):
+                were_wrong_pictures = True
+                continue
+            tmp_file = self.save_bands_indices(
+                input_path=file,
+                save=training_labels,
+                postfix=training_labels,
+                working_dir=self.persistence.working_dir,
+            )
+            unet = self._unet
+            (
+                classification,
+                heatmap,
+            ) = self.create_classification_and_heatmap_with_UNET(
+                input_path=tmp_file,
+                unet=unet,
+                classification_postfix=self.persistence.unet_classified_postfix,
+                heatmap_postfix=self.persistence.unet_heatmap_postfix,
+            )
+            if classification and heatmap:
+                if not ((file, classification, heatmap) in self._result_files_unet):
+                    self._result_files_unet.append((file, classification, heatmap))
             else:
                 were_wrong_labels = True
 

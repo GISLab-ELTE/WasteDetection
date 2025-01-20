@@ -6,7 +6,8 @@ from ttkbootstrap.tooltip import ToolTip
 
 
 THEME = "lumen"
-SIZE = "1090x730"
+# SIZE = "1090x730"
+SIZE = "1308x876"
 
 
 class SettingsView(ttk.Toplevel):
@@ -44,6 +45,14 @@ class SettingsView(ttk.Toplevel):
     @property
     def sentinel_rb(self) -> ttk.Radiobutton:
         return self._sentinel_rb
+
+    @property
+    def unet_rb(self) -> ttk.Radiobutton:
+        return self._unet_rb
+
+    @property
+    def unetpp_rb(self) -> ttk.Radiobutton:
+        return self._unetpp_rb
 
     @property
     def sentinel_blue_spinbox(self) -> ttk.Spinbox:
@@ -122,6 +131,14 @@ class SettingsView(ttk.Toplevel):
         return self._floating_rf_browse_btn
 
     @property
+    def unet_entry(self) -> ttk.Entry:
+        return self._unet_entry
+
+    @property
+    def unet_browse_btn(self) -> ttk.Button:
+        return self._unet_browse_btn
+
+    @property
     def file_extension_entry(self) -> ttk.Entry:
         return self._file_extension_entry
 
@@ -156,6 +173,14 @@ class SettingsView(ttk.Toplevel):
     @property
     def washed_up_after_postfix_entry(self) -> ttk.Entry:
         return self._washed_up_after_postfix_entry
+
+    @property
+    def unet_classified_postfix_entry(self) -> ttk.Entry:
+        return self._unet_classified_postfix_entry
+
+    @property
+    def unet_heatmap_postfix_entry(self) -> ttk.Entry:
+        return self._unet_heatmap_postfix_entry
 
     @property
     def color_buttons(self) -> List[tk.Button]:
@@ -219,6 +244,11 @@ class SettingsView(ttk.Toplevel):
         self._planet_rb = ttk.Radiobutton(master=self._satellite_lf)
         self._sentinel_rb = ttk.Radiobutton(master=self._satellite_lf)
 
+        self._unet_lf = ttk.Labelframe(master=self)
+
+        self._unet_rb = ttk.Radiobutton(master=self._unet_lf)
+        self._unetpp_rb = ttk.Radiobutton(master=self._unet_lf)
+
         self._sentinel_settings_lf = ttk.Labelframe(master=self)
 
         self._sentinel_blue_label = ttk.Label(master=self._sentinel_settings_lf)
@@ -278,6 +308,10 @@ class SettingsView(ttk.Toplevel):
         self._floating_rf_entry = ttk.Entry(master=self._paths_lf)
         self._floating_rf_browse_btn = ttk.Button(master=self._paths_lf)
 
+        self._unet_label = ttk.Label(master=self._paths_lf)
+        self._unet_entry = ttk.Entry(master=self._paths_lf)
+        self._unet_browse_btn = ttk.Button(master=self._paths_lf)
+
         self._file_settings_lf = ttk.Labelframe(master=self)
 
         self._file_extension_label = ttk.Label(master=self._file_settings_lf)
@@ -306,6 +340,12 @@ class SettingsView(ttk.Toplevel):
 
         self._washed_up_after_postfix_label = ttk.Label(master=self._file_settings_lf)
         self._washed_up_after_postfix_entry = ttk.Entry(master=self._file_settings_lf)
+
+        self._unet_heatmap_postfix_label = ttk.Label(master=self._file_settings_lf)
+        self._unet_heatmap_postfix_entry = ttk.Entry(master=self._file_settings_lf)
+
+        self._unet_classified_postfix_label = ttk.Label(master=self._file_settings_lf)
+        self._unet_classified_postfix_entry = ttk.Entry(master=self._file_settings_lf)
 
         self._training_labels = ttk.Labelframe(master=self)
 
@@ -345,6 +385,14 @@ class SettingsView(ttk.Toplevel):
 
         self._planet_rb.configure(text="Planet", variable=self._vars["satellite_rb"], value=1)
         self._sentinel_rb.configure(text="Sentinel-2", variable=self._vars["satellite_rb"], value=2)
+
+        self._unet_lf.configure(text="UNET architecture", padding=10)
+        self._unet_lf.rowconfigure(0, weight=1)
+        self._unet_lf.rowconfigure(1, weight=1)
+        self._unet_lf.columnconfigure(0, weight=1)
+
+        self._unet_rb.configure(text="UNET", variable=self._vars["unet_rb"], value=1)
+        self._unetpp_rb.configure(text="UNET++", variable=self._vars["unet_rb"], value=2)
 
         self._sentinel_settings_lf.configure(text="Sentinel-2 settings", padding=10)
         for i in range(8):
@@ -401,8 +449,8 @@ class SettingsView(ttk.Toplevel):
         self._water_c_id_spinbox.configure(width=2, from_=1, increment=1, to=15)
 
         self._paths_lf.configure(text="Path settings", padding=10)
-        for i in range(4):
-            self._paths_lf.rowconfigure(i, weight=1)
+        for i in range(5):
+            self._paths_lf.rowconfigure(i, weight=2)
         self._paths_lf.columnconfigure(0, weight=4)
         self._paths_lf.columnconfigure(1, weight=10)
         self._paths_lf.columnconfigure(2, weight=1)
@@ -419,8 +467,12 @@ class SettingsView(ttk.Toplevel):
         self._floating_rf_entry.configure(validate="all", width=40)
         self._floating_rf_browse_btn.configure(text="...")
 
+        self._unet_label.configure(text="UNET:")
+        self.unet_entry.configure(validate="all", width=40)
+        self._unet_browse_btn.configure(text="...")
+
         self._file_settings_lf.configure(text="Output file settings", padding=10)
-        for i in range(5):
+        for i in range(6):
             self._file_settings_lf.rowconfigure(i, weight=1)
         for i in range(4):
             self._file_settings_lf.columnconfigure(i, weight=1)
@@ -453,6 +505,12 @@ class SettingsView(ttk.Toplevel):
 
         self._washed_up_after_postfix_label.configure(text="Postfix of Washed up waste second result image:")
         self._washed_up_after_postfix_entry.configure(width=20)
+
+        self._unet_classified_postfix_label.configure(text="Postfix of UNET classified image:")
+        self._unet_classified_postfix_entry.configure(width=20)
+
+        self._unet_heatmap_postfix_label.configure(text="Postfix of UNET heatmap immage:")
+        self._unet_heatmap_postfix_entry.configure(width=20)
 
         self._training_labels.configure(text="Training labels", padding=10)
         for i in range(9):
@@ -500,6 +558,11 @@ class SettingsView(ttk.Toplevel):
 
         self._planet_rb["bootstyle"] = "default"
         self._sentinel_rb["bootstyle"] = "default"
+
+        self._unet_lf["bootstyle"] = "default"
+
+        self._unet_rb["bootstyle"] = "default"
+        self._unetpp_rb["bootstyle"] = "default"
 
         self._sentinel_settings_lf["bootstyle"] = "default"
 
@@ -560,6 +623,10 @@ class SettingsView(ttk.Toplevel):
         self._floating_rf_entry["bootstyle"] = "default"
         self._floating_rf_browse_btn["bootstyle"] = "default"
 
+        self._unet_label["bootstyle"] = "default"
+        self._unet_entry["bootstyle"] = "default"
+        self._unet_browse_btn["bootstyle"] = "default"
+
         self._file_settings_lf["bootstyle"] = "default"
 
         self._file_extension_label["bootstyle"] = "default"
@@ -588,6 +655,12 @@ class SettingsView(ttk.Toplevel):
 
         self._washed_up_after_postfix_label["bootstyle"] = "default"
         self._washed_up_after_postfix_entry["bootstyle"] = "default"
+
+        self._unet_heatmap_postfix_label["bootstyle"] = "default"
+        self._unet_heatmap_postfix_entry["bootstyle"] = "default"
+
+        self._unet_classified_postfix_label["bootstyle"] = "default"
+        self._unet_classified_postfix_entry["bootstyle"] = "default"
 
         self._training_labels["bootstyle"] = "default"
 
@@ -666,7 +739,7 @@ class SettingsView(ttk.Toplevel):
         self._water_c_id_label.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
         self._water_c_id_spinbox.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
 
-        self._paths_lf.place(x=20, y=305, height=150, width=880)
+        self._paths_lf.place(x=20, y=305, height=200, width=880)
 
         self._working_dir_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         self._working_dir_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
@@ -680,7 +753,11 @@ class SettingsView(ttk.Toplevel):
         self._floating_rf_entry.grid(row=2, column=1, sticky="ew", padx=5, pady=5)
         self._floating_rf_browse_btn.grid(row=2, column=2, sticky="ew", padx=5, pady=5)
 
-        self._file_settings_lf.place(x=20, y=465, height=250, width=880)
+        self._unet_label.grid(row=3, column=0, sticky="ew", padx=5, pady=5)
+        self._unet_entry.grid(row=3, column=1, sticky="ew", padx=5, pady=5)
+        self._unet_browse_btn.grid(row=3, column=2, sticky="ew", padx=5, pady=5)
+
+        self._file_settings_lf.place(x=20, y=505, height=300, width=880)
 
         self._file_extension_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         self._file_extension_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
@@ -709,6 +786,12 @@ class SettingsView(ttk.Toplevel):
         self._washed_up_after_postfix_label.grid(row=3, column=2, sticky="ew", padx=5, pady=5)
         self._washed_up_after_postfix_entry.grid(row=3, column=3, sticky="ew", padx=5, pady=5)
 
+        self._unet_classified_postfix_label.grid(row=4, column=2, sticky="ew", padx=5, pady=5)
+        self._unet_classified_postfix_entry.grid(row=4, column=3, sticky="ew", padx=5, pady=5)
+
+        self._unet_heatmap_postfix_label.grid(row=5, column=2, sticky="ew", padx=5, pady=5)
+        self._unet_heatmap_postfix_entry.grid(row=5, column=3, sticky="ew", padx=5, pady=5)
+
         self._training_labels.place(x=800, y=10, height=285, width=100)
 
         self._training_blue.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
@@ -731,6 +814,10 @@ class SettingsView(ttk.Toplevel):
         self._ok_btn.place(x=995, y=685, height=30, width=70)
         self._cancel_btn.place(x=920, y=685, height=30, width=70)
 
+        self._unet_lf.place(x=1100, y=20, height=150, width=150)
+        self._unet_rb.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        self._unetpp_rb.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+
     def _setup_vars(self) -> None:
         """
         Initializes the ttk.Variables of this class.
@@ -740,6 +827,7 @@ class SettingsView(ttk.Toplevel):
 
         self._vars = dict()
         self._vars["satellite_rb"] = ttk.IntVar(master=self)
+        self._vars["unet_rb"] = ttk.IntVar(master=self)
         self._vars["training_blue"] = ttk.IntVar(master=self)
         self._vars["training_green"] = ttk.IntVar(master=self)
         self._vars["training_red"] = ttk.IntVar(master=self)
@@ -843,7 +931,7 @@ class SettingsView(ttk.Toplevel):
             self._floating_rf_browse_btn,
             "Browse saved Random Forest classifier model for the Floating waste detection method.",
         )
-
+        ToolTip(self._unet_browse_btn, "Browse saved UNET classifier model")
         # Output file settings
         ToolTip(
             self._file_extension_label,
@@ -880,6 +968,14 @@ class SettingsView(ttk.Toplevel):
         ToolTip(
             self._washed_up_after_postfix_label,
             "File name postfix of the second result image (Washed up waste detection).",
+        )
+        ToolTip(
+            self._unet_classified_postfix_label,
+            "File name postfix of the UNET classified image",
+        )
+        ToolTip(
+            self._unet_heatmap_postfix_label,
+            "File name postfix of the UNET heatmap image",
         )
 
         # Training labels
