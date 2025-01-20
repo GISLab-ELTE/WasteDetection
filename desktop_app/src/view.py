@@ -514,3 +514,4 @@ class View(ttk.Window):
             value=3,
             variable=self._vars["process_menu"],
         )
+        self._process_menu.add_radiobutton(label="Process with UNET", value=4, variable=self._vars["process_menu"])

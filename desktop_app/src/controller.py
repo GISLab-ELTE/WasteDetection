@@ -242,6 +242,11 @@ class Controller(object):
             validatecommand=(self._file_path_func, "%P"),
             invalidcommand=self._invalid_file_path_func,
         )
+        self._view.settings_view.unet_entry.configure(
+            validate="focusout",
+            validatecommand=(self._file_path_func, "%P"),
+            invalidcommand=self._invalid_file_path_func,
+        )
 
         self._view.settings_view.floating_rf_entry.configure(
             validate="focusout",
@@ -303,6 +308,18 @@ class Controller(object):
             invalidcommand=self._invalid_postfix_func,
         )
 
+        self._view.settings_view.unet_classified_postfix_entry.configure(
+            validate="focusout",
+            validatecommand=(self._postfix_func, "%P"),
+            invalidcommand=self._invalid_postfix_func,
+        )
+
+        self._view.settings_view.unet_heatmap_postfix_entry.configure(
+            validate="focusout",
+            validatecommand=(self._postfix_func, "%P"),
+            invalidcommand=self._invalid_postfix_func,
+        )
+
         self._view.settings_view.working_dir_browse_btn.configure(command=self._settings_working_dir_browse_directory)
         self._view.settings_view.hotspot_rf_browse_btn.configure(
             command=lambda b="hotspot": self._settings_browse_file(b)
@@ -310,6 +327,7 @@ class Controller(object):
         self._view.settings_view.floating_rf_browse_btn.configure(
             command=lambda b="floating": self._settings_browse_file(b)
         )
+        self._view.settings_view.unet_browse_btn.configure(command=lambda b="unet": self._settings_browse_file(b))
         self._view.settings_view.ok_btn.configure(command=self._settings_on_ok)
         self._view.settings_view.cancel_btn.configure(command=self._view.settings_view.hide)
 
@@ -381,6 +399,8 @@ class Controller(object):
             self._view.process_btn.configure(text="Floating waste detection")
         elif text_var == 3:
             self._view.process_btn.configure(text="Washed up waste detection")
+        elif text_var == 4:
+            self._view.process_btn.configure(text="Process with UNET")
 
         self._view_update_start_process_btn_state()
 
@@ -671,6 +691,8 @@ class Controller(object):
                 parent=self._view,
                 message="Could not load Random Forest for Floating waste detection!\nLoading previous classifier!",
             )
+        except UNETFileException:
+            tkinter.messagebox.showerror(parent=self._view, message="Could not load UNET classifier!")
         except Exception as exc:
             message = traceback.format_exception_only(type(exc), exc)[0]
             if len(message) == 0:
@@ -701,7 +723,7 @@ class Controller(object):
         process_id = self._view.vars["process_menu"].get()
         listbox_size = self._view.opened_files_lb.size()
 
-        if (process_id == 1 or process_id == 2) and not (listbox_size == 0):
+        if (process_id == 1 or process_id == 2 or process_id == 4) and not (listbox_size == 0):
             self._view_change_start_process_btn_state(active=True)
         elif process_id == 3 and listbox_size > 1:
             self._view_change_start_process_btn_state(active=True)
@@ -854,7 +876,7 @@ class Controller(object):
         satellite_rgb = self._get_satellite_rgb()
 
         if len(view_selected_files) == 1:
-            if process_id == 1 or process_id == 2:
+            if process_id == 1 or process_id == 2 or process_id == 4:
                 selected_file = view_selected_files[0]
 
                 self._view.clear_canvas("left")
@@ -890,7 +912,7 @@ class Controller(object):
                 self._view.clear_canvas("left")
                 self._view.clear_canvas("right")
         elif len(view_selected_files) == 2:
-            if process_id == 1 or process_id == 2:
+            if process_id == 1 or process_id == 2 or process_id == 4:
                 self._view.clear_canvas("left")
                 self._view.clear_canvas("right")
             elif process_id == 3:
@@ -997,11 +1019,13 @@ class Controller(object):
             model_source_result_files += self._model.result_files_floating
         elif process_id == 3:
             model_source_result_files += self._model.result_files_washed_up
+        elif process_id == 4:
+            model_source_result_files += self._model.result_files_unet
 
         model_source_files = list()
         model_result_files = list()
 
-        if process_id == 1 or process_id == 2:
+        if process_id == 1 or process_id == 2 or process_id == 4:
             model_source_files += [source_file for (source_file, classification, heatmap) in model_source_result_files]
             model_result_files += [
                 (classification, heatmap) for (source_file, classification, heatmap) in model_source_result_files
@@ -1065,6 +1089,9 @@ class Controller(object):
             elif button_id == "floating":
                 self._view.settings_view.floating_rf_entry.delete(0, END)
                 self._view.settings_view.floating_rf_entry.insert(0, filename)
+            elif button_id == "unet":
+                self._view.settings_view.unet_entry.delete(0, END)
+                self._view.settings_view.unet_entry.insert(0, filename)
 
     def _settings_validate_spinbox_and_entry_values(self) -> bool:
         """
@@ -1183,6 +1210,7 @@ class Controller(object):
         working_dir = self._view.settings_view.working_dir_entry.get()
         hotspot_rf_path = self._view.settings_view.hotspot_rf_entry.get()
         floating_rf_path = self._view.settings_view.floating_rf_entry.get()
+        unet_path = self._view.settings_view.unet_entry.get()
 
         # File settings
         file_extension = self._view.settings_view.file_extension_entry.get()
@@ -1194,6 +1222,8 @@ class Controller(object):
         floating_masked_heatmap_postfix = self._view.settings_view.floating_masked_heatmap_postfix_entry.get()
         washed_up_before_postfix = self._view.settings_view.washed_up_before_postfix_entry.get()
         washed_up_after_postfix = self._view.settings_view.washed_up_after_postfix_entry.get()
+        unet_classified_postfix = self._view.settings_view._unet_classified_postfix_entry.get()
+        unet_heatmap_postfix = self._view.settings_view._unet_heatmap_postfix_entry.get()
 
         # Training labels
         bands_and_indices = [
@@ -1222,6 +1252,12 @@ class Controller(object):
         elif self._view.settings_view.vars["satellite_rb"].get() == 2:
             self._model.persistence.satellite_type = "sentinel-2"
 
+        # UNET type
+        if self._view.settings_view.vars["unet_rb"].get() == 1:
+            self._model.persistence.unet_type = "unet"
+        if self._view.settings_view.vars["unet_rb"].get() == 2:
+            self._model.persistence.unet_type = "unetpp"
+
         # Sentinel-2 settings
         self._model.persistence.sentinel_2_blue = blue_value
         self._model.persistence.sentinel_2_green = green_value
@@ -1245,6 +1281,7 @@ class Controller(object):
         self._model.persistence.hotspot_rf_path = hotspot_rf_path
         prev_floating_rf_path = self._model.persistence.floating_rf_path
         self._model.persistence.floating_rf_path = floating_rf_path
+        self._model.persistence.unet_path = unet_path
 
         # File settings
         self._model.persistence.file_extension = file_extension
@@ -1256,6 +1293,8 @@ class Controller(object):
         self._model.persistence.floating_masked_heatmap_postfix = floating_masked_heatmap_postfix
         self._model.persistence.washed_up_before_postfix = washed_up_before_postfix
         self._model.persistence.washed_up_after_postfix = washed_up_after_postfix
+        self._model.persistence.unet_classified_postfix = unet_classified_postfix
+        self._model.persistence.unet_heatmap_postfix = unet_heatmap_postfix
 
         # Training labels
         for i in range(len(bands_and_indices)):
@@ -1315,6 +1354,13 @@ class Controller(object):
         else:
             self._view.settings_view.vars["satellite_rb"].set(0)
 
+        # UNET type
+        if self._model.persistence.unet_type.lower() == "unet":
+            self._view.settings_view.vars["unet_rb"].set(1)
+        elif self._model.persistence.unet_type.lower() == "unetpp":
+            self._view.settings_view.vars["unet_rb"].set(2)
+        else:
+            self._view.settings_view.vars["unet_rb"].set(0)
         # Sentinel-2 settings
         blue_value = self._model.persistence.sentinel_2_blue
         self._view.settings_view.sentinel_blue_spinbox.set(blue_value)
@@ -1370,6 +1416,10 @@ class Controller(object):
         self._view.settings_view.floating_rf_entry.delete(0, END)
         self._view.settings_view.floating_rf_entry.insert(0, floating_rf_path)
 
+        unet_path = self._model.persistence.unet_path
+        self._view.settings_view.unet_entry.delete(0, END)
+        self._view.settings_view.unet_entry.insert(0, unet_path)
+
         # File settings
         file_extension = self._model.persistence.file_extension
         self._view.settings_view.file_extension_entry.delete(0, END)
@@ -1406,6 +1456,14 @@ class Controller(object):
         washed_up_above_postfix = self._model.persistence.washed_up_after_postfix
         self._view.settings_view.washed_up_after_postfix_entry.delete(0, END)
         self._view.settings_view.washed_up_after_postfix_entry.insert(0, washed_up_above_postfix)
+
+        unet_classified_postfix = self._model.persistence.unet_classified_postfix
+        self._view.settings_view.unet_classified_postfix_entry.delete(0, END)
+        self._view.settings_view.unet_classified_postfix_entry.insert(0, unet_classified_postfix)
+
+        unet_heatmap_postfix = self._model.persistence.unet_heatmap_postfix
+        self._view.settings_view.unet_heatmap_postfix_entry.delete(0, END)
+        self._view.settings_view.unet_heatmap_postfix_entry.insert(0, unet_heatmap_postfix)
 
         # Training labels
         self._view.settings_view.vars["training_blue"].set(1 if self._model.persistence.training_label_blue else 0)

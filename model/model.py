@@ -16,6 +16,10 @@ from itertools import compress
 from scipy.ndimage import median_filter
 from skimage.filters import threshold_minimum
 
+from model.unet import UNET
+from model.unet import UNETPP
+
+import torch
 from model.exceptions import *
 from shapely.geometry import shape
 from shapely.geometry import Point
@@ -199,7 +203,12 @@ class Model(object):
             return udm2_mask
 
     def save_bands_indices(
-        self, input_path: str, save: str, postfix: str, working_dir: str, udm2_input_path: str = None
+        self,
+        input_path: str,
+        save: str,
+        postfix: str,
+        working_dir: str,
+        udm2_input_path: str = None,
     ) -> str:
         """
         Saves the specified band values and/or index values to a single- or multi-band tif file.
@@ -368,11 +377,14 @@ class Model(object):
             masked_heatmap = np.empty_like(classification_matrix)
 
             rows, cols = classification_matrix.shape
-            working_dir = self.persistence.working_dir if hasattr(self.persistence, "working_dir") else ""
+            working_dir = self.persistence.workspace_root_dir if hasattr(self.persistence, "workspace_root_dir") else ""
 
             # output paths
             morphology_path = Model.output_path(
-                [original_input_path], "morphology", self.persistence.file_extension, working_dir
+                [original_input_path],
+                "morphology",
+                self.persistence.file_extension,
+                working_dir,
             )
             opening_path = Model.output_path(
                 [original_input_path],
@@ -417,12 +429,18 @@ class Model(object):
                 output_path=morphology_path,
             )
 
-            matrix = self.persistence.morphology_matrix_size, self.persistence.morphology_matrix_size
+            matrix = (
+                self.persistence.morphology_matrix_size,
+                self.persistence.morphology_matrix_size,
+            )
             opening = Model.morphology("opening", morphology_path, opening_path, matrix=matrix)
 
             if opening is not None:
                 dilation = Model.morphology(
-                    "dilation", opening_path, dilation_path, iterations=self.persistence.morphology_iterations
+                    "dilation",
+                    opening_path,
+                    dilation_path,
+                    iterations=self.persistence.morphology_iterations,
                 )
 
                 if dilation is not None:
@@ -546,7 +564,7 @@ class Model(object):
             classification = classification.reshape((rows, cols))
             heatmap = heatmap.reshape((rows, cols))
 
-            working_dir = self.persistence.working_dir if hasattr(self.persistence, "working_dir") else ""
+            working_dir = self.persistence.workspace_root_dir if hasattr(self.persistence, "workspace_root_dir") else ""
             classification_output_path = Model.output_path(
                 [input_path],
                 classification_postfix,
@@ -585,7 +603,107 @@ class Model(object):
         finally:
             del ds
 
-    def apply_water_and_udm2_masks(self, list_of_bands_and_indices: List[np.ndarray], save: str, udm2_input_path: str):
+    def create_classification_and_heatmap_with_UNET(
+        self,
+        input_path: str,
+        unet: Union[UNET, UNETPP],
+        classification_postfix: str,
+        heatmap_postfix: str,
+    ) -> Tuple[str, str]:
+        """
+        Creates classification and garbage heatmap with UNET Classifier.
+
+        :param input_path: input path of the image to be processed
+        :param unet: an instance of UNET
+        :param classification_postfix: postfix of classified image name
+        :param heatmap_postfix: postfix of heatmap image name
+        :return: path of the classified image and the heatmap image
+        """
+
+        try:
+            ds = gdal.Open(input_path, gdal.GA_ReadOnly)
+
+            # initialize variables
+            rows = ds.RasterYSize
+            cols = ds.RasterXSize
+            bands = ds.RasterCount
+            array = ds.ReadAsArray().astype(dtype="float32")
+
+            if bands < unet.in_channels:
+                raise NotEnoughBandsException(bands, unet.in_channels, input_path)
+            # merge band values
+            array = np.stack(array, axis=2)
+            # reshape array
+            array = np.reshape(array, [rows, cols, bands])
+            array = np.transpose(array, (2, 0, 1))
+            array = array[: unet.in_channels, :, :]
+            array = torch.tensor(array)
+            array = array.unsqueeze(0)
+
+            with torch.no_grad():
+                prob = unet.predict(array)
+            prob = prob.squeeze()
+            prob = np.asarray(prob)
+            classification = np.zeros(prob.shape)
+            classification[prob >= self.persistence.medium_prob_percent / 100] = 1
+
+            low_mask = np.where(
+                (prob > self.persistence.low_prob_percent / 100) & (prob <= self.persistence.medium_prob_percent / 100)
+            )
+            medium_mask = np.where(
+                (prob > self.persistence.medium_prob_percent / 100) & (prob <= self.persistence.high_prob_percent / 100)
+            )
+            high_mask = np.where(prob > self.persistence.high_prob_percent / 100)
+
+            heatmap = np.zeros(prob.shape)
+            heatmap[low_mask] = self.persistence.low_prob_value
+            heatmap[medium_mask] = self.persistence.medium_prob_value
+            heatmap[high_mask] = self.persistence.high_prob_value
+
+            working_dir = self.persistence.workspace_root_dir if hasattr(self.persistence, "workspace_root_dir") else ""
+
+            classification_output_path = Model.output_path(
+                [input_path],
+                classification_postfix,
+                self.persistence.file_extension,
+                working_dir,
+            )
+            heatmap_output_path = Model.output_path(
+                [input_path],
+                heatmap_postfix,
+                self.persistence.file_extension,
+                working_dir,
+            )
+
+            # save classification
+            Model.save_tif(
+                input_path=input_path,
+                array=[classification],
+                shape=classification.shape,
+                band_count=1,
+                output_path=classification_output_path,
+            )
+
+            # save heatmap
+            Model.save_tif(
+                input_path=input_path,
+                array=[heatmap],
+                shape=heatmap.shape,
+                band_count=1,
+                output_path=heatmap_output_path,
+            )
+
+            return classification_output_path, heatmap_output_path
+        except:
+            traceback.print_exc()
+            return "", ""
+
+    def apply_water_and_udm2_masks(
+        self,
+        list_of_bands_and_indices: List[np.ndarray],
+        save: str,
+        udm2_input_path: str,
+    ):
         """
         Apply masking based on configuration parameters.
 
@@ -608,7 +726,10 @@ class Model(object):
             water_mask = self.create_water_mask(ndwi, self.persistence.invert_water_mask)
 
             water_mask = self.water_mask_morphological_transform(
-                water_mask, self.persistence.open_kernel, self.persistence.close_kernel, self.persistence.dilute_kernel
+                water_mask,
+                self.persistence.open_kernel,
+                self.persistence.close_kernel,
+                self.persistence.dilute_kernel,
             )
 
             if water_mask is not None:

@@ -13,6 +13,9 @@ from collections import OrderedDict
 from server_app.src.planetapi import PlanetAPI
 from server_app.src.sentinelapi import SentinelAPI
 
+from model.model import UNET, UNETPP
+import torch
+
 
 class Process(object):
     """
@@ -20,7 +23,14 @@ class Process(object):
 
     """
 
-    def __init__(self, model: Model, download_init: bool, download_update: bool, classify: bool) -> None:
+    def __init__(
+        self,
+        model: Model,
+        download_init: bool,
+        download_update: bool,
+        classify: bool,
+        is_unet: bool,
+    ) -> None:
         """
         Constructor of Process class.
 
@@ -35,7 +45,9 @@ class Process(object):
         self.pixel_size = None
         self.download_init = download_init
         self.download_update = download_update
+        self.is_unet = is_unet
         self.classify = classify
+        self.unet = None
 
         self.estimations = dict()
 
@@ -54,6 +66,19 @@ class Process(object):
             self.api.data_file = Model.transform_dict_of_coordinates_to_crs(
                 data_file=self.api.data_file, crs_to="epsg:3857"
             )
+        if self.is_unet:
+            if hasattr(self.model.persistence, "unet_path"):
+                unet_dict = torch.load(self.model.persistence.unet_path, weights_only=True)
+            if hasattr(self.model.persistence, "unet_type"):
+                if self.model.persistence.unet_type == "unetpp":
+                    if unet_dict["pretrained"]:
+                        base_unet = UNET()
+                    else:
+                        base_unet = None
+                    self.unet = UNETPP(pretrained_unet=base_unet, deep_vision=unet_dict["deep_vision"])
+                elif self.model.persistence.unet_type == "unet":
+                    self.unet = UNET()
+                self.unet.load_state_dict(unet_dict["model_state_dict"])
 
     def mainloop(self) -> None:
         """
@@ -62,7 +87,7 @@ class Process(object):
         :return: None
         """
 
-        if not self.classify and not self.download_init and not self.download_update:
+        if not self.classify and not self.download_init and not self.download_update and not self.is_unet:
             logging.error("One of the flags must be specified. See help.")
             return
 
@@ -70,7 +95,7 @@ class Process(object):
             logging.error("cannot have download-init and download-update at the same time!")
             return
 
-        if not self.classify:
+        if not self.classify and not self.is_unet:
             logging.info("Started setting up the account.")
             self.api.login()
             logging.info("Finished setting up the account.")
@@ -116,14 +141,22 @@ class Process(object):
 
         :return: None
         """
+        if self.is_unet:
+            logging.info("{} Estimating extent of polluted areas...")
+            self.create_estimations_with_unet()
+            logging.info("{} Finished estimation...")
 
-        logging.info("{} Estimating extent of polluted areas...")
-        self.create_estimations()
-        logging.info("{} Finished estimation...")
+            logging.info("{} Analyzing acquired data...")
+            self.analyze_estimations()
+            logging.info("{} Finished analyzing data...")
+        else:
+            logging.info("{} Estimating extent of polluted areas...")
+            self.create_estimations()
+            logging.info("{} Finished estimation...")
 
-        logging.info("{} Analyzing acquired data...")
-        self.analyze_estimations()
-        logging.info("{} Finished analyzing data...")
+            logging.info("{} Analyzing acquired data...")
+            self.analyze_estimations()
+            logging.info("{} Finished analyzing data...")
 
     def execute_download_pipeline(self) -> None:
         """
@@ -238,6 +271,73 @@ class Process(object):
 
         self.generate_json_files_for_webapp()
 
+    def create_estimations_with_unet(self) -> None:
+        """
+        Executes the estimations on new images with UNET classifier.
+
+        :return: None
+        """
+
+        downloaded_images = self.get_satellite_images()
+        sentinel_path = self.join_path("workspace_root_dir", "result_dir_sentinel_2")
+        planet_path = self.join_path("workspace_root_dir", "result_dir_planetscope")
+        work_dir = sentinel_path if self.satellite_type == "sentinel-2" else planet_path
+
+        for feature_id in downloaded_images.keys():
+            for date in downloaded_images[feature_id].keys():
+                output_dir_path = "/".join([work_dir, feature_id, date])
+                heatmap_postfix = self.model.persistence.unet_heatmap_postfix
+
+                processed = False
+
+                if not os.path.exists(output_dir_path):
+                    os.makedirs(output_dir_path)
+
+                for file in os.listdir(output_dir_path):
+                    if fnmatch.fnmatch(file, f"*{heatmap_postfix}*"):
+                        processed = True
+                        break
+
+                if processed:
+                    continue
+
+                input_file_path = downloaded_images[feature_id][date]
+
+                indices_path = self.model.save_bands_indices(input_file_path, "all", "all", output_dir_path)
+
+                (
+                    classified,
+                    heatmap,
+                ) = self.model.create_classification_and_heatmap_with_UNET(
+                    indices_path,
+                    self.unet,
+                    self.model.persistence.unet_classification_postfix,
+                    self.model.persistence.unet_heatmap_postfix,
+                )
+
+                Model.get_waste_geojson(
+                    input_file=classified,
+                    output_file="/".join([work_dir, feature_id, date, "classified.geojson"]),
+                    search_value=1,
+                )
+
+                heatmap_types = [("low", 1), ("medium", 2), ("high", 3)]
+
+                for heatmap_type, value in heatmap_types:
+                    Model.get_waste_geojson(
+                        input_file=heatmap,
+                        output_file="/".join([work_dir, feature_id, date, heatmap_type + ".geojson"]),
+                        search_value=value,
+                    )
+
+                estimation = self.model.estimate_garbage_area(classified, "classified")
+
+                if feature_id not in self.estimations.keys():
+                    self.estimations[feature_id] = dict()
+                self.estimations[feature_id][date] = estimation
+
+        self.generate_json_files_for_webapp()
+
     def generate_json_files_for_webapp(self) -> None:
         """
         Generates all the needed JSON files for web_app.
@@ -247,7 +347,6 @@ class Process(object):
         geojson_files_path = self.join_path("workspace_root_dir", "geojson_files_path")
         satellite_images_path = self.join_path("workspace_root_dir", "satellite_images_path")
         estimations_file_path = self.join_path("workspace_root_dir", "estimations_file_path")
-
         result_dir, image_files_abs, image_files_rel = None, None, None
 
         if self.satellite_type == "sentinel-2":
@@ -323,8 +422,10 @@ class Process(object):
         :param file_path: The path of the json file
         :param model_data: The dictionary that needs to be added to the json file.
         """
-
-        clf_id = self.model.persistence.clf_id
+        if self.is_unet:
+            clf_id = self.model.persistence.unet_id
+        else:
+            clf_id = self.model.persistence.clf_id
 
         # to prevent deleting the file's contents before reading, we need to use the "r" flag to read the contents.
         # This throws an exception when the file does not exist, thus we need to create an empty json file to prevent errors.
