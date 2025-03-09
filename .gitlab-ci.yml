@@ -53,7 +53,7 @@ lint:prettier:
     - npx prettier --check .
 
 # Model
-model-unittest:
+unittest:
   image: "$IMAGE_NAME_BASE"
   stage: test
   before_script:
@@ -66,7 +66,7 @@ model-unittest:
     # Activate environment
     - conda activate WasteDetection
     # Run unit tests
-    - python unittest_model.py
+    - python -m unittest discover -s ./unit_tests -p *_test.py
 
 # Webapp
 webapp-build:
