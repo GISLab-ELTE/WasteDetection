@@ -47,69 +47,53 @@ const annotationSave = document.getElementById("annotation-save");
 const annotationCancel = document.getElementById("annotation-cancel");
 
 // Styles for GeoJSON polygons
-const stylesClassified = {
-  MultiPolygon: new Style({
-    stroke: new Stroke({
-      color: "rgb(255, 128, 0)",
-      width: 3,
-    }),
-    fill: new Fill({
-      color: "rgba(255, 128, 0, 0.5)",
-    }),
+const styleClassified = new Style({
+  stroke: new Stroke({
+    color: "rgb(255, 128, 0)",
+    width: 3,
   }),
-};
-
-const stylesHeatmapHigh = {
-  MultiPolygon: new Style({
-    stroke: new Stroke({
-      color: "red",
-      width: 3,
-    }),
-    fill: new Fill({
-      color: "rgba(255, 0, 0, 0.5)",
-    }),
+  fill: new Fill({
+    color: "rgba(255, 128, 0, 0.5)",
   }),
-};
+});
 
-const stylesHeatmapMedium = {
-  MultiPolygon: new Style({
-    stroke: new Stroke({
-      color: "rgb(255, 255, 0)",
-      width: 3,
-    }),
-    fill: new Fill({
-      color: "rgba(255, 255, 0, 0.5)",
-    }),
+const styleHeatmapHigh = new Style({
+  stroke: new Stroke({
+    color: "red",
+    width: 3,
   }),
-};
-
-const stylesHeatmapLow = {
-  MultiPolygon: new Style({
-    stroke: new Stroke({
-      color: "green",
-      width: 3,
-    }),
-    fill: new Fill({
-      color: "rgba(0, 255, 0, 0.5)",
-    }),
+  fill: new Fill({
+    color: "rgba(255, 0, 0, 0.5)",
   }),
-};
+});
 
-const styleFunctionClassified = function (feature) {
-  return stylesClassified[feature.getGeometry().getType()];
-};
+const styleHeatmapMedium = new Style({
+  stroke: new Stroke({
+    color: "rgb(255, 255, 0)",
+    width: 3,
+  }),
+  fill: new Fill({
+    color: "rgba(255, 255, 0, 0.5)",
+  }),
+});
 
-const styleFunctionHeatmapHigh = function (feature) {
-  return stylesHeatmapHigh[feature.getGeometry().getType()];
-};
+const styleHeatmapLow = new Style({
+  stroke: new Stroke({
+    color: "green",
+    width: 3,
+  }),
+  fill: new Fill({
+    color: "rgba(0, 255, 0, 0.5)",
+  }),
+});
 
-const styleFunctionHeatmapMedium = function (feature) {
-  return stylesHeatmapMedium[feature.getGeometry().getType()];
-};
+const styleFunctionClassified = (_) => styleClassified;
 
-const styleFunctionHeatmapLow = function (feature) {
-  return stylesHeatmapLow[feature.getGeometry().getType()];
-};
+const styleFunctionHeatmapHigh = (_) => styleHeatmapHigh;
+
+const styleFunctionHeatmapMedium = (_) => styleHeatmapMedium;
+
+const styleFunctionHeatmapLow = (_) => styleHeatmapLow;
 
 // Sources and layers
 const sourceClassified = new VectorSource({ format: new GeoJSON() });

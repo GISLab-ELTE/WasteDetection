@@ -15,11 +15,14 @@ from osgeo import gdal, osr
 from itertools import compress
 from scipy.ndimage import median_filter
 from skimage.filters import threshold_minimum
+from model.treshold import Treshold
+import model.gdal_utils as gdal_utils
 
 from model.unet import UNET
 from model.unet import UNETPP
 
 import torch
+import model.estimations as estimations
 from model.exceptions import *
 from shapely.geometry import shape
 from shapely.geometry import Point
@@ -82,43 +85,20 @@ class Model(object):
 
             band = dataset.GetRasterBand(1)
             band = band.ReadAsArray()
-            unique_values = np.unique(band)
 
-            rows, cols = band.shape
-            area = 0.0
+            pixel_area = self.pixel_size_x * self.pixel_size_y
 
             if image_type.lower() == "classified":
-                if self.persistence.garbage_c_id * 100 not in unique_values:
-                    return 0
+                return np.count_nonzero(band == self.persistence.garbage_c_id * 100) * pixel_area
+            if image_type.lower() == "heatmap":
+                if prob == "low":
+                    return np.count_nonzero(band == self.persistence.low_prob_value) * pixel_area
+                if prob == "medium":
+                    return np.count_nonzero(band == self.persistence.medium_prob_value) * pixel_area
+                if prob == "high":
+                    return np.count_nonzero(band == self.persistence.high_prob_value) * pixel_area
 
-                cond_list = [value % 100 == 0 for value in unique_values]
-
-                if not all(cond_list):
-                    return 0
-
-                for i in range(rows):
-                    for j in range(cols):
-                        if band[i, j] == self.persistence.garbage_c_id * 100:
-                            area += self.pixel_size_x * self.pixel_size_y
-            elif image_type.lower() == "heatmap":
-                for i in range(rows):
-                    for j in range(cols):
-                        if (
-                            prob == "low"
-                            and band[i, j] == self.persistence.low_prob_value
-                            or prob == "medium"
-                            and band[i, j] == self.persistence.medium_prob_value
-                            or prob == "high"
-                            and band[i, j] == self.persistence.high_prob_value
-                        ):
-                            area += self.pixel_size_x * self.pixel_size_y
-
-            return area
-        except NotEnoughBandsException:
-            raise
-        except Exception:
-            traceback.print_exc()
-            return None
+            raise ValueError("Unrecognized image_type!")
         finally:
             del dataset
 
@@ -372,12 +352,12 @@ class Model(object):
             # create matrices
             classification_matrix = classification_matrix.read(1)
             heatmap_matrix = heatmap_matrix.read(1)
-            morphology_matrix = np.empty_like(classification_matrix)
-            masked_classification = np.empty_like(classification_matrix)
-            masked_heatmap = np.empty_like(classification_matrix)
 
-            rows, cols = classification_matrix.shape
-            working_dir = self.persistence.workspace_root_dir if hasattr(self.persistence, "workspace_root_dir") else ""
+            working_dir = working_dir = (
+                self.persistence.working_dir
+                if hasattr(self.persistence, "working_dir")
+                else os.path.dirname(original_input_path)
+            )
 
             # output paths
             morphology_path = Model.output_path(
@@ -411,15 +391,9 @@ class Model(object):
                 working_dir,
             )
 
-            for i in range(rows):
-                for j in range(cols):
-                    if (
-                        classification_matrix[i, j] == self.persistence.garbage_c_id * 100
-                        or classification_matrix[i, j] == self.persistence.water_c_id * 100
-                    ):
-                        morphology_matrix[i, j] = 1
-                    else:
-                        morphology_matrix[i, j] = 0
+            morphology_matrix = np.zeros_like(classification_matrix)
+            morphology_matrix[classification_matrix == self.persistence.garbage_c_id * 100] = 1
+            morphology_matrix[classification_matrix == self.persistence.water_c_id * 100] = 1
 
             Model.save_tif(
                 input_path=original_input_path,
@@ -444,14 +418,13 @@ class Model(object):
                 )
 
                 if dilation is not None:
-                    for i in range(rows):
-                        for j in range(cols):
-                            if dilation[i, j] == 1:
-                                masked_classification[i, j] = classification_matrix[i, j]
-                                masked_heatmap[i, j] = heatmap_matrix[i, j]
-                            else:
-                                masked_classification[i, j] = 0
-                                masked_heatmap[i, j] = 0
+                    dilation_mask = dilation == 0
+
+                    masked_classification = classification_matrix
+                    masked_classification[dilation_mask] = 0
+
+                    masked_heatmap = heatmap_matrix
+                    masked_heatmap[dilation_mask] = 0
 
                     Model.save_tif(
                         input_path=original_input_path,
@@ -494,114 +467,77 @@ class Model(object):
         :param heatmap_postfix: postfix of heatmap image name
         :return: path of the classified image and the heatmap image
         """
-
         try:
             ds = gdal.Open(input_path, gdal.GA_ReadOnly)
-
-            # initialize variables
             rows = ds.RasterYSize
             cols = ds.RasterXSize
             bands = ds.RasterCount
             array = ds.ReadAsArray().astype(dtype="float32")
-
-            classes = clf.classes_
-
-            classification = np.zeros(shape=rows * cols, dtype=int)
-            heatmap = np.zeros(shape=rows * cols, dtype=int)
-
-            # merge band values
-            array = np.stack(array, axis=2)
-
-            # reshape array
-            array = np.reshape(array, [rows * cols, bands])
-
-            # array to data frame
-            array_df = pd.DataFrame(array, dtype="float32")
-
-            split_size = ceil(
-                array_df.shape[0]
-                / ceil((array_df.shape[0] * self.persistence.max_class_count) / self.persistence.max_class_value_count)
-            )
-            split_count = ceil(
-                (array_df.shape[0] * self.persistence.max_class_count) / self.persistence.max_class_value_count
-            )
-            for c in range(split_count):
-                new_array_df = array_df[c * split_size : (c + 1) * split_size].dropna(axis="index")
-                pred_proba = clf.predict_proba(new_array_df)
-
-                counter = 0
-                for i in range(c * split_size, (c + 1) * split_size):
-                    if i == rows * cols:
-                        break
-
-                    if np.any(np.isnan(array[i])):
-                        continue
-
-                    max_ind = np.argmax(pred_proba[counter])
-                    max_value = pred_proba[counter][max_ind]
-
-                    class_str = str(classes[max_ind])
-                    if class_str == (str(self.persistence.garbage_c_id * 100)):
-                        if max_value >= self.persistence.high_prob_percent / 100:
-                            heatmap[i] = self.persistence.high_prob_value
-                        elif (
-                            self.persistence.medium_prob_percent / 100
-                            <= max_value
-                            < self.persistence.high_prob_percent / 100
-                        ):
-                            heatmap[i] = self.persistence.medium_prob_value
-                        elif (
-                            self.persistence.low_prob_percent / 100
-                            <= max_value
-                            < self.persistence.medium_prob_percent / 100
-                        ):
-                            heatmap[i] = self.persistence.low_prob_value
-
-                    classification[i] = classes[max_ind]
-
-                    counter += 1
-
-            classification = classification.reshape((rows, cols))
-            heatmap = heatmap.reshape((rows, cols))
-
-            working_dir = self.persistence.workspace_root_dir if hasattr(self.persistence, "workspace_root_dir") else ""
-            classification_output_path = Model.output_path(
-                [input_path],
-                classification_postfix,
-                self.persistence.file_extension,
-                working_dir,
-            )
-            heatmap_output_path = Model.output_path(
-                [input_path],
-                heatmap_postfix,
-                self.persistence.file_extension,
-                working_dir,
-            )
-
-            # save classification
-            Model.save_tif(
-                input_path=input_path,
-                array=[classification],
-                shape=classification.shape,
-                band_count=1,
-                output_path=classification_output_path,
-            )
-
-            # save heatmap
-            Model.save_tif(
-                input_path=input_path,
-                array=[heatmap],
-                shape=heatmap.shape,
-                band_count=1,
-                output_path=heatmap_output_path,
-            )
-
-            return classification_output_path, heatmap_output_path
-        except Exception:
-            traceback.print_exc()
-            return "", ""
         finally:
             del ds
+
+        classes = clf.classes_
+        garbage_class_index = np.nonzero(classes == (self.persistence.garbage_c_id * 100))[0][0]
+
+        array = np.stack(array, axis=2)
+        array = np.reshape(array, [rows * cols, bands])
+        nan_mask = np.count_nonzero(np.isnan(array), axis=1) > 0
+
+        # array to data frame
+        array_df = pd.DataFrame(array, dtype="float32").fillna(axis="index", value=0)
+
+        pred_proba = clf.predict_proba(array_df)
+
+        garbage_probabilities = pred_proba[:, garbage_class_index]
+
+        tresholds = [
+            Treshold(self.persistence.low_prob_percent / 100, self.persistence.low_prob_value),
+            Treshold(self.persistence.medium_prob_percent / 100, self.persistence.medium_prob_value),
+            Treshold(self.persistence.high_prob_percent / 100, self.persistence.high_prob_value),
+        ]
+
+        heatmap = estimations.create_heatmap(garbage_probabilities, tresholds)
+        heatmap[nan_mask] = 0
+        heatmap = heatmap.reshape((rows, cols))
+
+        classification = classes.take(np.argmax(pred_proba, axis=1), axis=0)
+        classification[nan_mask] = 0
+        classification = classification.reshape((rows, cols))
+
+        working_dir = (
+            self.persistence.working_dir if hasattr(self.persistence, "working_dir") else os.path.dirname(input_path)
+        )
+
+        classification_output_path = Model.output_path(
+            [input_path],
+            classification_postfix,
+            self.persistence.file_extension,
+            working_dir,
+        )
+        heatmap_output_path = Model.output_path(
+            [input_path],
+            heatmap_postfix,
+            self.persistence.file_extension,
+            working_dir,
+        )
+
+        Model.save_tif(
+            input_path=input_path,
+            array=[classification],
+            shape=classification.shape,
+            band_count=1,
+            output_path=classification_output_path,
+        )
+
+        Model.save_tif(
+            input_path=input_path,
+            array=[heatmap],
+            shape=heatmap.shape,
+            band_count=1,
+            output_path=heatmap_output_path,
+        )
+
+        return classification_output_path, heatmap_output_path
 
     def create_classification_and_heatmap_with_UNET(
         self,
@@ -660,7 +596,11 @@ class Model(object):
             heatmap[medium_mask] = self.persistence.medium_prob_value
             heatmap[high_mask] = self.persistence.high_prob_value
 
-            working_dir = self.persistence.workspace_root_dir if hasattr(self.persistence, "workspace_root_dir") else ""
+            working_dir = (
+                self.persistence.working_dir
+                if hasattr(self.persistence, "working_dir")
+                else os.path.dirname(input_path)
+            )
 
             classification_output_path = Model.output_path(
                 [input_path],
@@ -698,12 +638,7 @@ class Model(object):
             traceback.print_exc()
             return "", ""
 
-    def apply_water_and_udm2_masks(
-        self,
-        list_of_bands_and_indices: List[np.ndarray],
-        save: str,
-        udm2_input_path: str,
-    ):
+    def apply_water_and_udm2_masks(self, list_of_bands_and_indices: List[np.ndarray], save: str, udm2_input_path: str):
         """
         Apply masking based on configuration parameters.
 
@@ -847,35 +782,6 @@ class Model(object):
                 list_of_bands_and_indices.append(apwi)
 
         return list_of_bands_and_indices
-
-    @staticmethod
-    def make_noisy_data(data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Adds noise to given dataframe
-        :param data: the dataframe to add noise to
-        :return: A dataframe that has noisy data added to it.
-        """
-
-        data_copy = data.copy()[["BLUE", "GREEN", "RED", "NIR", "PI", "NDWI", "NDVI", "RNDVI", "SR"]]
-        noise = (np.random.normal(0, 0.1, data_copy.shape) * 1000).astype(int)
-        data_copy = data_copy + noise
-        bands = {
-            "blue": np.expand_dims(data_copy["BLUE"].to_numpy(), axis=0),
-            "green": np.expand_dims(data_copy["GREEN"].to_numpy(), axis=0),
-            "red": np.expand_dims(data_copy["RED"].to_numpy(), axis=0),
-            "nir": np.expand_dims(data_copy["NIR"].to_numpy(), axis=0),
-        }
-
-        requested_indices = [col.lower() for col in data_copy.columns]
-        labels = [data["SURFACE"].to_numpy(), data["COD"].to_numpy()]
-        indices = [id.flatten() for id in Model.calculate_indices(requested_indices, bands)]
-        labels_indices = [pd.Series(col) for col in labels + indices]
-
-        data_noisy = pd.DataFrame(labels_indices).T
-        data_noisy.columns = data.columns
-        data_noisy.index.name = "FID"
-
-        return data_noisy
 
     @staticmethod
     def get_coords_inside_polygon(polygon_coords: List[float], bbox_coords: Tuple[int, ...]) -> List[Tuple[int, int]]:
@@ -1120,35 +1026,6 @@ class Model(object):
         return bbox
 
     @staticmethod
-    def get_bbox_of_all_given_values(input_file: str, value: int) -> List:
-        """
-        Calculates all bounding boxes of all pixels.
-
-        :param input_file: Path of input file.
-        :param value: Numerical value of the pixels.
-        :return: List of bounding boxes.
-        """
-
-        dataset = gdal.Open(input_file, gdal.GA_ReadOnly)
-        values = dataset.GetRasterBand(1).ReadAsArray()
-        gt = dataset.GetGeoTransform()
-
-        all_bboxes = list()
-        rows, cols = values.shape
-
-        for i in range(rows):
-            for j in range(cols):
-                if values[i, j] != value:
-                    continue
-                else:
-                    bbox = Model.get_bbox_of_pixel(i, j, gt)
-                    all_bboxes.append(bbox)
-
-        dataset = None
-
-        return all_bboxes
-
-    @staticmethod
     def get_waste_geojson(input_file: str, output_file: str, search_value: int) -> None:
         """
         Unites the adjacent pixels, then creates a GeoJSON file containing the result polygons.
@@ -1158,55 +1035,32 @@ class Model(object):
         :param search_value: Numerical value of the pixels.
         :return:
         """
+        try:
+            input_ds = gdal.Open(input_file)
+            projection = input_ds.GetProjection()
+            input_band = input_ds.GetRasterBand(1)
 
-        all_bboxes = Model.get_bbox_of_all_given_values(input_file, search_value)
+            driver = gdal.ogr.GetDriverByName("GeoJSON")
+            output_ds = driver.CreateDataSource(output_file)
+            spatial_reference = gdal.osr.SpatialReference(wkt=projection)
 
-        ds = gdal.Open(input_file, gdal.GA_ReadOnly)
-        srs_wkt = ds.GetProjection()
-        srs_converter = osr.SpatialReference()
-        srs_converter.ImportFromWkt(srs_wkt)
+            output_layer = output_ds.CreateLayer("layer", srs=spatial_reference)
 
-        ds = None
+            field_definition = gdal.ogr.FieldDefn("field", gdal.ogr.OFTInteger)
+            output_layer.CreateField(field_definition)
+            output_field = output_layer.GetLayerDefn().GetFieldIndex("field")
 
-        features = list()
-        polygon_id = 1
+            raster_data = input_band.ReadAsArray()
+            mask = raster_data == search_value
+            mask_ds = gdal_utils.create_in_memory_dataset(mask, input_ds, gdal.GDT_Byte)
 
-        for bbox in all_bboxes:
-            bbox.append(bbox[0])
-
-            coords = list(map(list, bbox))
-
-            bbox_transformed = list(map(tuple, coords))
-
-            polygon = geojson.Polygon([bbox_transformed])
-
-            features.append(geojson.Feature(geometry=polygon, properties={"id": str(polygon_id)}))
-
-            polygon_id += 1
-
-        feature_collection = geojson.FeatureCollection(features)
-
-        polygons = list()
-        for elem in feature_collection["features"]:
-            polygon = shape(elem["geometry"])
-            polygons.append(polygon)
-
-        if polygons:
-            boundary = gpd.GeoSeries(unary_union(polygons))
-            boundary = boundary.__geo_interface__
-            boundary["crs"] = {
-                "type": "name",
-                "properties": {"name": "urn:ogc:def:crs:EPSG::3857"},
-            }
-        else:
-            boundary = {"type": "FeatureCollection", "features": []}
-
-        output_dir = os.path.dirname(output_file)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-
-        with open(output_file, "w") as file:
-            geojson.dump(boundary, file)
+            response = gdal.Polygonize(input_band, mask_ds.GetRasterBand(1), output_layer, output_field)
+            if response != 0:
+                logging.error("something went wrong when creating polygon. Error code: %s", response)
+        finally:
+            del input_ds
+            del output_ds
+            del mask_ds
 
     @staticmethod
     def convert_multipolygons_to_polygons(data_file: Dict) -> Dict:
