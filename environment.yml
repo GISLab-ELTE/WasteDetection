@@ -1,7 +1,6 @@
 name: WasteDetection
 channels:
   - conda-forge
-  - defaults
   - pytorch
 dependencies:
   - pytorch=2.4.0
@@ -14,7 +13,7 @@ dependencies:
   - gdal=3.3.2
   - geojson=2.5.0
   - geopandas=0.12.1
-  #- gunicorn=22.0.0
+  - gunicorn=22.0.0
   - matplotlib=3.4.3
   - numpy=1.24.4
   - pandas=1.3.3
@@ -25,7 +24,7 @@ dependencies:
   - scikit-image=0.19.0
   - scikit-learn=0.24.2
   - sentinelhub=3.4.4
-  - shapely=2.0.7
+  - shapely=1.7.1
   - tk=8.6.11 # for desktop_app
   - pip:
       - flask-cors==4.0.1
