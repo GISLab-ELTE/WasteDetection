@@ -27,6 +27,9 @@ fi;
 if echo "${ARGS[@]}" | grep -qw "classify"; then
   PYTHON_ARGS+=("--classify")
 fi;
+if echo "${ARGS[@]}" | grep -qw "classify-unet"; then
+  PYTHON_ARGS+=("--classify-unet")
+fi;
 
 source /opt/conda/etc/profile.d/conda.sh
 conda activate WasteDetection
