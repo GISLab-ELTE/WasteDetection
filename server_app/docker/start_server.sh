@@ -24,11 +24,10 @@ fi;
 if echo "${ARGS[@]}" | grep -qw "download-update"; then
   PYTHON_ARGS+=("--download-update")
 fi;
-if echo "${ARGS[@]}" | grep -qw "classify"; then
-  PYTHON_ARGS+=("--classify")
-fi;
 if echo "${ARGS[@]}" | grep -qw "classify-unet"; then
   PYTHON_ARGS+=("--classify-unet")
+elif echo "${ARGS[@]}" | grep -qw "classify"; then
+  PYTHON_ARGS+=("--classify")
 fi;
 
 source /opt/conda/etc/profile.d/conda.sh
