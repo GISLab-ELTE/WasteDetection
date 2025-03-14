@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import logging
 import os
 import copy
@@ -8,25 +9,22 @@ import traceback
 import cv2 as cv
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 
-from math import ceil
-from osgeo import gdal, osr
+from osgeo import gdal
 from itertools import compress
 from scipy.ndimage import median_filter
 from skimage.filters import threshold_minimum
 from model.treshold import Treshold
 import model.gdal_utils as gdal_utils
 
+from model.index_calculator import IndexCalculator
 from model.unet import UNET
 from model.unet import UNETPP
 
 import torch
 import model.estimations as estimations
 from model.exceptions import *
-from shapely.geometry import shape
 from shapely.geometry import Point
-from shapely.ops import unary_union
 from model.persistence import Persistence
 from shapely.geometry.polygon import Polygon
 from sklearn.ensemble import RandomForestClassifier
@@ -102,55 +100,60 @@ class Model(object):
         finally:
             del dataset
 
-    def get_satellite_band(self, band: str) -> int:
+    def format_satellite_band_name(self, band: str) -> str:
         """
-        Returns the given satellite's band index.
+        Returns the formatted full name of the satellite band.
+        :param band: name of satellite band
+        :return: The formatted full name of the satellite band.
+        """
+        satellite_name = self.persistence.satellite_type.lower()
+        satellite_name = satellite_name.replace("-", "_")
+        band_name = band.lower()
+
+        return f"{satellite_name}_{band_name}"
+
+    def is_configured_band(self, band: str) -> bool:
+        """
+        Returns whether the given band exists in the configuration.
+
+        :param band: Name of the satellite band.
+        :return: true if the satellite is configured, false otherwise
+        """
+        formatted_band_name = self.format_satellite_band_name(band)
+        return hasattr(self.persistence, formatted_band_name)
+
+    def get_band_number(self, band: str) -> int:
+        """
+        Returns the given satellite's band's number.
 
         :param band: Name of satellite band.
         :return: Index of given satellite band.
         :raise NameError: If wrong satellite name is given.
         """
-
-        satellite_name = self.persistence.satellite_type.lower()
-        satellite_name = satellite_name.replace("-", "_")
-        band_name = band.lower()
-
-        index = satellite_name + "_" + band_name
-
-        if hasattr(self.persistence, index):
-            return getattr(self.persistence, index)
+        if self.is_configured_band(band):
+            formatted_band_name = self.format_satellite_band_name(band)
+            return getattr(self.persistence, formatted_band_name)
         else:
-            raise NameError("Wrong satellite or band name!")
+            raise NameError(f"Wrong satellite or band name! Band name: {band}")
 
-    def get_bands_indices(self, input_path: str, get: str) -> List[np.ndarray]:
+    def get_satellite_band(self, img: rasterio.DatasetReader, band: str, dtype: str) -> np.ndarray:
+        band_number = self.get_band_number(band)
+        return img.read(band_number).astype(dtype=dtype)
+
+    def get_bands(self, input_path: str, band_names: List[str], dtype: str) -> OrderedDict:
         """
-        Returns a list of arrays, containing the band values and/or calculated index values.
+        Returns the requested bands from an image.
 
         :param input_path: path of the input image
-        :param get: name of band/indices
-        :return: band values and/or index values
+        :param band_names: names of bands
+        :param dtype: the type of the data
+        :return: and ordered dictionary containing band values. The order is the same as in band_names
         """
-
-        get_list = Model.resolve_bands_indices_string(get)
-
+        bands = OrderedDict()
         with rasterio.open(input_path, "r") as img:
-            # read bands
-            try:
-                blue_ind = self.get_satellite_band("Blue")
-                green_ind = self.get_satellite_band("Green")
-                red_ind = self.get_satellite_band("Red")
-                nir_ind = self.get_satellite_band("NIR")
-
-                blue = (img.read(blue_ind)).astype(dtype="float32")
-                green = (img.read(green_ind)).astype(dtype="float32")
-                red = (img.read(red_ind)).astype(dtype="float32")
-                nir = (img.read(nir_ind)).astype(dtype="float32")
-            except Exception as exc:
-                raise NotEnoughBandsException(
-                    img.count, max([blue_ind, green_ind, red_ind, nir_ind]), input_path
-                ) from None
-
-            return Model.calculate_indices(get_list, {"blue": blue, "green": green, "red": red, "nir": nir})
+            for band_name in band_names:
+                bands[band_name] = self.get_satellite_band(img, band_name, dtype)
+        return bands
 
     def get_udm2_bands(self, udm2_input_path: str) -> np.ndarray:
         """
@@ -164,7 +167,7 @@ class Model(object):
             udm2_mask = None
 
             for udm2_band_name in self.persistence.udm2_masking_bands:
-                ind = self.get_satellite_band("UDM2_" + udm2_band_name)
+                ind = self.get_band_number("UDM2_" + udm2_band_name)
                 band = (img.read(ind)).astype(dtype="float32")
                 if udm2_mask is None:
                     udm2_mask = band
@@ -174,7 +177,7 @@ class Model(object):
             minimum_confidence = self.persistence.minimum_confidence
 
             if minimum_confidence >= 0 and udm2_mask is not None:
-                confidence_ind = self.get_satellite_band("UDM2_Confidence")
+                confidence_ind = self.get_band_number("UDM2_Confidence")
                 confidence_band = img.read(confidence_ind).astype(dtype="float32")
                 confidence_mask = np.where(confidence_band > minimum_confidence, 1, 0)
 
@@ -185,7 +188,8 @@ class Model(object):
     def save_bands_indices(
         self,
         input_path: str,
-        save: str,
+        band_names: List[str],
+        index_names: List[str],
         postfix: str,
         working_dir: str,
         udm2_input_path: str = None,
@@ -194,23 +198,24 @@ class Model(object):
         Saves the specified band values and/or index values to a single- or multi-band tif file.
 
         :param input_path: path of the input image
-        :param save: name of band/indices
+        :param requested_bands_and_indices: name of band/indices
         :param working_dir: path of the working directory
         :param postfix: file name postfix of the output image
         :param udm2_input_path: path of the input image containing udm2 images
         :return: path of the output image
         """
+        bands = self.get_bands(input_path, band_names, "float32")
 
-        list_of_bands_and_indices = self.get_bands_indices(
-            input_path=input_path,
-            get=save,
-        )
+        indices = IndexCalculator.calculate_indices(index_names, bands)
 
-        self.apply_water_and_udm2_masks(list_of_bands_and_indices, save, udm2_input_path)
+        bands_and_indices = bands.copy()
+        bands_and_indices.update(indices)
+        self.apply_water_and_udm2_masks(bands_and_indices, udm2_input_path)
 
-        bands = len(list_of_bands_and_indices)
         output_path = Model.output_path([input_path], postfix, self.persistence.file_extension, working_dir)
 
+        list_of_bands_and_indices = list(bands_and_indices.values())
+        bands = len(list_of_bands_and_indices)
         Model.save_tif(
             input_path=input_path,
             array=list_of_bands_and_indices,
@@ -476,7 +481,7 @@ class Model(object):
         finally:
             del ds
 
-        classes = clf.classes_
+        classes = clf.classes_.astype(np.int32)
         garbage_class_index = np.nonzero(classes == (self.persistence.garbage_c_id * 100))[0][0]
 
         array = np.stack(array, axis=2)
@@ -638,17 +643,20 @@ class Model(object):
             traceback.print_exc()
             return "", ""
 
-    def apply_water_and_udm2_masks(self, list_of_bands_and_indices: List[np.ndarray], save: str, udm2_input_path: str):
+    def apply_water_and_udm2_masks(
+        self,
+        bands_and_indices: OrderedDict,
+        udm2_input_path: str,
+    ):
         """
         Apply masking based on configuration parameters.
 
-        :param list_of_bands_and_indices: list of bands and/or indices
+        :param bands_and_indices: list of bands and/or indices
         :param save: name of band/indices
         :param udm2_input_path: path of the UDM2 input image
         """
-
         if self.persistence.masking:
-            ndwi = self.get_ndwi(list_of_bands_and_indices, save)
+            ndwi = IndexCalculator.calculate_ndwi(bands_and_indices["green"], bands_and_indices["nir"])
 
             if ndwi is None:
                 logging.warning("Skip masking. NDWI could not be retrieved.")
@@ -668,31 +676,8 @@ class Model(object):
             )
 
             if water_mask is not None:
-                for bands_and_indices in list_of_bands_and_indices:
+                for bands_and_indices in bands_and_indices.values():
                     bands_and_indices[water_mask == 0] = np.nan
-
-    def get_ndwi(self, list_of_bands_and_indices: List[np.ndarray], training_labels: str) -> np.ndarray:
-        """
-        Retrieve or calculate NDWI values from bands and indices.
-
-        :param list_of_bands_and_indices: loaded bands
-        :param training_labels: name of band/indices
-
-        :return: ndarray ndwi values
-        """
-        ndwi = None
-
-        indices = self.resolve_bands_indices_string(training_labels)
-
-        if "ndwi" in indices:
-            ndwi = list_of_bands_and_indices[indices.index("ndwi")]
-
-        if ndwi is None and "green" and "nir" in indices:
-            green = list_of_bands_and_indices[indices.index("green")]
-            nir = list_of_bands_and_indices[indices.index("nir")]
-            ndwi = self.calculate_index(numerator=green - nir, denominator=green + nir)
-
-        return ndwi
 
     # Static public methods
     @staticmethod
@@ -723,7 +708,7 @@ class Model(object):
             geojson.dump(feature_collection, file, indent=4)
 
     @staticmethod
-    def get_min_max_value_of_band(input_path: str, band_number: int) -> Tuple[int, int]:
+    def get_min_max_value_of_band(input_path: str, band_number: int) -> Tuple[np.float32, np.float32]:
         """
         Calculates the minimum and maximum values of a band.
 
@@ -734,54 +719,7 @@ class Model(object):
 
         with rasterio.open(input_path, "r") as img:
             band = img.read(band_number)
-            min_value, max_value = np.nanmin(band), np.nanmax(band)
-            return int(min_value), int(max_value)
-
-    @staticmethod
-    def calculate_indices(get_list: List[str], bands: Dict[str, np.ndarray]) -> List[np.ndarray]:
-        # calculate indices
-        # PI = NIR / (NIR + RED)
-        # NDWI = (GREEN - NIR) / (GREEN + NIR)
-        # NDVI = (NIR - RED) / (NIR + RED)
-        # RNDVI = (RED - NIR) / (RED + NIR)
-        # SR = NIR / RED
-        # APWI = 1 - (RED + GREEN + NIR) / 3
-
-        blue = bands["blue"]
-        green = bands["green"]
-        red = bands["red"]
-        nir = bands["nir"]
-
-        list_of_bands_and_indices = list()
-        for item in get_list:
-            if item == "blue":
-                list_of_bands_and_indices.append(blue)
-            elif item == "green":
-                list_of_bands_and_indices.append(green)
-            elif item == "red":
-                list_of_bands_and_indices.append(red)
-            elif item == "nir":
-                list_of_bands_and_indices.append(nir)
-            elif item == "pi":
-                pi = Model.calculate_index(numerator=nir, denominator=nir + red)
-                list_of_bands_and_indices.append(pi)
-            elif item == "ndwi":
-                ndwi = Model.calculate_index(numerator=green - nir, denominator=green + nir)
-                list_of_bands_and_indices.append(ndwi)
-            elif item == "ndvi":
-                ndvi = Model.calculate_index(numerator=nir - red, denominator=nir + red)
-                list_of_bands_and_indices.append(ndvi)
-            elif item == "rndvi":
-                rndvi = Model.calculate_index(numerator=red - nir, denominator=red + nir)
-                list_of_bands_and_indices.append(rndvi)
-            elif item == "sr":
-                sr = Model.calculate_index(numerator=nir, denominator=red)
-                list_of_bands_and_indices.append(sr)
-            elif item == "apwi":
-                apwi = Model.calculate_index(numerator=blue, denominator=1 - (red + green + nir) / 3)
-                list_of_bands_and_indices.append(apwi)
-
-        return list_of_bands_and_indices
+            return np.nanmin(band), np.nanmax(band)
 
     @staticmethod
     def get_coords_inside_polygon(polygon_coords: List[float], bbox_coords: Tuple[int, ...]) -> List[Tuple[int, int]]:
@@ -864,49 +802,6 @@ class Model(object):
             del img_gdal
 
     @staticmethod
-    def calculate_index(numerator: np.ndarray, denominator: np.ndarray) -> np.ndarray:
-        """
-        Calculating an index based on given numerator and denominator.
-
-        :param numerator: numerator matrix
-        :param denominator: denominator matrix
-        :return: result matrix, containing the calculated values
-        """
-
-        # variables
-        index = np.ndarray(
-            shape=numerator.shape,
-            dtype="float32",
-        )
-
-        numerator_nan_min = np.nanmin(numerator)
-        numerator_nan_max = np.nanmax(numerator)
-
-        # calculate index
-        nan_mask = np.isnan(numerator) | np.isnan(denominator)
-        numerator_zero_mask = numerator == 0
-        denominator_zero_mask = denominator == 0
-
-        invalid_mask = nan_mask | (numerator_zero_mask & denominator_zero_mask)
-        valid_mask = np.logical_not(invalid_mask)
-
-        valid_denominator_non_zero_mask = valid_mask & np.logical_not(denominator_zero_mask)
-        valid_denominator_zero_mask = valid_mask & denominator_zero_mask
-
-        numerator_positive_denominator_zero_mask = valid_denominator_zero_mask & (numerator > 0)
-        numerator_negative_denominator_zero_mask = valid_denominator_zero_mask & (numerator < 0)
-
-        index[invalid_mask] = float("NaN")
-        index[numerator_positive_denominator_zero_mask] = numerator_nan_max
-        index[numerator_negative_denominator_zero_mask] = numerator_nan_min
-        index[valid_denominator_non_zero_mask] = (
-            numerator[valid_denominator_non_zero_mask] / denominator[valid_denominator_non_zero_mask]
-        )
-
-        # return index values
-        return index
-
-    @staticmethod
     def output_path(
         input_paths: List[str],
         postfix: str,
@@ -928,62 +823,8 @@ class Model(object):
             file_name_with_extension = os.path.basename(path)
             file_name, _ = os.path.splitext(file_name_with_extension)
             file_names.append(file_name)
-        output_path = working_dir + "/" + "_".join(file_names) + "_" + postfix + "." + output_file_extension
+        output_path = os.path.join(working_dir, "_".join(file_names) + "_" + postfix + "." + output_file_extension)
         return output_path
-
-    @staticmethod
-    def resolve_bands_indices_string(string: str) -> List[str]:
-        """
-        Resolves band strings.
-
-        :param string: name of band/indices separated by "-", or "all", "all_no_blue", "bands", "indices"
-        :return: list containing the band/index values
-        """
-
-        string_list = string.lower().split("-")
-
-        if "all" in string_list:
-            return [
-                "blue",
-                "green",
-                "red",
-                "nir",
-                "pi",
-                "ndwi",
-                "ndvi",
-                "rndvi",
-                "sr",
-            ]
-        elif "all_no_blue" in string_list:
-            return ["green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr"]
-        elif "bands" in string_list:
-            return ["blue", "green", "red", "nir"]
-        elif "indices" in string_list:
-            return ["pi", "ndwi", "ndvi", "rndvi", "sr"]
-
-        bands_indices = list()
-        if "blue" in string_list:
-            bands_indices.append("blue")
-        if "green" in string_list:
-            bands_indices.append("green")
-        if "red" in string_list:
-            bands_indices.append("red")
-        if "nir" in string_list:
-            bands_indices.append("nir")
-        if "pi" in string_list:
-            bands_indices.append("pi")
-        if "ndwi" in string_list:
-            bands_indices.append("ndwi")
-        if "ndvi" in string_list:
-            bands_indices.append("ndvi")
-        if "rndvi" in string_list:
-            bands_indices.append("rndvi")
-        if "sr" in string_list:
-            bands_indices.append("sr")
-        if "apwi" in string_list:
-            bands_indices.append("apwi")
-
-        return bands_indices
 
     @staticmethod
     def get_coords_of_pixel(i: int, j: int, gt: Tuple[int, ...]) -> Tuple[float, float]:

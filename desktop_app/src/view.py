@@ -462,10 +462,10 @@ class View(ttk.Window):
         self._img_label.grid(row=0, column=2, rowspan=2, sticky="e", padx=5, pady=5)
 
         self._heatmap_frame.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=5, pady=5)
-        self._heatmap_checkbutton.pack(side=TOP, expand=YES, padx=5, pady=5, fill=BOTH)
-        self._high_checkbutton.pack(side=TOP, expand=YES, padx=40, pady=5, fill=X)
-        self._medium_checkbutton.pack(side=TOP, expand=YES, padx=40, pady=5, fill=X)
-        self._low_checkbutton.pack(side=TOP, expand=YES, padx=40, pady=5, fill=X)
+        self._heatmap_checkbutton.pack(side=TOP, expand=YES, padx=0, pady=0, fill=BOTH)
+        self._high_checkbutton.pack(side=TOP, expand=YES, padx=10, pady=5, fill=X)
+        self._medium_checkbutton.pack(side=TOP, expand=YES, padx=10, pady=5, fill=X)
+        self._low_checkbutton.pack(side=TOP, expand=YES, padx=10, pady=5, fill=X)
 
         # place left canvas controls
         self._left_img_lf.place(x=20, y=220, height=640, width=770)
@@ -483,9 +483,9 @@ class View(ttk.Window):
         self._vars = dict()
         self._vars["process_menu"] = ttk.IntVar(master=self)
         self._vars["heatmap_toggle"] = ttk.IntVar(master=self)
-        self._vars["heatmap_high"] = ttk.IntVar(master=self)
-        self._vars["heatmap_medium"] = ttk.IntVar(master=self)
-        self._vars["heatmap_low"] = ttk.IntVar(master=self)
+        self._vars["heatmap_high"] = ttk.IntVar(master=self, value=1)
+        self._vars["heatmap_medium"] = ttk.IntVar(master=self, value=1)
+        self._vars["heatmap_low"] = ttk.IntVar(master=self, value=1)
 
     def _setup_menu(self) -> None:
         """

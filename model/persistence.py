@@ -3,7 +3,6 @@ import json
 import pickle
 import geojson
 import jsonmerge
-import torch
 
 
 class Persistence(object):

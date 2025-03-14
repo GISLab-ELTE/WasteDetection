@@ -21,6 +21,7 @@ from ttkbootstrap.dialogs.colorchooser import ColorChooserDialog
 
 
 MAX_PIXEL_COUNT = 40000000
+SUPPORTED_EXTENSIONS = [".tif", ".tiff"]
 
 
 class Controller(object):
@@ -147,6 +148,11 @@ class Controller(object):
 
         :return: None
         """
+        self._view.settings_view._planet_rb.configure(command=self._on_satellite_change)
+        self._view.settings_view._sentinel_rb.configure(command=self._on_satellite_change)
+
+        self._view.settings_view._training_pi.configure(command=self._on_pi_checkbox_change)
+        self._view.settings_view._training_swir.configure(command=self._on_swir_checkbox_change)
 
         for i in range(len(self._view.settings_view.color_buttons)):
             self._view.settings_view.color_buttons[i].configure(
@@ -524,7 +530,7 @@ class Controller(object):
 
         for file in new_files:
             name, extension = os.path.splitext(file)
-            if extension != ".tif":
+            if extension not in SUPPORTED_EXTENSIONS:
                 not_valid_extension.append(file)
                 continue
             try:
@@ -564,7 +570,7 @@ class Controller(object):
             tkinter.messagebox.showerror(
                 parent=self._view.opened_files_lb,
                 title="File opening",
-                message="There were images with extension other than .tif! These were not added.",
+                message="There were images with extension other than .tif or .tiff! These were not added.",
             )
 
             for file in not_valid_extension:
@@ -1128,6 +1134,9 @@ class Controller(object):
         green_value = int(self._view.settings_view.sentinel_green_spinbox.get())
         red_value = int(self._view.settings_view.sentinel_red_spinbox.get())
         nir_value = int(self._view.settings_view.sentinel_nir_spinbox.get())
+        swir_value = int(self._view.settings_view.sentinel_swir_spinbox.get())
+        band_values = np.array([blue_value, green_value, red_value, nir_value, swir_value])
+
         heatmap_high = int(self._view.settings_view.heatmap_high_spinbox.get())
         heatmap_medium = int(self._view.settings_view.heatmap_medium_spinbox.get())
         heatmap_low = int(self._view.settings_view.heatmap_low_spinbox.get())
@@ -1139,13 +1148,17 @@ class Controller(object):
             "green",
             "red",
             "nir",
+            "swir",
             "pi",
             "ndwi",
             "ndvi",
             "rndvi",
             "sr",
             "apwi",
+            "mndbi",
+            "api",
         ]
+
         values = list()
         for i in range(len(bands_and_indices)):
             index = "training_" + bands_and_indices[i]
@@ -1156,8 +1169,8 @@ class Controller(object):
 
         if not (satellite_type in [1, 2]):
             error_message += "The Satellite type must be set!"
-        elif len(np.unique([blue_value, green_value, red_value, nir_value])) != 4:
-            error_message += "The Sentinel-2 settings must not contain identical values!"
+        elif len(np.unique(band_values)) != len(band_values):
+            error_message += "The band values must not be identical!"
         elif not (heatmap_low < heatmap_medium < heatmap_high):
             error_message += "The Heatmap probabilities must be in ascending order: low < medium < high!"
         elif garbage_c_id == water_c_id:
@@ -1194,6 +1207,7 @@ class Controller(object):
         green_value = int(self._view.settings_view.sentinel_green_spinbox.get())
         red_value = int(self._view.settings_view.sentinel_red_spinbox.get())
         nir_value = int(self._view.settings_view.sentinel_nir_spinbox.get())
+        swir_value = int(self._view.settings_view.sentinel_swir_spinbox.get())
 
         # Value settings
         n_estimators = int(self._view.settings_view.training_estimators_entry.get())
@@ -1231,12 +1245,15 @@ class Controller(object):
             "green",
             "red",
             "nir",
+            "swir",
             "pi",
             "ndwi",
             "ndvi",
             "rndvi",
             "sr",
             "apwi",
+            "mndbi",
+            "api",
         ]
         values = list()
         for i in range(len(bands_and_indices)):
@@ -1263,6 +1280,7 @@ class Controller(object):
         self._model.persistence.sentinel_2_green = green_value
         self._model.persistence.sentinel_2_red = red_value
         self._model.persistence.sentinel_2_nir = nir_value
+        self._model.persistence.sentinel_2_swir = swir_value
 
         # Value settings
         self._model.persistence.training_estimators = n_estimators
@@ -1309,7 +1327,8 @@ class Controller(object):
         # Save changes
         self._model.persistence.save()
         try:
-            self._model.load_random_forests()
+            self._model.load_hotspot_random_forest()
+            self._model.load_floating_random_forest()
         except HotspotRandomForestFileException:
             self._view.settings_view.hotspot_rf_entry.delete(0, END)
             self._view.settings_view.hotspot_rf_entry.insert(0, prev_hotspot_rf_path)
@@ -1337,6 +1356,57 @@ class Controller(object):
         # Reload Canvas
         self._view.opened_files_lb.event_generate("<<ListboxSelect>>")
 
+    def _on_swir_checkbox_change(self) -> None:
+        if self._view.settings_view.vars["training_swir"].get():
+            self._view.settings_view._training_mndbi.configure(state=ttk.NORMAL)
+            if self._view.settings_view.vars["training_pi"].get():
+                self._view.settings_view._training_api.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_swir_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_swir_label.configure(state=ttk.NORMAL)
+        else:
+            self._view.settings_view._training_mndbi.configure(state=ttk.DISABLED)
+            self._view.settings_view._training_api.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_swir_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_swir_label.configure(state=ttk.DISABLED)
+
+    def _on_satellite_change(self) -> None:
+        if self._view.settings_view.vars["satellite_rb"].get() == 1:
+            self._view.settings_view._training_swir.configure(state=ttk.DISABLED)
+            self._view.settings_view._training_mndbi.configure(state=ttk.DISABLED)
+            self._view.settings_view._training_api.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_swir_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_swir_label.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_red_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_red_label.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_green_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_green_label.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_blue_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_blue_label.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_nir_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_nir_label.configure(state=ttk.DISABLED)
+        else:
+            self._view.settings_view._training_swir.configure(state=ttk.NORMAL)
+            self._view.settings_view._training_mndbi.configure(state=ttk.NORMAL)
+            if self._view.settings_view.vars["training_pi"].get():
+                self._view.settings_view._training_api.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_swir_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_swir_label.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_red_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_red_label.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_green_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_green_label.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_blue_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_blue_label.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_nir_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_nir_label.configure(state=ttk.NORMAL)
+            self._on_swir_checkbox_change()
+
+    def _on_pi_checkbox_change(self) -> None:
+        if self._view.settings_view.vars["training_pi"].get():
+            self._view.settings_view._training_api.configure(state=ttk.NORMAL)
+        else:
+            self._view.settings_view._training_api.configure(state=ttk.DISABLED)
+
     def _settings_show(self) -> None:
         """
         Handles the displaying of SettingsView containing the previously saved data.
@@ -1345,6 +1415,11 @@ class Controller(object):
         """
 
         self._model.persistence.load()
+
+        self._on_satellite_change()
+        self._on_swir_checkbox_change()
+        self._on_pi_checkbox_change()
+        self._on_satellite_change()
 
         # Satellite type
         if self._model.persistence.satellite_type.lower() == "planetscope":
@@ -1373,6 +1448,9 @@ class Controller(object):
 
         nir_value = self._model.persistence.sentinel_2_nir
         self._view.settings_view.sentinel_nir_spinbox.set(nir_value)
+
+        swir_value = self._model.persistence.sentinel_2_swir
+        self._view.settings_view.sentinel_swir_spinbox.set(swir_value)
 
         # Value settings
         n_estimators = self._model.persistence.training_estimators
@@ -1470,12 +1548,15 @@ class Controller(object):
         self._view.settings_view.vars["training_green"].set(1 if self._model.persistence.training_label_green else 0)
         self._view.settings_view.vars["training_red"].set(1 if self._model.persistence.training_label_red else 0)
         self._view.settings_view.vars["training_nir"].set(1 if self._model.persistence.training_label_nir else 0)
+        self._view.settings_view.vars["training_swir"].set(1 if self._model.persistence.training_label_swir else 0)
         self._view.settings_view.vars["training_pi"].set(1 if self._model.persistence.training_label_pi else 0)
         self._view.settings_view.vars["training_ndwi"].set(1 if self._model.persistence.training_label_ndwi else 0)
         self._view.settings_view.vars["training_ndvi"].set(1 if self._model.persistence.training_label_ndvi else 0)
         self._view.settings_view.vars["training_rndvi"].set(1 if self._model.persistence.training_label_rndvi else 0)
         self._view.settings_view.vars["training_sr"].set(1 if self._model.persistence.training_label_sr else 0)
         self._view.settings_view.vars["training_apwi"].set(1 if self._model.persistence.training_label_apwi else 0)
+        self._view.settings_view.vars["training_mndbi"].set(1 if self._model.persistence.training_label_mndbi else 0)
+        self._view.settings_view.vars["training_api"].set(1 if self._model.persistence.training_label_api else 0)
 
         # Color settings
         for i in range(len(self._view.settings_view.color_buttons)):
@@ -1522,7 +1603,7 @@ class Controller(object):
 
         for file in new_files:
             name, extension = os.path.splitext(file)
-            if extension != ".tif":
+            if extension not in SUPPORTED_EXTENSIONS:
                 not_valid_extension = True
                 continue
             try:
@@ -1569,7 +1650,7 @@ class Controller(object):
             tkinter.messagebox.showerror(
                 parent=self._view.opened_files_lb,
                 title="File opening",
-                message="There were images with extension other than .tif! These were not added.",
+                message="There were images with extension other than .tif or .tiff! These were not added.",
             )
 
     def _training_delete_files(self) -> None:
@@ -1825,6 +1906,12 @@ class Controller(object):
                     title="Error",
                     message="Training interrupted!",
                 )
+        except IndexError as err:
+            tkinter.messagebox.showerror(
+                "Settings error",
+                "There are values wrongly set in Settings!",
+                parent=self._view,
+            )
         except Exception as exc:
             message = traceback.format_exception_only(type(exc), exc)[0]
             if len(message) == 0:
@@ -2077,7 +2164,7 @@ class Controller(object):
 
         active_window = self._view.get_active_window()
 
-        filetypes = (("tif files", "*.tif"), ("All files", "*.*"))
+        filetypes = (("tiff files", "*.tiff"), ("tif files", "*.tif"), ("All files", "*.*"))
 
         filenames = fd.askopenfilenames(
             parent=active_window,

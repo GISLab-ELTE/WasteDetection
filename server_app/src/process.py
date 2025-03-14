@@ -231,7 +231,12 @@ class Process(object):
                 udm2_file_path = udm2_images[feature_id][date] if udm2_images is not None else None
 
                 indices_path = self.model.save_bands_indices(
-                    input_file_path, "all", "all", output_dir_path, udm2_file_path
+                    input_file_path,
+                    self.model.persistence.enabled_bands,
+                    self.model.persistence.enabled_indices,
+                    "all",
+                    output_dir_path,
+                    udm2_file_path,
                 )
 
                 (classified, heatmap) = self.model.create_classification_and_heatmap_with_random_forest(
@@ -303,8 +308,13 @@ class Process(object):
 
                 input_file_path = downloaded_images[feature_id][date]
 
-                indices_path = self.model.save_bands_indices(input_file_path, "all", "all", output_dir_path)
-
+                indices_path = self.model.save_bands_indices(
+                    input_file_path,
+                    self.model.persistence.enabled_bands,
+                    self.model.persistence.enabled_indices,
+                    "all",
+                    output_dir_path,
+                )
                 (
                     classified,
                     heatmap,
@@ -390,8 +400,8 @@ class Process(object):
                 image_dict[feature_id][date] = OrderedDict()
 
             image_dict[feature_id][date]["src"] = image_files_rel[i]
-            image_dict[feature_id][date]["min"] = int(min_value)
-            image_dict[feature_id][date]["max"] = int(max_value)
+            image_dict[feature_id][date]["min"] = float(min_value)
+            image_dict[feature_id][date]["max"] = float(max_value)
 
         for file in geojson_files_rel:
             rel_path_split = file.split("/")
