@@ -85,6 +85,8 @@ Meaning of the parameters in `config.sample.json` file:
 - `planetscope_green`: The index of the Green band on the PlanetScope image.
 - `planetscope_red`: The index of the Red band on the PlanetScope image.
 - `planetscope_nir`: The index of the NIR band on the PlanetScope image.
+- `enabled_bands`: The names of the bands that should be used during pre-processing and classification
+- `enabled_indices`: The names of the indices that should be using during pre-processing and classification
 - `masking`: Turn water and cloud masking on.
 - `udm2_eliminator`: The value to mask out in UDM2 cloud masking.
 - `udm2_masking_bands`: List of UDM2 bands to use in cloud masking.

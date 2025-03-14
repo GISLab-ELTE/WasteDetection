@@ -43,7 +43,7 @@ class SentinelAPI(BaseAPI):
 
         self.requests = dict()
 
-        self.evalscript = self.generate_evalscript(settings.masking)
+        self.evalscript = self.generate_evalscript(settings.masking, "swir" in settings.enabled_bands)
 
     def login(self) -> None:
         """
@@ -156,7 +156,7 @@ class SentinelAPI(BaseAPI):
                 print(acquisition[1].get_filename_list()[0].split("\\")[0])
 
     @staticmethod
-    def generate_evalscript(masking: bool) -> str:
+    def generate_evalscript(masking: bool, with_swir: bool) -> str:
         """
         Generate evalscript. If masking is enabled, it downloads CLM band and evaluates the pixels based on its value
 
@@ -164,35 +164,65 @@ class SentinelAPI(BaseAPI):
         :return: evalscipt to process sentinel data
         """
         bands = '["B02", "B03", "B04", "B08"'
+        if with_swir:
+            bands += ', "B12"'
         if masking:
             bands += ', "CLM"'
         bands += "]"
-        clm_check = """
+        if with_swir:
+            clm_check = """
                         if (sample.CLM == 1) {
-                          return [NaN, NaN, NaN, NaN];
+                        return [NaN, NaN, NaN, NaN, NaN];
                         }
                         """
+        else:
+            clm_check = """
+                            if (sample.CLM == 1) {
+                            return [NaN, NaN, NaN, NaN];
+                            }
+                            """
+        if with_swir:
+            evalscript = f"""
+                        //VERSION=3
+                        function setup() {{
+                            return {{
+                                input: [{{
+                                    bands: {bands},
+                                    units: "reflectance"
+                                }}],
+                                output: {{
+                                    bands: 5,
+                                    sampleType: "FLOAT32"
+                                }}
+                            }};
+                        }}
+        
+                        function evaluatePixel(sample) {{
+                            { clm_check if masking else ''}
+                            return [sample.B02, sample.B03, sample.B04, sample.B08, sample.B12];
+                        }}
+                    """
+        else:
+            evalscript = f"""
+                //VERSION=3
+                function setup() {{
+                    return {{
+                        input: [{{
+                            bands: {bands},
+                            units: "reflectance"
+                        }}],
+                        output: {{
+                            bands: 4,
+                            sampleType: "FLOAT32"
+                        }}
+                    }};
+                }}
 
-        evalscript = f"""
-                    //VERSION=3
-                    function setup() {{
-                        return {{
-                            input: [{{
-                                bands: {bands},
-                                units: "DN"
-                            }}],
-                            output: {{
-                                bands: 4,
-                                sampleType: "INT16"
-                            }}
-                        }};
-                    }}
-    
-                    function evaluatePixel(sample) {{
-                        { clm_check if masking else ''}
-                        return [sample.B02, sample.B03, sample.B04, sample.B08];
-                    }}
-                """
+                function evaluatePixel(sample) {{
+                    { clm_check if masking else ''}
+                    return [sample.B02, sample.B03, sample.B04, sample.B08];
+                }}
+            """
         return evalscript
 
     @staticmethod

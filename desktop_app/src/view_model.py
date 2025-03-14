@@ -6,6 +6,7 @@ import pandas as pd
 
 from matplotlib import cm
 
+from model.index_calculator import IndexCalculator
 from model.unet import UNET, UNETPP
 
 from PIL import ImageColor
@@ -74,45 +75,59 @@ class ViewModel(Model):
         return self._classification_layer_data
 
     # Non-static public methods
-    def get_training_labels(self) -> str:
+    def get_training_band_names(self) -> List[str]:
         """
-        Gets the checked training labels in SettingsView.
+        Gets the checked training band names in SettingsView.
 
-        :return: training label names separated by "-"
+        :return: training band names
         """
 
-        labels = list()
+        bands = list()
         if self.persistence.training_label_blue == 1:
-            labels.append("blue")
+            bands.append("blue")
         if self.persistence.training_label_green == 1:
-            labels.append("green")
+            bands.append("green")
         if self.persistence.training_label_red == 1:
-            labels.append("red")
+            bands.append("red")
         if self.persistence.training_label_nir == 1:
-            labels.append("nir")
+            bands.append("nir")
+        if self.persistence.training_label_swir == 1:
+            bands.append("swir")
+
+        return bands
+
+    def get_training_index_names(self) -> List[str]:
+        """
+        Gets the checked training band names in SettingsView.
+
+        :return: training band names
+        """
+        indices = list()
         if self.persistence.training_label_pi == 1:
-            labels.append("pi")
+            indices.append("pi")
         if self.persistence.training_label_ndwi == 1:
-            labels.append("ndwi")
+            indices.append("ndwi")
         if self.persistence.training_label_ndvi == 1:
-            labels.append("ndvi")
+            indices.append("ndvi")
         if self.persistence.training_label_rndvi == 1:
-            labels.append("rndvi")
+            indices.append("rndvi")
         if self.persistence.training_label_sr == 1:
-            labels.append("sr")
+            indices.append("sr")
         if self.persistence.training_label_apwi == 1:
-            labels.append("apwi")
-        return "-".join(labels)
+            indices.append("apwi")
+        if self.persistence.training_label_mndbi == 1:
+            indices.append("mndbi")
+        if self.persistence.training_label_api == 1:
+            indices.append("api")
 
-    def load_random_forests(self) -> None:
+        return indices
+
+    def load_hotspot_random_forest(self) -> None:
         """
-        Tries to load the Random Forest classifiers.
+        Tries to load the hotspot random forest classifier.
 
-        :return: None
         :raise HotspotRandomForestFileException: if Random Forest file is incorrect for Hot-spot detection method
-        :raise FloatingRandomForestFileException: if Random Forest file is incorrect for Floating waste detection method
         """
-
         try:
             with open(self.persistence.hotspot_rf_path, "rb") as file:
                 self._hotspot_rf = pickle.load(file)
@@ -120,6 +135,12 @@ class ViewModel(Model):
             self._hotspot_rf = None
             raise HotspotRandomForestFileException()
 
+    def load_floating_random_forest(self) -> None:
+        """
+        Tries to load the floating random forest classifier.
+
+        :raise FloatingRandomForestFileException: if Random Forest file is incorrect for Floating waste detection method
+        """
         try:
             with open(self.persistence.floating_rf_path, "rb") as file:
                 self._floating_rf = pickle.load(file)
@@ -131,7 +152,6 @@ class ViewModel(Model):
         """
         Tries to load UNET classifier.
 
-        :return: None
         :raise UNETFileException: if UNET file is incorrect
         """
         try:
@@ -145,7 +165,6 @@ class ViewModel(Model):
         """
         Tries to load UNET++ classifier.
 
-        :return: None
         :raise UNETFileException: if UNET++ file is incorrect
         """
         try:
@@ -193,24 +212,21 @@ class ViewModel(Model):
         :return: all successful or not
         :raise RandomForestFileException: if there are no Random Forest model loaded
         """
-
-        if (self._hotspot_rf is None) or (self._floating_rf is None):
-            self.load_random_forests()
-        if self.persistence.unet_type == "unet":
-            self.load_unet()
-        elif self.persistence.unet_type == "unetpp":
-            self.load_unetpp()
         if process_id == 1:
             if self._hotspot_rf is None:
-                raise RandomForestFileException("Hot-spot")
+                self.load_hotspot_random_forest()
             return self._process_hotspot_floating(hotspot=True)
         elif process_id == 2:
             if self._floating_rf is None:
-                raise RandomForestFileException("Floating waste")
+                self.load_floating_random_forest()
             return self._process_hotspot_floating(hotspot=False)
         elif process_id == 3:
             return self._process_washed_up()
         elif process_id == 4:
+            if self.persistence.unet_type == "unet":
+                self.load_unet()
+            elif self.persistence.unet_type == "unetpp":
+                self.load_unetpp()
             return self._process_with_unet()
 
     def save_training_input_file(self, path: str) -> None:
@@ -446,8 +462,9 @@ class ViewModel(Model):
         """
 
         column_labels = ["SURFACE", "COD"]
-        training_labels = self.get_training_labels()
-        labels = Model.resolve_bands_indices_string(training_labels)
+        band_names = self.get_training_band_names()
+        index_names = self.get_training_index_names()
+        labels = band_names + index_names
         labels = [value.upper() for value in labels]
         column_labels += labels
         labels = column_labels + labels
@@ -456,7 +473,11 @@ class ViewModel(Model):
         classified_layers = self._classification_layer_data
 
         for training_file, labeled_layer in classified_layers.items():
-            bands_and_indices = self.get_bands_indices(training_file, training_labels)
+            bands = self.get_bands(training_file, band_names, "float32")
+            indices = IndexCalculator.calculate_indices(index_names, bands)
+            bands_and_indices = bands.copy()
+            bands_and_indices.update(indices)
+            bands_and_indices = list(bands_and_indices.values())
             bands_and_indices = np.asarray(bands_and_indices)
             if training_file in usable_training_data:
                 labeled_layer = self.add_polygon_values_to_image(training_file, usable_training_data)
@@ -516,9 +537,9 @@ class ViewModel(Model):
         :param output_path: path of the trained Random Forest
         :return: None
         """
-
-        training_labels = self.get_training_labels()
-        labels = Model.resolve_bands_indices_string(training_labels)
+        band_names = self.get_training_band_names()
+        index_names = self.get_training_index_names()
+        labels = band_names + index_names
         labels = [value.upper() for value in labels]
 
         clf = self._create_random_forest(
@@ -635,8 +656,8 @@ class ViewModel(Model):
         :param hotspot: True means Hot-spot detection, False means Floating waste detection
         :return: process successful or not
         """
-
-        training_labels = self.get_training_labels()
+        training_bands = self.get_training_band_names()
+        training_indices = self.get_training_index_names()
 
         were_wrong_labels = False
         were_wrong_pictures = False
@@ -645,10 +666,12 @@ class ViewModel(Model):
             if not os.path.exists(file):
                 were_wrong_pictures = True
                 continue
+
             tmp_file = self.save_bands_indices(
                 input_path=file,
-                save=training_labels,
-                postfix=training_labels,
+                band_names=training_bands,
+                index_names=training_indices,
+                postfix="-".join(training_bands + training_indices),
                 working_dir=self.persistence.working_dir,
             )
 
@@ -690,7 +713,8 @@ class ViewModel(Model):
 
         :return: process successful or not
         """
-        training_labels = self.get_training_labels()
+        training_bands = self.get_training_band_names()
+        training_indices = self.get_training_index_names()
 
         were_wrong_labels = False
         were_wrong_pictures = False
@@ -701,8 +725,9 @@ class ViewModel(Model):
                 continue
             tmp_file = self.save_bands_indices(
                 input_path=file,
-                save=training_labels,
-                postfix=training_labels,
+                band_names=training_bands,
+                index_names=training_indices,
+                postfix="-".join(training_bands + training_indices),
                 working_dir=self.persistence.working_dir,
             )
             unet = self._unet

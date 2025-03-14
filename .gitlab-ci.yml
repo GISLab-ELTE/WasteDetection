@@ -1,3 +1,9 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: always
+
 variables:
   DS_EXCLUDED_ANALYZERS: gemnasium-python
   IMAGE_NAME_BASE: "$CI_REGISTRY_IMAGE/base"
@@ -52,7 +58,16 @@ lint:prettier:
   script:
     - npx prettier --check .
 
-# Model
+lint:package:
+  image: continuumio/miniconda3
+  stage: lint
+  script:
+    - conda env create -f environment.yml -n TestEnv --dry-run
+  rules:
+    - changes:
+        - environment.yml
+
+# Tests
 unittest:
   image: "$IMAGE_NAME_BASE"
   stage: test

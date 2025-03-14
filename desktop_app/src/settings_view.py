@@ -6,8 +6,7 @@ from ttkbootstrap.tooltip import ToolTip
 
 
 THEME = "lumen"
-# SIZE = "1090x730"
-SIZE = "1308x876"
+SIZE = "1450x830"
 
 
 class SettingsView(ttk.Toplevel):
@@ -69,6 +68,10 @@ class SettingsView(ttk.Toplevel):
     @property
     def sentinel_nir_spinbox(self) -> ttk.Spinbox:
         return self._sentinel_nir_spinbox
+
+    @property
+    def sentinel_swir_spinbox(self) -> ttk.Spinbox:
+        return self._sentinel_swir_spinbox
 
     @property
     def training_estimators_entry(self) -> ttk.Entry:
@@ -263,6 +266,9 @@ class SettingsView(ttk.Toplevel):
         self._sentinel_nir_label = ttk.Label(master=self._sentinel_settings_lf)
         self._sentinel_nir_spinbox = ttk.Spinbox(master=self._sentinel_settings_lf)
 
+        self._sentinel_swir_label = ttk.Label(master=self._sentinel_settings_lf)
+        self._sentinel_swir_spinbox = ttk.Spinbox(master=self._sentinel_settings_lf)
+
         self._value_settings_lf = ttk.Labelframe(master=self)
 
         self._training_estimators_label = ttk.Label(master=self._value_settings_lf)
@@ -353,12 +359,15 @@ class SettingsView(ttk.Toplevel):
         self._training_green = ttk.Checkbutton(master=self._training_labels)
         self._training_red = ttk.Checkbutton(master=self._training_labels)
         self._training_nir = ttk.Checkbutton(master=self._training_labels)
+        self._training_swir = ttk.Checkbutton(master=self._training_labels)
         self._training_pi = ttk.Checkbutton(master=self._training_labels)
         self._training_ndwi = ttk.Checkbutton(master=self._training_labels)
         self._training_ndvi = ttk.Checkbutton(master=self._training_labels)
         self._training_rndvi = ttk.Checkbutton(master=self._training_labels)
         self._training_sr = ttk.Checkbutton(master=self._training_labels)
         self._training_apwi = ttk.Checkbutton(master=self._training_labels)
+        self._training_mndbi = ttk.Checkbutton(master=self._training_labels)
+        self._training_api = ttk.Checkbutton(master=self._training_labels)
 
         self._color_settings = ttk.Labelframe(master=self)
 
@@ -410,6 +419,9 @@ class SettingsView(ttk.Toplevel):
 
         self._sentinel_nir_label.configure(text="NIR band:")
         self._sentinel_nir_spinbox.configure(width=2, from_=1, increment=1, to=13)
+
+        self._sentinel_swir_label.configure(text="SWIR band:")
+        self._sentinel_swir_spinbox.configure(width=2, from_=1, increment=1, to=13)
 
         self._value_settings_lf.configure(text="Algorithm settings", padding=10)
         for i in range(4):
@@ -521,12 +533,15 @@ class SettingsView(ttk.Toplevel):
         self._training_green.configure(text="Green", variable=self._vars["training_green"])
         self._training_red.configure(text="Red", variable=self._vars["training_red"])
         self._training_nir.configure(text="NIR", variable=self._vars["training_nir"])
+        self._training_swir.configure(text="SWIR", variable=self._vars["training_swir"])
         self._training_pi.configure(text="PI", variable=self._vars["training_pi"])
         self._training_ndwi.configure(text="NDWI", variable=self._vars["training_ndwi"])
         self._training_ndvi.configure(text="NDVI", variable=self._vars["training_ndvi"])
         self._training_rndvi.configure(text="RNDVI", variable=self._vars["training_rndvi"])
         self._training_sr.configure(text="SR", variable=self._vars["training_sr"])
         self._training_apwi.configure(text="APWI", variable=self._vars["training_apwi"])
+        self._training_mndbi.configure(text="MNDBI", variable=self._vars["training_mndbi"])
+        self._training_api.configure(text="API", variable=self._vars["training_api"])
 
         self._color_settings.configure(text="Color settings", padding=5)
         for i in range(16):
@@ -577,6 +592,9 @@ class SettingsView(ttk.Toplevel):
 
         self._sentinel_nir_label["bootstyle"] = "default"
         self._sentinel_nir_spinbox["bootstyle"] = "default"
+
+        self._sentinel_swir_label["bootstyle"] = "default"
+        self._sentinel_swir_spinbox["bootstyle"] = "default"
 
         self._value_settings_lf["bootstyle"] = "default"
 
@@ -668,12 +686,15 @@ class SettingsView(ttk.Toplevel):
         self._training_green["bootstyle"] = "default"
         self._training_red["bootstyle"] = "default"
         self._training_nir["bootstyle"] = "default"
+        self._training_swir["bootstyle"] = "default"
         self._training_pi["bootstyle"] = "default"
         self._training_ndwi["bootstyle"] = "default"
         self._training_ndvi["bootstyle"] = "default"
         self._training_rndvi["bootstyle"] = "default"
         self._training_sr["bootstyle"] = "default"
         self._training_apwi["bootstyle"] = "default"
+        self._training_mndbi["bootstyle"] = "default"
+        self._training_api["bootstyle"] = "default"
 
         self._color_settings["bootstyle"] = "default"
 
@@ -690,11 +711,11 @@ class SettingsView(ttk.Toplevel):
         :return: None
         """
 
-        self._satellite_lf.place(x=20, y=10, height=75, width=200)
+        self._satellite_lf.place(x=20, y=10, height=125, width=200)
         self._planet_rb.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-        self._sentinel_rb.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        self._sentinel_rb.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
 
-        self._sentinel_settings_lf.place(x=230, y=10, height=75, width=560)
+        self._sentinel_settings_lf.place(x=230, y=10, height=125, width=685)
 
         self._sentinel_blue_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         self._sentinel_blue_spinbox.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
@@ -705,10 +726,13 @@ class SettingsView(ttk.Toplevel):
         self._sentinel_red_label.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
         self._sentinel_red_spinbox.grid(row=0, column=5, sticky="ew", padx=5, pady=5)
 
-        self._sentinel_nir_label.grid(row=0, column=6, sticky="ew", padx=5, pady=5)
-        self._sentinel_nir_spinbox.grid(row=0, column=7, sticky="ew", padx=5, pady=5)
+        self._sentinel_nir_label.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
+        self._sentinel_nir_spinbox.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
 
-        self._value_settings_lf.place(x=20, y=95, height=200, width=770)
+        self._sentinel_swir_label.grid(row=1, column=2, sticky="ew", padx=5, pady=5)
+        self._sentinel_swir_spinbox.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
+
+        self._value_settings_lf.place(x=20, y=145, height=225, width=895)
 
         self._training_estimators_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         self._training_estimators_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
@@ -739,7 +763,7 @@ class SettingsView(ttk.Toplevel):
         self._water_c_id_label.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
         self._water_c_id_spinbox.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
 
-        self._paths_lf.place(x=20, y=305, height=200, width=880)
+        self._paths_lf.place(x=20, y=380, height=170, width=895)
 
         self._working_dir_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         self._working_dir_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
@@ -757,7 +781,7 @@ class SettingsView(ttk.Toplevel):
         self._unet_entry.grid(row=3, column=1, sticky="ew", padx=5, pady=5)
         self._unet_browse_btn.grid(row=3, column=2, sticky="ew", padx=5, pady=5)
 
-        self._file_settings_lf.place(x=20, y=505, height=300, width=880)
+        self._file_settings_lf.place(x=20, y=560, height=260, width=1055)
 
         self._file_extension_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         self._file_extension_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
@@ -792,29 +816,38 @@ class SettingsView(ttk.Toplevel):
         self._unet_heatmap_postfix_label.grid(row=5, column=2, sticky="ew", padx=5, pady=5)
         self._unet_heatmap_postfix_entry.grid(row=5, column=3, sticky="ew", padx=5, pady=5)
 
-        self._training_labels.place(x=800, y=10, height=285, width=100)
+        self._unet_classified_postfix_label.grid(row=4, column=2, sticky="ew", padx=5, pady=5)
+        self._unet_classified_postfix_entry.grid(row=4, column=3, sticky="ew", padx=5, pady=5)
+
+        self._unet_heatmap_postfix_label.grid(row=5, column=2, sticky="ew", padx=5, pady=5)
+        self._unet_heatmap_postfix_entry.grid(row=5, column=3, sticky="ew", padx=5, pady=5)
+
+        self._training_labels.place(x=925, y=10, height=540, width=150)
 
         self._training_blue.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         self._training_green.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
         self._training_red.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
         self._training_nir.grid(row=3, column=0, sticky="nsew", padx=5, pady=5)
-        self._training_pi.grid(row=4, column=0, sticky="nsew", padx=5, pady=5)
-        self._training_ndwi.grid(row=5, column=0, sticky="nsew", padx=5, pady=5)
-        self._training_ndvi.grid(row=6, column=0, sticky="nsew", padx=5, pady=5)
-        self._training_rndvi.grid(row=7, column=0, sticky="nsew", padx=5, pady=5)
-        self._training_sr.grid(row=8, column=0, sticky="nsew", padx=5, pady=5)
-        self._training_apwi.grid(row=9, column=0, sticky="nsew", padx=5, pady=5)
+        self._training_swir.grid(row=4, column=0, sticky="nsew", padx=5, pady=5)
+        self._training_pi.grid(row=5, column=0, sticky="nsew", padx=5, pady=5)
+        self._training_ndwi.grid(row=6, column=0, sticky="nsew", padx=5, pady=5)
+        self._training_ndvi.grid(row=7, column=0, sticky="nsew", padx=5, pady=5)
+        self._training_rndvi.grid(row=8, column=0, sticky="nsew", padx=5, pady=5)
+        self._training_sr.grid(row=9, column=0, sticky="nsew", padx=5, pady=5)
+        self._training_apwi.grid(row=10, column=0, sticky="nsew", padx=5, pady=5)
+        self._training_mndbi.grid(row=11, column=0, sticky="nsew", padx=5, pady=5)
+        self._training_api.grid(row=12, column=0, sticky="nsew", padx=5, pady=5)
 
-        self._color_settings.place(x=910, y=10, height=655, width=160)
+        self._color_settings.place(x=1085, y=10, height=760, width=180)
 
         for i in range(len(self._color_labels)):
             self._color_labels[i].grid(row=i, column=0, sticky="ew", padx=5, pady=5)
             self._color_buttons[i].grid(row=i, column=1, sticky="e", padx=5, pady=5)
 
-        self._ok_btn.place(x=995, y=685, height=30, width=70)
-        self._cancel_btn.place(x=920, y=685, height=30, width=70)
+        self._ok_btn.place(x=1180, y=780, height=40, width=85)
+        self._cancel_btn.place(x=1085, y=780, height=40, width=85)
 
-        self._unet_lf.place(x=1100, y=20, height=150, width=150)
+        self._unet_lf.place(x=1275, y=10, height=150, width=150)
         self._unet_rb.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         self._unetpp_rb.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
 
@@ -832,12 +865,15 @@ class SettingsView(ttk.Toplevel):
         self._vars["training_green"] = ttk.IntVar(master=self)
         self._vars["training_red"] = ttk.IntVar(master=self)
         self._vars["training_nir"] = ttk.IntVar(master=self)
+        self._vars["training_swir"] = ttk.IntVar(master=self)
         self._vars["training_pi"] = ttk.IntVar(master=self)
         self._vars["training_ndwi"] = ttk.IntVar(master=self)
         self._vars["training_ndvi"] = ttk.IntVar(master=self)
         self._vars["training_rndvi"] = ttk.IntVar(master=self)
         self._vars["training_sr"] = ttk.IntVar(master=self)
         self._vars["training_apwi"] = ttk.IntVar(master=self)
+        self._vars["training_mndbi"] = ttk.IntVar(master=self)
+        self._vars["training_api"] = ttk.IntVar(master=self)
 
     def _create_tooltips(self) -> None:
         """
@@ -865,6 +901,10 @@ class SettingsView(ttk.Toplevel):
         ToolTip(
             self._sentinel_nir_label,
             "The index of the NIR (Near-infrared) band on the Sentinel-2 image.",
+        )
+        ToolTip(
+            self._sentinel_swir_label,
+            "The index of the SWIR (Short waved infrared) band on the Sentinel-2 image.",
         )
 
         # Algorithm settings
@@ -983,6 +1023,7 @@ class SettingsView(ttk.Toplevel):
         ToolTip(self._training_green, "Green band.")
         ToolTip(self._training_red, "Red band.")
         ToolTip(self._training_nir, "NIR (Near-infrared) band.")
+        ToolTip(self._training_swir, "SWIR (Short waved infrared) band.")
         ToolTip(self._training_pi, "Plastic index: (NIR) / (NIR + Red).")
         ToolTip(
             self._training_ndwi,
@@ -1001,6 +1042,8 @@ class SettingsView(ttk.Toplevel):
             self._training_apwi,
             "Agricultural Plastic Waste Index: (Blue) / (1 - (Red + Green + NIR) / 3).",
         )
+        ToolTip(self._training_mndbi, "MNDBI")
+        ToolTip(self._training_api, "API")
 
         # Color settings
         for btn in self._color_buttons:

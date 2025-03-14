@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+from model.index_calculator import IndexCalculator
 import model.persistence as persistence
 
 from desktop_app.src.view_model import ViewModel
@@ -519,107 +520,6 @@ class TestGetCoordsInsidePolygon(unittest.TestCase, ViewModel):
         self.assertEqual(len(result), len(expected))
         for value in expected:
             self.assertTrue(value in result)
-
-
-class TestCalculateIndex(unittest.TestCase, ViewModel):
-    def setUp(self) -> None:
-        ViewModel.__init__(self, persistence=persistence.Persistence(CONFIG_FILE_NAME_DESKTOP_APP))
-
-        self.shape = (3, 3)
-
-    def test_all_nan(self):
-        numerator = np.ndarray(
-            shape=self.shape,
-            dtype="float64",
-        )
-
-        denominator = np.ndarray(
-            shape=self.shape,
-            dtype="float64",
-        )
-
-        for i in range(self.shape[0]):
-            for j in range(self.shape[1]):
-                numerator[i, j] = float("NaN")
-                denominator[i, j] = float("NaN")
-
-        result = self.calculate_index(numerator, denominator)
-
-        self.assertTrue(np.array_equal(result, numerator, equal_nan=True))
-        self.assertTrue(np.array_equal(result, denominator, equal_nan=True))
-
-    def test_all_not_nan(self):
-        numerator = np.ndarray(
-            shape=self.shape,
-            dtype="float64",
-        )
-
-        denominator = np.ndarray(
-            shape=self.shape,
-            dtype="float64",
-        )
-
-        for i in range(self.shape[0]):
-            for j in range(self.shape[1]):
-                numerator[i, j] = i + j + 1
-                denominator[i, j] = i + j + 1
-
-        result = self.calculate_index(numerator, denominator)
-
-        self.assertTrue(np.all(result == 1))
-
-    def test_numerator_negative_denominator_zeros(self):
-        numerator = np.ndarray(
-            shape=self.shape,
-            dtype="float64",
-        )
-
-        denominator = np.zeros(
-            shape=self.shape,
-            dtype="float64",
-        )
-
-        for i in range(self.shape[0]):
-            for j in range(self.shape[1]):
-                numerator[i, j] = -(i + j + 1)
-
-        result = self.calculate_index(numerator, denominator)
-
-        self.assertTrue(np.all(result == -5))
-
-    def test_numerator_positive_denominator_zeros(self):
-        numerator = np.ndarray(
-            shape=self.shape,
-            dtype="float64",
-        )
-
-        denominator = np.zeros(
-            shape=self.shape,
-            dtype="float64",
-        )
-
-        for i in range(self.shape[0]):
-            for j in range(self.shape[1]):
-                numerator[i, j] = i + j + 1
-
-        result = self.calculate_index(numerator, denominator)
-
-        self.assertTrue(np.all(result == 5))
-
-    def test_numerator_zeros_denominator_zeros(self):
-        numerator = np.zeros(
-            shape=self.shape,
-            dtype="float64",
-        )
-
-        denominator = np.zeros(
-            shape=self.shape,
-            dtype="float64",
-        )
-
-        result = self.calculate_index(numerator, denominator)
-
-        self.assertTrue(np.all(np.isnan(result)))
 
 
 if __name__ == "__main__":
