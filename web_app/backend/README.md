@@ -31,7 +31,23 @@ In the [`Dockerfile`](../../Dockerfile), several environment variables (`ENV`) a
       docker build . --target web_app_backend -t web_app_backend
    ```
 
-3. **Run container:**
+3. **Create PostgreSQL Database with PostGIS Extension:**
+
+   ```bash
+      psql -U postgres
+
+      CREATE DATABASE waste_detection_database;
+
+      \c waste_detection_database;
+
+      CREATE EXTENSION postgis;
+
+      \q
+
+      # DROP DATABASE waste_detection_database;
+   ```
+
+4. **Run container:**
 
    ```bash
       docker run -d --name web_app_backend_container \
@@ -42,35 +58,18 @@ In the [`Dockerfile`](../../Dockerfile), several environment variables (`ENV`) a
         gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
    ```
 
-4. **Run container locally (development only):**
+5. **Running the container with mounted data folder:**
+   When running the container, use the `-v` option to mount the data folder:
 
-- **Create PostgreSQL Database with PostGIS Extension:**
-
-  ```bash
-     psql -U postgres
-
-     CREATE DATABASE waste_detection_database;
-
-     \c waste_detection_database;
-
-     CREATE EXTENSION postgis;
-
-     \q
-
-     # DROP DATABASE waste_detection_database;
-  ```
-
-- **Run container:**
-
-  Be sure to verify the values of the other `ENV` variables listed above.
-
-  ```bash
-     docker run --rm -it --name web_app_backend_container \
-       -e FLASK_SECRET_KEY=secret_key \
-       -e PSQL_DATABASE_URL=postgresql://postgres:admin@192.168.1.118:5432/waste_detection_database \
-       -p 5000:5000 \
-       web_app_backend
-  ```
+   ```bash
+   docker run -d --name web_app_backend_container \
+   -e FLASK_SECRET_KEY={SECRET_KEY} \
+   -e PSQL_DATABASE_URL=postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME} \
+   -v ${DATA_FOLDER_PATH}:/app/data \
+   --net=host \
+   --restart always \
+   gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
+   ```
 
 ## `curl` commands for endpoints:
 
@@ -83,6 +82,7 @@ In the [`Dockerfile`](../../Dockerfile), several environment variables (`ENV`) a
     curl -X POST http://127.0.0.1:5000/users -H "Content-Type: application/json" -d "{\"name\": \"John Doe\", \"email\": \"john@example.com\", \"password\": \"password123\", \"role\": \"admin\"}"
   ```
 - Add satellite image:
+
   ```bash
     curl -b cookies.txt -X POST http://127.0.0.1:5000/satellite-images -H "Content-Type: application/json" -d "{\"filename\": \"image1.tif\", \"acquisition_date\": \"2023-06-01\", \"satellite_type\": \"Landsat\", \"src\": \"NASA\", \"min\": 0.0, \"max\": 255.0}"
   ```

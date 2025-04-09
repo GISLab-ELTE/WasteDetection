@@ -68,6 +68,12 @@
             value="0"
           />
         </div>
+        <div class="col-12 col-lg-2">
+          <label for="all-stations-checkbox">
+            <input type="checkbox" id="all-stations-checkbox" />
+            Get all stations.
+          </label>
+        </div>
       </div>
       <div class="row">
         <div class="col-12">
@@ -109,6 +115,15 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div id="popup" class="ol-popup">
+      <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+      <div id="popup-content"></div>
+    </div>
+
+    <div id="spinner-overlay" class="spinner-overlay" style="display: none">
+      <div class="spinner">Loading...</div>
     </div>
 
     <script type="module" src="./main.js"></script>
