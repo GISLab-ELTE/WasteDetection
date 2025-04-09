@@ -12,6 +12,7 @@
   "dependencies": {
     "ol": "^7.3.0",
     "ol-layerswitcher": "^4.1.0",
-    "prettier": "^3.2.2"
+    "prettier": "^3.2.2",
+    "quickselect": "^3.0.0"
   }
 }
