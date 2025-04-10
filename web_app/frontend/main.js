@@ -238,6 +238,7 @@ const removeLayersFromMap = function () {
   }
 
   map.removeLayer(geojsonLayerGroup);
+  layerGeoTiff.setSource(null);
 };
 
 const changeDate = function (newDate) {
@@ -256,8 +257,9 @@ const setAOILayers = function () {
 
   removeLayersFromMap();
 
-  layerGeoTiff.setSource(
-    new GeoTIFF({
+  if (date in satelliteImagesPaths[aoi])
+  {
+    const geoTiffSource = new GeoTIFF({
       sources: [
         {
           url: satelliteImagesPaths[aoi][date]["src"],
@@ -268,15 +270,18 @@ const setAOILayers = function () {
         },
       ],
       transition: 0,
-    }),
-  );
-  layers[0] = layerGeoTiff;
+    });
+
+    layerGeoTiff.setSource(geoTiffSource);
+  }
+
+  layers.push(layerGeoTiff);
 
   for (let i = 0; i < 4; i++) {
     sourcesAndLayers["sources"][i].setUrl(aoisWithDates[model][aoi][date][i]);
     sourcesAndLayers["sources"][i].refresh();
     sourcesAndLayers["layers"][i].setSource(sourcesAndLayers["sources"][i]);
-    layers[i + 1] = sourcesAndLayers["layers"][i];
+    layers.push(sourcesAndLayers["layers"][i]);
   }
 
   geojsonLayerGroup = new LayerGroup({
@@ -287,17 +292,21 @@ const setAOILayers = function () {
   map.addLayer(geojsonLayerGroup);
 };
 
-const changeAOI = function () {
-  let aoiBbox = null;
+const resetSlider = function() {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
 
   swipe.value = 0;
   swipe.max = Object.keys(aoisWithDates[model][aoi]).length - 1;
+}
 
-  const swipeValue = swipe.value;
+const changeAOI = function () {
+  let aoiBbox = null;
+  const aoi = selectedAOI.value;
+  const model = selectedModel.value;
 
-  changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
+  resetSlider();
+  changeDate(Object.keys(aoisWithDates[model][aoi])[swipe.value]);
   setAOILayers();
 
   if (aoi == "Kiskore") {
@@ -317,6 +326,11 @@ const changeAOI = function () {
     map.getView().fit(aoiBbox, map.getSize());
   }
 };
+
+const updateModel = async function() {
+    resetSlider();
+    await updateClassification();
+}
 
 const resizeMap = function () {
   var userInputsHeight = document.getElementById("user-inputs").offsetHeight;
@@ -357,17 +371,13 @@ const fetchGeojsonPaths = async function () {
       }
     }
   }
-
-  swipe.max =
-    Object.keys(aoisWithDates[modelId][Object.keys(aoisWithDates[modelId])[0]])
-      .length - 1;
 };
 
 const updateClassification = async function () {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
-  const swipeValue = swipe.value;
-  changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
+
+  changeDate(Object.keys(aoisWithDates[model][aoi])[swipe.value]);
   setAOILayers(aoi);
   await displayExistingAnnotations();
 };
@@ -586,7 +596,7 @@ const postAnnotation = function (satellite_image_id, user_id, geom, waste) {
 
 // Events
 selectedAOI.onchange = changeAOI;
-selectedModel.onchange = updateClassification;
+selectedModel.onchange = updateModel;
 
 swipe.addEventListener("input", updateClassification);
 
