@@ -319,6 +319,7 @@ const removeLayersFromMap = function () {
   }
 
   map.removeLayer(geojsonLayerGroup);
+  layerGeoTiff.setSource(null);
 };
 
 const changeDate = function (newDate) {
@@ -337,8 +338,8 @@ const setAOILayers = function () {
 
   removeLayersFromMap();
 
-  layerGeoTiff.setSource(
-    new GeoTIFF({
+  if (date in satelliteImagesPaths[aoi]) {
+    const geoTiffSource = new GeoTIFF({
       sources: [
         {
           url: satelliteImagesPaths[aoi][date]["src"],
@@ -349,15 +350,18 @@ const setAOILayers = function () {
         },
       ],
       transition: 0,
-    })
-  );
-  layers[0] = layerGeoTiff;
+    });
+
+    layerGeoTiff.setSource(geoTiffSource);
+  }
+
+  layers.push(layerGeoTiff);
 
   for (let i = 0; i < 4; i++) {
     sourcesAndLayers["sources"][i].setUrl(aoisWithDates[model][aoi][date][i]);
     sourcesAndLayers["sources"][i].refresh();
     sourcesAndLayers["layers"][i].setSource(sourcesAndLayers["sources"][i]);
-    layers[i + 1] = sourcesAndLayers["layers"][i];
+    layers.push(sourcesAndLayers["layers"][i]);
   }
 
   geojsonLayerGroup = new LayerGroup({
@@ -368,17 +372,21 @@ const setAOILayers = function () {
   map.addLayer(geojsonLayerGroup);
 };
 
-const changeAOI = function () {
-  let aoiBbox = null;
+const resetSlider = function () {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
 
   swipe.value = 0;
   swipe.max = Object.keys(aoisWithDates[model][aoi]).length - 1;
+};
 
-  const swipeValue = swipe.value;
+const changeAOI = function () {
+  let aoiBbox = null;
+  const aoi = selectedAOI.value;
+  const model = selectedModel.value;
 
-  changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
+  resetSlider();
+  changeDate(Object.keys(aoisWithDates[model][aoi])[swipe.value]);
   setAOILayers();
 
   if (aoi == "Kiskore") {
@@ -397,6 +405,11 @@ const changeAOI = function () {
   if (aoiBbox !== null) {
     map.getView().fit(aoiBbox, map.getSize());
   }
+};
+
+const updateModel = async function () {
+  resetSlider();
+  await updateClassification();
 };
 
 const resizeMap = function () {
@@ -438,17 +451,13 @@ const fetchGeojsonPaths = async function () {
       }
     }
   }
-
-  swipe.max =
-    Object.keys(aoisWithDates[modelId][Object.keys(aoisWithDates[modelId])[0]])
-      .length - 1;
 };
 
 const updateClassification = async function () {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
-  const swipeValue = swipe.value;
-  changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
+
+  changeDate(Object.keys(aoisWithDates[model][aoi])[swipe.value]);
   setAOILayers(aoi);
   await displayExistingAnnotations();
 };
@@ -471,11 +480,11 @@ const annotationContainerSave = async function () {
   const lastDrawnFeature = sourceDraw.getFeatures().slice(-1)[0];
   const coordinates = lastDrawnFeature.getGeometry().getCoordinates();
   const annotationTypeValue = document.getElementById(
-    "annotation-type-select"
+    "annotation-type-select",
   ).value;
 
   const satelliteImageId = await getSatelliteImageId(
-    layerGeoTiff.getSource().key_
+    layerGeoTiff.getSource().key_,
   );
   const userId = await getUserId();
   const geom = createWKTPolygon(coordinates);
@@ -493,7 +502,7 @@ const displayExistingAnnotations = async function () {
   }
 
   const satellite_image_id = await getSatelliteImageId(
-    layerGeoTiff.getSource().key_
+    layerGeoTiff.getSource().key_,
   );
 
   try {
@@ -506,7 +515,7 @@ const displayExistingAnnotations = async function () {
         },
         body: JSON.stringify({ satellite_image_id }),
         credentials: "include",
-      }
+      },
     );
     if (response.ok) {
       const data = await response.json();
@@ -514,7 +523,7 @@ const displayExistingAnnotations = async function () {
         .getFeatures()
         .forEach((feature) => sourceDraw.removeFeature(feature));
       data.forEach((feature) =>
-        sourceDraw.addFeature(new GeoJSON().readFeatures(feature)[0])
+        sourceDraw.addFeature(new GeoJSON().readFeatures(feature)[0]),
       );
     } else {
       console.error("Failed to fetch user ID:", response.statusText);
@@ -646,7 +655,7 @@ const logout = function () {
 
 const createWKTPolygon = function (coordinates) {
   const coordinatesString = coordinates.map((coordPair) =>
-    coordPair.map((coord) => coord.join(" ")).join(", ")
+    coordPair.map((coord) => coord.join(" ")).join(", "),
   );
   const wktPolygon = `POLYGON((${coordinatesString}))`;
   return wktPolygon;
@@ -667,7 +676,7 @@ const postAnnotation = function (satellite_image_id, user_id, geom, waste) {
 
 // Events
 selectedAOI.onchange = changeAOI;
-selectedModel.onchange = updateClassification;
+selectedModel.onchange = updateModel;
 
 swipe.addEventListener("input", updateClassification);
 
@@ -778,7 +787,7 @@ map.on("click", function (evt) {
         stationName,
         forecasts,
         props.lowest_level_cm,
-        props.highest_level_cm
+        props.highest_level_cm,
       );
       showPopup(evt.coordinate, popupHTML);
     } else if (props.type === "waste_deposit") {
@@ -798,7 +807,7 @@ map.on("click", function (evt) {
     const [lon, lat] = toLonLat(evt.coordinate);
     showSpinner();
     const disableFiltering = document.getElementById(
-      "all-stations-checkbox"
+      "all-stations-checkbox",
     ).checked;
     const url = `${flaskUrl}flood-forecast?lat=${lat}&lon=${lon}&disable_filtering=${disableFiltering}`;
     fetch(url, {
@@ -831,7 +840,7 @@ function createStationPopupHTML(
   stationName,
   forecasts,
   lowest_level_cm,
-  highest_level_cm
+  highest_level_cm,
 ) {
   let html = `
     <div class="popup-content-wrapper">
