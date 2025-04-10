@@ -1,6 +1,7 @@
 import logging
 import os
-
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from config import Config
 from flask_cors import CORS
 from datetime import datetime
@@ -342,7 +343,7 @@ def get_forecasts(station_id):
         API_URL,
         params={
             "view": "getfc",
-            "TOKEN": OVSZ_TOKEN,
+            "token": OVSZ_TOKEN,
             "varid": VARID,
             "statid": station_id,
             "extended": 1,
@@ -357,7 +358,7 @@ def transform_coordinates(lon, lat, source_crs="EPSG:4326", target_crs="EPSG:237
 
 
 def get_deposit_elevation(deposit_point):
-    return FloodPrediction.get_elevation_from_dem(HUNGARY_ELEVATION_MODEL, deposit_point)
+    return FloodPrediction.get_elevation_from_dem(HUNGARY_ELEVATION_MODEL, deposit_point,POINT_CRS, DEM_CRS)
 
 
 def find_closest_station(lat, lon, stations):
@@ -418,10 +419,10 @@ def process_station_forecasts(station, lat, lon):
                     abs_levels.append(abs_level)
                     station_forecasts.append(
                         {
-                            "date": forecast.get("date"),
-                            "value_cm": value_cm,
-                            "abs_level_m": abs_level,
-                            "conf": f"{forecast.get('conf', 0)}cm",
+                            "date": str(forecast.get("date")),
+                            "value_cm": str(round(float(forecast.get("value", 0)))),
+                            "abs_level_m": str(round(abs_level, 2)),
+                            "conf": f"{round(float(forecast.get('conf', 0)))}",
                         }
                     )
 
@@ -517,7 +518,7 @@ def flood_forecast():
     avg_abs_level = sum(all_levels) / len(all_levels) if all_levels else 0.0
 
     # Determine flood zones
-    zones = FloodPrediction.check_flood_zone(deposit_point)
+    zones = FloodPrediction.check_flood_zone(deposit_point, FLOOD_ZONES, DEM_CRS)
     deposit_feature = build_deposit_feature(lon, lat, deposit_elevation, avg_abs_level, zones, river)
 
     # Combine deposit and station features to geosjon
