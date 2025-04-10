@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from config import Config
 from flask_cors import CORS
@@ -358,7 +359,7 @@ def transform_coordinates(lon, lat, source_crs="EPSG:4326", target_crs="EPSG:237
 
 
 def get_deposit_elevation(deposit_point):
-    return FloodPrediction.get_elevation_from_dem(HUNGARY_ELEVATION_MODEL, deposit_point,POINT_CRS, DEM_CRS)
+    return FloodPrediction.get_elevation_from_dem(HUNGARY_ELEVATION_MODEL, deposit_point, POINT_CRS, DEM_CRS)
 
 
 def find_closest_station(lat, lon, stations):
