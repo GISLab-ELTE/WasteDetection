@@ -257,8 +257,7 @@ const setAOILayers = function () {
 
   removeLayersFromMap();
 
-  if (date in satelliteImagesPaths[aoi])
-  {
+  if (date in satelliteImagesPaths[aoi]) {
     const geoTiffSource = new GeoTIFF({
       sources: [
         {
@@ -292,13 +291,13 @@ const setAOILayers = function () {
   map.addLayer(geojsonLayerGroup);
 };
 
-const resetSlider = function() {
+const resetSlider = function () {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
 
   swipe.value = 0;
   swipe.max = Object.keys(aoisWithDates[model][aoi]).length - 1;
-}
+};
 
 const changeAOI = function () {
   let aoiBbox = null;
@@ -327,10 +326,10 @@ const changeAOI = function () {
   }
 };
 
-const updateModel = async function() {
-    resetSlider();
-    await updateClassification();
-}
+const updateModel = async function () {
+  resetSlider();
+  await updateClassification();
+};
 
 const resizeMap = function () {
   var userInputsHeight = document.getElementById("user-inputs").offsetHeight;
