@@ -480,11 +480,11 @@ const annotationContainerSave = async function () {
   const lastDrawnFeature = sourceDraw.getFeatures().slice(-1)[0];
   const coordinates = lastDrawnFeature.getGeometry().getCoordinates();
   const annotationTypeValue = document.getElementById(
-    "annotation-type-select"
+    "annotation-type-select",
   ).value;
 
   const satelliteImageId = await getSatelliteImageId(
-    layerGeoTiff.getSource().key_
+    layerGeoTiff.getSource().key_,
   );
   const userId = await getUserId();
   const geom = createWKTPolygon(coordinates);
@@ -502,7 +502,7 @@ const displayExistingAnnotations = async function () {
   }
 
   const satellite_image_id = await getSatelliteImageId(
-    layerGeoTiff.getSource().key_
+    layerGeoTiff.getSource().key_,
   );
 
   try {
@@ -515,7 +515,7 @@ const displayExistingAnnotations = async function () {
         },
         body: JSON.stringify({ satellite_image_id }),
         credentials: "include",
-      }
+      },
     );
     if (response.ok) {
       const data = await response.json();
@@ -523,7 +523,7 @@ const displayExistingAnnotations = async function () {
         .getFeatures()
         .forEach((feature) => sourceDraw.removeFeature(feature));
       data.forEach((feature) =>
-        sourceDraw.addFeature(new GeoJSON().readFeatures(feature)[0])
+        sourceDraw.addFeature(new GeoJSON().readFeatures(feature)[0]),
       );
     } else {
       console.error("Failed to fetch user ID:", response.statusText);
@@ -655,7 +655,7 @@ const logout = function () {
 
 const createWKTPolygon = function (coordinates) {
   const coordinatesString = coordinates.map((coordPair) =>
-    coordPair.map((coord) => coord.join(" ")).join(", ")
+    coordPair.map((coord) => coord.join(" ")).join(", "),
   );
   const wktPolygon = `POLYGON((${coordinatesString}))`;
   return wktPolygon;
@@ -787,7 +787,7 @@ map.on("click", function (evt) {
         stationName,
         forecasts,
         props.lowest_level_cm,
-        props.highest_level_cm
+        props.highest_level_cm,
       );
       showPopup(evt.coordinate, popupHTML);
     } else if (props.type === "waste_deposit") {
@@ -807,7 +807,7 @@ map.on("click", function (evt) {
     const [lon, lat] = toLonLat(evt.coordinate);
     showSpinner();
     const disableFiltering = document.getElementById(
-      "all-stations-checkbox"
+      "all-stations-checkbox",
     ).checked;
     const url = `${flaskUrl}flood-forecast?lat=${lat}&lon=${lon}&disable_filtering=${disableFiltering}`;
     fetch(url, {
@@ -840,7 +840,7 @@ function createStationPopupHTML(
   stationName,
   forecasts,
   lowest_level_cm,
-  highest_level_cm
+  highest_level_cm,
 ) {
   let html = `
     <div class="popup-content-wrapper">
