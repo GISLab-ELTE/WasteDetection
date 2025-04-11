@@ -211,7 +211,7 @@ webapp-backend:
          docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_WEB_BACKEND" --format "{{.ID}}" | xargs docker image rm
       fi
     # Run new image in background
-    - docker run -d --name $CONTAINER_NAME_WEB_BACKEND -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL -e OVSZ_TOKEN=$OVSZ_API_KEY --net=host --restart always gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
+    - docker run -d --name $CONTAINER_NAME_WEB_BACKEND --mount type=bind,source=/var/cells/data/spatial-private/waste-detection/flood_prediction,target=/mnt/data,readonly -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL -e OVSZ_TOKEN=$OVSZ_API_KEY --net=host --restart always gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       changes:
