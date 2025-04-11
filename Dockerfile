@@ -22,6 +22,7 @@ FROM base AS web_app_backend
 
 WORKDIR /workspace/flask_app
 COPY web_app/backend/ ./
+COPY model/ model/
 ENV FLASK_APP=app.py
 ENV FLASK_APP_HOST=0.0.0.0
 ENV FLASK_APP_PORT=5000
