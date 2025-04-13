@@ -466,7 +466,6 @@ def build_deposit_feature(lon, lat, deposit_elevation, avg_abs_level, zones, riv
 
 
 @app.route("/flood-forecast", methods=["GET"])
-@login_required
 def flood_forecast():
     """
     Endpoint to forecast flood risk for a given deposit location.
