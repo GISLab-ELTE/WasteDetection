@@ -62,7 +62,7 @@ lint:package:
   image: mambaorg/micromamba
   stage: lint
   script:
-    - micrimamba env create -f environment.yml -n TestEnv --dry-run
+    - micromamba env create -f environment.yml -n TestEnv --dry-run
   rules:
     - changes:
         - environment.yml
