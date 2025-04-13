@@ -35,7 +35,7 @@ const drawType = "Polygon";
 if (!import.meta.env.VITE_GEOSERVER_URL) {
   throw new Error("GEOSERVER_URL is not defined in the environment variables.");
 }
-const wmsUrl = import.meta.env.GEOSERVER_URL;
+const wmsUrl = import.meta.env.VITE_GEOSERVER_URL;
 
 // Variables
 var geojsonLayerGroup;
