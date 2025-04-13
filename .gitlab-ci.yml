@@ -59,10 +59,10 @@ lint:prettier:
     - npx prettier --check .
 
 lint:package:
-  image: continuumio/miniconda3
+  image: mambaorg/micromamba
   stage: lint
   script:
-    - conda env create -f environment.yml -n TestEnv --dry-run
+    - micrimamba env create -f environment.yml -n TestEnv --dry-run
   rules:
     - changes:
         - environment.yml
