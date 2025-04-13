@@ -25,7 +25,7 @@ dependencies:
   - scikit-image=0.19.0
   - scikit-learn=0.24.2
   - sentinelhub=3.4.4
-  - shapely=1.7.1
+  - shapely=1.8.0
   - tk=8.6.11 # for desktop_app
   - pip:
       - flask-cors==4.0.1
