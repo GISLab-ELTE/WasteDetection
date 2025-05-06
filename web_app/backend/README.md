@@ -6,28 +6,28 @@ This backend is a containerized Flask application designed for processing satell
 
 The application expects the following environment variables:
 
-| Variable | Description |
-|----------|-------------|
-| `FLASK_SECRET_KEY` | Secret key for session management and CSRF protection. |
-| `PSQL_DATABASE_URL` | PostgreSQL connection string. Format: `postgresql://<USER>:<PASSWORD>@<HOST>:<PORT>/<DB_NAME>` |
-| `API_URL` | Flood forecast API URL (e.g., `https://hydroinfo.hu/WSCSS/ovszws/api.php`) |
-| `OVSZ_TOKEN` | API token for accessing the external flood forecast service. |
-| `VARID` | Numerical identifier for API request parameters (e.g. `4`). |
-| `data_folder` | Base path to where your spatial files (TIFF/Shape) are located. |
-| `HUNGARY_ELEVATION_MODEL` | DEM raster file name relative to `data_folder`. |
-| `STATIONS_DISTANCE_LIMIT` | Max distance (in meters) from deposit to stations (default: `40000`). |
-| `FLOOD_ZONE_MEDIUM` | Shapefile path for medium flood zones. |
-| `FLOOD_ZONE_LOW` | Shapefile path for low flood zones. |
-| `FLOOD_ZONE_HIGH` | Shapefile path for high flood zones. |
-| `FLOOD_ZONE_NAGYVIZ` | Shapefile path for nagyvízi meder. |
-| `POINT_CRS` | CRS code for deposit coordinates (e.g., `EPSG:23700`). |
-| `DEM_CRS` | CRS code for DEM data (e.g., `EPSG:32634`). |
-| `FLASK_APP` | Entry point of the Flask app. Default: `app.py`. |
-| `FLASK_APP_HOST` | Host address for the Flask server. Default: `0.0.0.0`. |
-| `FLASK_APP_PORT` | Port number the app listens to. Default: `5000`. |
-| `FLASK_DEBUG` | Enables debug mode and CORS configuration. Default: `False`. |
-| `FLASK_CORS_ORIGIN` | Allowed CORS origin during development. Default: `http://localhost:5173`. |
-| `GUNICORN_WORKERS` | Number of Gunicorn worker processes. Default: `5`. |
+| Variable                  | Description                                                                                    |
+| ------------------------- | ---------------------------------------------------------------------------------------------- |
+| `FLASK_SECRET_KEY`        | Secret key for session management and CSRF protection.                                         |
+| `PSQL_DATABASE_URL`       | PostgreSQL connection string. Format: `postgresql://<USER>:<PASSWORD>@<HOST>:<PORT>/<DB_NAME>` |
+| `API_URL`                 | Flood forecast API URL (e.g., `https://hydroinfo.hu/WSCSS/ovszws/api.php`)                     |
+| `OVSZ_TOKEN`              | API token for accessing the external flood forecast service.                                   |
+| `VARID`                   | Numerical identifier for API request parameters (e.g. `4`).                                    |
+| `data_folder`             | Base path to where your spatial files (TIFF/Shape) are located.                                |
+| `HUNGARY_ELEVATION_MODEL` | DEM raster file name relative to `data_folder`.                                                |
+| `STATIONS_DISTANCE_LIMIT` | Max distance (in meters) from deposit to stations (default: `40000`).                          |
+| `FLOOD_ZONE_MEDIUM`       | Shapefile path for medium flood zones.                                                         |
+| `FLOOD_ZONE_LOW`          | Shapefile path for low flood zones.                                                            |
+| `FLOOD_ZONE_HIGH`         | Shapefile path for high flood zones.                                                           |
+| `FLOOD_ZONE_NAGYVIZ`      | Shapefile path for nagyvízi meder.                                                             |
+| `POINT_CRS`               | CRS code for deposit coordinates (e.g., `EPSG:23700`).                                         |
+| `DEM_CRS`                 | CRS code for DEM data (e.g., `EPSG:32634`).                                                    |
+| `FLASK_APP`               | Entry point of the Flask app. Default: `app.py`.                                               |
+| `FLASK_APP_HOST`          | Host address for the Flask server. Default: `0.0.0.0`.                                         |
+| `FLASK_APP_PORT`          | Port number the app listens to. Default: `5000`.                                               |
+| `FLASK_DEBUG`             | Enables debug mode and CORS configuration. Default: `False`.                                   |
+| `FLASK_CORS_ORIGIN`       | Allowed CORS origin during development. Default: `http://localhost:5173`.                      |
+| `GUNICORN_WORKERS`        | Number of Gunicorn worker processes. Default: `5`.                                             |
 
 ## Running the Application
 
