@@ -1,4 +1,5 @@
 import logging
+import re
 from logging.config import fileConfig
 
 from flask import current_app
@@ -50,6 +51,13 @@ def get_metadata():
     return target_db.metadata
 
 
+exclude_tables = config.get_section("alembic:exclude").get("tables", "").split(",")
+
+
+def include_object(object, name, type_, *args, **kwargs):
+    return not (type_ == "table" and name in exclude_tables)
+
+
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
 
@@ -63,7 +71,7 @@ def run_migrations_offline():
 
     """
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(url=url, target_metadata=get_metadata(), literal_binds=True)
+    context.configure(url=url, target_metadata=get_metadata(), literal_binds=True, include_object=include_object)
 
     with context.begin_transaction():
         context.run_migrations()
@@ -88,13 +96,17 @@ def run_migrations_online():
                 logger.info("No changes in schema detected.")
 
     conf_args = current_app.extensions["migrate"].configure_args
-    if conf_args.get("process_revision_directives") is None:
-        conf_args["process_revision_directives"] = process_revision_directives
+
+    # This section is commented out to allow the creation of an empty migration file for customization
+    # if conf_args.get("process_revision_directives") is None:
+    #     conf_args["process_revision_directives"] = process_revision_directives
 
     connectable = get_engine()
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=get_metadata(), **conf_args)
+        context.configure(
+            connection=connection, target_metadata=get_metadata(), include_object=include_object, **conf_args
+        )
 
         with context.begin_transaction():
             context.run_migrations()

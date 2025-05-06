@@ -68,9 +68,24 @@ def log_response_info(response):
 
 
 @app.route("/users", methods=["POST"])
+@login_required
 def create_user():
     data = request.get_json()
     user = User(name=data["name"], email=data["email"], role=data["role"])
+    user.set_password(data["password"])
+    db.session.add(user)
+    db.session.commit()
+    return jsonify({"id": user.id}), 201
+
+
+@app.route("/setup", methods=["POST"])
+def setup_user():
+    user_exists = User.query.first() is not None
+    if user_exists:
+        return jsonify({"error": "Initial user has already been seeded"}), 403
+
+    data = request.get_json()
+    user = User(name=data["name"], email=data["email"], role="admin")
     user.set_password(data["password"])
     db.session.add(user)
     db.session.commit()
