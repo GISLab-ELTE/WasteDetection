@@ -90,7 +90,7 @@ def setup_user():
     db.session.add(user)
     db.session.commit()
     return jsonify({"id": user.id}), 201
-    
+
 
 @app.route("/login", methods=["POST"])
 def login():
