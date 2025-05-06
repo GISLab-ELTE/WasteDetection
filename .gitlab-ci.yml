@@ -1,3 +1,9 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: always
+
 variables:
   DS_EXCLUDED_ANALYZERS: gemnasium-python
   IMAGE_NAME_BASE: "$CI_REGISTRY_IMAGE/base"
@@ -52,8 +58,17 @@ lint:prettier:
   script:
     - npx prettier --check .
 
-# Model
-model-unittest:
+lint:package:
+  image: mambaorg/micromamba
+  stage: lint
+  script:
+    - micromamba env create -f environment.yml -n TestEnv --dry-run
+  rules:
+    - changes:
+        - environment.yml
+
+# Tests
+unittest:
   image: "$IMAGE_NAME_BASE"
   stage: test
   before_script:
@@ -66,7 +81,7 @@ model-unittest:
     # Activate environment
     - conda activate WasteDetection
     # Run unit tests
-    - python unittest_model.py
+    - python -m unittest discover -s ./unit_tests -p *_test.py
 
 # Webapp
 webapp-build:
@@ -84,29 +99,6 @@ webapp-build:
     paths:
       - web_app/frontend/dist/
     expire_in: 1 week
-
-webapp-deploy:
-  image: ubuntu:latest
-  stage: deploy
-  dependencies:
-    - webapp-build
-  before_script:
-    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )"
-    - mkdir -p ~/.ssh
-    - eval $(ssh-agent -s)
-    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-  script:
-    - ssh-add <(echo "$CD_PRIVATE_KEY")
-    - ssh -P22 gitlab-deployer@gis.inf.elte.hu "rm -r /var/www/gis/waste-detection/*"
-    - scp -P22 -r web_app/frontend/dist/* gitlab-deployer@gis.inf.elte.hu:/var/www/gis/waste-detection/
-  environment:
-    name: production
-    url: https://gis.inf.elte.hu/waste-detection/
-  rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-      changes:
-        - web_app/**/*
-        - .gitlab-ci.yml
 
 .docker-login: &docker-login
   - docker version
@@ -169,6 +161,29 @@ serverapp:
         - model/**/*
         - .gitlab-ci.yml
 
+webapp-frontend:
+  image: ubuntu:latest
+  stage: deploy
+  dependencies:
+    - webapp-build
+  before_script:
+    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )"
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+    - ssh-add <(echo "$CD_PRIVATE_KEY")
+    - ssh -P22 gitlab-deployer@gis.inf.elte.hu "rm -r /var/www/gis/waste-detection/*"
+    - scp -P22 -r web_app/frontend/dist/* gitlab-deployer@gis.inf.elte.hu:/var/www/gis/waste-detection/
+  environment:
+    name: production
+    url: https://gis.inf.elte.hu/waste-detection/
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        - web_app/**/*
+        - .gitlab-ci.yml
+
 webapp-backend:
   stage: deploy
   image: docker:latest
@@ -196,7 +211,7 @@ webapp-backend:
          docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_WEB_BACKEND" --format "{{.ID}}" | xargs docker image rm
       fi
     # Run new image in background
-    - docker run -d --name $CONTAINER_NAME_WEB_BACKEND -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL -e WD_ADMIN_EMAIL=$WD_ADMIN_EMAIL -e WD_ADMIN_PASSWORD=$WD_ADMIN_PASSWORD --net=host --restart always gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
+    - docker run -d --name $CONTAINER_NAME_WEB_BACKEND --mount type=bind,source=/var/cells/data/spatial-private/waste-detection/flood_prediction,target=/mnt/data,readonly -e FLASK_SECRET_KEY=$FLASK_SECRET_KEY -e PSQL_DATABASE_URL=$PSQL_DATABASE_URL -e OVSZ_TOKEN=$OVSZ_API_KEY --net=host --restart always gitlab.inf.elte.hu:5050/gislab/waste-detection/web_app_backend
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       changes:

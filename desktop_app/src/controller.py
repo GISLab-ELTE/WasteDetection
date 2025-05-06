@@ -21,6 +21,7 @@ from ttkbootstrap.dialogs.colorchooser import ColorChooserDialog
 
 
 MAX_PIXEL_COUNT = 40000000
+SUPPORTED_EXTENSIONS = [".tif", ".tiff"]
 
 
 class Controller(object):
@@ -147,6 +148,11 @@ class Controller(object):
 
         :return: None
         """
+        self._view.settings_view._planet_rb.configure(command=self._on_satellite_change)
+        self._view.settings_view._sentinel_rb.configure(command=self._on_satellite_change)
+
+        self._view.settings_view._training_pi.configure(command=self._on_pi_checkbox_change)
+        self._view.settings_view._training_swir.configure(command=self._on_swir_checkbox_change)
 
         for i in range(len(self._view.settings_view.color_buttons)):
             self._view.settings_view.color_buttons[i].configure(
@@ -242,6 +248,11 @@ class Controller(object):
             validatecommand=(self._file_path_func, "%P"),
             invalidcommand=self._invalid_file_path_func,
         )
+        self._view.settings_view.unet_entry.configure(
+            validate="focusout",
+            validatecommand=(self._file_path_func, "%P"),
+            invalidcommand=self._invalid_file_path_func,
+        )
 
         self._view.settings_view.floating_rf_entry.configure(
             validate="focusout",
@@ -303,6 +314,18 @@ class Controller(object):
             invalidcommand=self._invalid_postfix_func,
         )
 
+        self._view.settings_view.unet_classified_postfix_entry.configure(
+            validate="focusout",
+            validatecommand=(self._postfix_func, "%P"),
+            invalidcommand=self._invalid_postfix_func,
+        )
+
+        self._view.settings_view.unet_heatmap_postfix_entry.configure(
+            validate="focusout",
+            validatecommand=(self._postfix_func, "%P"),
+            invalidcommand=self._invalid_postfix_func,
+        )
+
         self._view.settings_view.working_dir_browse_btn.configure(command=self._settings_working_dir_browse_directory)
         self._view.settings_view.hotspot_rf_browse_btn.configure(
             command=lambda b="hotspot": self._settings_browse_file(b)
@@ -310,6 +333,7 @@ class Controller(object):
         self._view.settings_view.floating_rf_browse_btn.configure(
             command=lambda b="floating": self._settings_browse_file(b)
         )
+        self._view.settings_view.unet_browse_btn.configure(command=lambda b="unet": self._settings_browse_file(b))
         self._view.settings_view.ok_btn.configure(command=self._settings_on_ok)
         self._view.settings_view.cancel_btn.configure(command=self._view.settings_view.hide)
 
@@ -381,6 +405,8 @@ class Controller(object):
             self._view.process_btn.configure(text="Floating waste detection")
         elif text_var == 3:
             self._view.process_btn.configure(text="Washed up waste detection")
+        elif text_var == 4:
+            self._view.process_btn.configure(text="Process with UNET")
 
         self._view_update_start_process_btn_state()
 
@@ -504,7 +530,7 @@ class Controller(object):
 
         for file in new_files:
             name, extension = os.path.splitext(file)
-            if extension != ".tif":
+            if extension not in SUPPORTED_EXTENSIONS:
                 not_valid_extension.append(file)
                 continue
             try:
@@ -544,7 +570,7 @@ class Controller(object):
             tkinter.messagebox.showerror(
                 parent=self._view.opened_files_lb,
                 title="File opening",
-                message="There were images with extension other than .tif! These were not added.",
+                message="There were images with extension other than .tif or .tiff! These were not added.",
             )
 
             for file in not_valid_extension:
@@ -671,6 +697,8 @@ class Controller(object):
                 parent=self._view,
                 message="Could not load Random Forest for Floating waste detection!\nLoading previous classifier!",
             )
+        except UNETFileException:
+            tkinter.messagebox.showerror(parent=self._view, message="Could not load UNET classifier!")
         except Exception as exc:
             message = traceback.format_exception_only(type(exc), exc)[0]
             if len(message) == 0:
@@ -701,7 +729,7 @@ class Controller(object):
         process_id = self._view.vars["process_menu"].get()
         listbox_size = self._view.opened_files_lb.size()
 
-        if (process_id == 1 or process_id == 2) and not (listbox_size == 0):
+        if (process_id == 1 or process_id == 2 or process_id == 4) and not (listbox_size == 0):
             self._view_change_start_process_btn_state(active=True)
         elif process_id == 3 and listbox_size > 1:
             self._view_change_start_process_btn_state(active=True)
@@ -854,7 +882,7 @@ class Controller(object):
         satellite_rgb = self._get_satellite_rgb()
 
         if len(view_selected_files) == 1:
-            if process_id == 1 or process_id == 2:
+            if process_id == 1 or process_id == 2 or process_id == 4:
                 selected_file = view_selected_files[0]
 
                 self._view.clear_canvas("left")
@@ -890,7 +918,7 @@ class Controller(object):
                 self._view.clear_canvas("left")
                 self._view.clear_canvas("right")
         elif len(view_selected_files) == 2:
-            if process_id == 1 or process_id == 2:
+            if process_id == 1 or process_id == 2 or process_id == 4:
                 self._view.clear_canvas("left")
                 self._view.clear_canvas("right")
             elif process_id == 3:
@@ -997,11 +1025,13 @@ class Controller(object):
             model_source_result_files += self._model.result_files_floating
         elif process_id == 3:
             model_source_result_files += self._model.result_files_washed_up
+        elif process_id == 4:
+            model_source_result_files += self._model.result_files_unet
 
         model_source_files = list()
         model_result_files = list()
 
-        if process_id == 1 or process_id == 2:
+        if process_id == 1 or process_id == 2 or process_id == 4:
             model_source_files += [source_file for (source_file, classification, heatmap) in model_source_result_files]
             model_result_files += [
                 (classification, heatmap) for (source_file, classification, heatmap) in model_source_result_files
@@ -1065,6 +1095,9 @@ class Controller(object):
             elif button_id == "floating":
                 self._view.settings_view.floating_rf_entry.delete(0, END)
                 self._view.settings_view.floating_rf_entry.insert(0, filename)
+            elif button_id == "unet":
+                self._view.settings_view.unet_entry.delete(0, END)
+                self._view.settings_view.unet_entry.insert(0, filename)
 
     def _settings_validate_spinbox_and_entry_values(self) -> bool:
         """
@@ -1101,6 +1134,9 @@ class Controller(object):
         green_value = int(self._view.settings_view.sentinel_green_spinbox.get())
         red_value = int(self._view.settings_view.sentinel_red_spinbox.get())
         nir_value = int(self._view.settings_view.sentinel_nir_spinbox.get())
+        swir_value = int(self._view.settings_view.sentinel_swir_spinbox.get())
+        band_values = np.array([blue_value, green_value, red_value, nir_value, swir_value])
+
         heatmap_high = int(self._view.settings_view.heatmap_high_spinbox.get())
         heatmap_medium = int(self._view.settings_view.heatmap_medium_spinbox.get())
         heatmap_low = int(self._view.settings_view.heatmap_low_spinbox.get())
@@ -1112,13 +1148,17 @@ class Controller(object):
             "green",
             "red",
             "nir",
+            "swir",
             "pi",
             "ndwi",
             "ndvi",
             "rndvi",
             "sr",
             "apwi",
+            "mndbi",
+            "api",
         ]
+
         values = list()
         for i in range(len(bands_and_indices)):
             index = "training_" + bands_and_indices[i]
@@ -1129,8 +1169,8 @@ class Controller(object):
 
         if not (satellite_type in [1, 2]):
             error_message += "The Satellite type must be set!"
-        elif len(np.unique([blue_value, green_value, red_value, nir_value])) != 4:
-            error_message += "The Sentinel-2 settings must not contain identical values!"
+        elif len(np.unique(band_values)) != len(band_values):
+            error_message += "The band values must not be identical!"
         elif not (heatmap_low < heatmap_medium < heatmap_high):
             error_message += "The Heatmap probabilities must be in ascending order: low < medium < high!"
         elif garbage_c_id == water_c_id:
@@ -1167,6 +1207,7 @@ class Controller(object):
         green_value = int(self._view.settings_view.sentinel_green_spinbox.get())
         red_value = int(self._view.settings_view.sentinel_red_spinbox.get())
         nir_value = int(self._view.settings_view.sentinel_nir_spinbox.get())
+        swir_value = int(self._view.settings_view.sentinel_swir_spinbox.get())
 
         # Value settings
         n_estimators = int(self._view.settings_view.training_estimators_entry.get())
@@ -1183,6 +1224,7 @@ class Controller(object):
         working_dir = self._view.settings_view.working_dir_entry.get()
         hotspot_rf_path = self._view.settings_view.hotspot_rf_entry.get()
         floating_rf_path = self._view.settings_view.floating_rf_entry.get()
+        unet_path = self._view.settings_view.unet_entry.get()
 
         # File settings
         file_extension = self._view.settings_view.file_extension_entry.get()
@@ -1194,6 +1236,8 @@ class Controller(object):
         floating_masked_heatmap_postfix = self._view.settings_view.floating_masked_heatmap_postfix_entry.get()
         washed_up_before_postfix = self._view.settings_view.washed_up_before_postfix_entry.get()
         washed_up_after_postfix = self._view.settings_view.washed_up_after_postfix_entry.get()
+        unet_classified_postfix = self._view.settings_view._unet_classified_postfix_entry.get()
+        unet_heatmap_postfix = self._view.settings_view._unet_heatmap_postfix_entry.get()
 
         # Training labels
         bands_and_indices = [
@@ -1201,12 +1245,15 @@ class Controller(object):
             "green",
             "red",
             "nir",
+            "swir",
             "pi",
             "ndwi",
             "ndvi",
             "rndvi",
             "sr",
             "apwi",
+            "mndbi",
+            "api",
         ]
         values = list()
         for i in range(len(bands_and_indices)):
@@ -1222,11 +1269,18 @@ class Controller(object):
         elif self._view.settings_view.vars["satellite_rb"].get() == 2:
             self._model.persistence.satellite_type = "sentinel-2"
 
+        # UNET type
+        if self._view.settings_view.vars["unet_rb"].get() == 1:
+            self._model.persistence.unet_type = "unet"
+        if self._view.settings_view.vars["unet_rb"].get() == 2:
+            self._model.persistence.unet_type = "unetpp"
+
         # Sentinel-2 settings
         self._model.persistence.sentinel_2_blue = blue_value
         self._model.persistence.sentinel_2_green = green_value
         self._model.persistence.sentinel_2_red = red_value
         self._model.persistence.sentinel_2_nir = nir_value
+        self._model.persistence.sentinel_2_swir = swir_value
 
         # Value settings
         self._model.persistence.training_estimators = n_estimators
@@ -1245,6 +1299,7 @@ class Controller(object):
         self._model.persistence.hotspot_rf_path = hotspot_rf_path
         prev_floating_rf_path = self._model.persistence.floating_rf_path
         self._model.persistence.floating_rf_path = floating_rf_path
+        self._model.persistence.unet_path = unet_path
 
         # File settings
         self._model.persistence.file_extension = file_extension
@@ -1256,6 +1311,8 @@ class Controller(object):
         self._model.persistence.floating_masked_heatmap_postfix = floating_masked_heatmap_postfix
         self._model.persistence.washed_up_before_postfix = washed_up_before_postfix
         self._model.persistence.washed_up_after_postfix = washed_up_after_postfix
+        self._model.persistence.unet_classified_postfix = unet_classified_postfix
+        self._model.persistence.unet_heatmap_postfix = unet_heatmap_postfix
 
         # Training labels
         for i in range(len(bands_and_indices)):
@@ -1270,7 +1327,8 @@ class Controller(object):
         # Save changes
         self._model.persistence.save()
         try:
-            self._model.load_random_forests()
+            self._model.load_hotspot_random_forest()
+            self._model.load_floating_random_forest()
         except HotspotRandomForestFileException:
             self._view.settings_view.hotspot_rf_entry.delete(0, END)
             self._view.settings_view.hotspot_rf_entry.insert(0, prev_hotspot_rf_path)
@@ -1298,6 +1356,57 @@ class Controller(object):
         # Reload Canvas
         self._view.opened_files_lb.event_generate("<<ListboxSelect>>")
 
+    def _on_swir_checkbox_change(self) -> None:
+        if self._view.settings_view.vars["training_swir"].get():
+            self._view.settings_view._training_mndbi.configure(state=ttk.NORMAL)
+            if self._view.settings_view.vars["training_pi"].get():
+                self._view.settings_view._training_api.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_swir_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_swir_label.configure(state=ttk.NORMAL)
+        else:
+            self._view.settings_view._training_mndbi.configure(state=ttk.DISABLED)
+            self._view.settings_view._training_api.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_swir_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_swir_label.configure(state=ttk.DISABLED)
+
+    def _on_satellite_change(self) -> None:
+        if self._view.settings_view.vars["satellite_rb"].get() == 1:
+            self._view.settings_view._training_swir.configure(state=ttk.DISABLED)
+            self._view.settings_view._training_mndbi.configure(state=ttk.DISABLED)
+            self._view.settings_view._training_api.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_swir_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_swir_label.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_red_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_red_label.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_green_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_green_label.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_blue_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_blue_label.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_nir_spinbox.configure(state=ttk.DISABLED)
+            self._view.settings_view._sentinel_nir_label.configure(state=ttk.DISABLED)
+        else:
+            self._view.settings_view._training_swir.configure(state=ttk.NORMAL)
+            self._view.settings_view._training_mndbi.configure(state=ttk.NORMAL)
+            if self._view.settings_view.vars["training_pi"].get():
+                self._view.settings_view._training_api.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_swir_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_swir_label.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_red_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_red_label.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_green_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_green_label.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_blue_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_blue_label.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_nir_spinbox.configure(state=ttk.NORMAL)
+            self._view.settings_view._sentinel_nir_label.configure(state=ttk.NORMAL)
+            self._on_swir_checkbox_change()
+
+    def _on_pi_checkbox_change(self) -> None:
+        if self._view.settings_view.vars["training_pi"].get():
+            self._view.settings_view._training_api.configure(state=ttk.NORMAL)
+        else:
+            self._view.settings_view._training_api.configure(state=ttk.DISABLED)
+
     def _settings_show(self) -> None:
         """
         Handles the displaying of SettingsView containing the previously saved data.
@@ -1307,6 +1416,11 @@ class Controller(object):
 
         self._model.persistence.load()
 
+        self._on_satellite_change()
+        self._on_swir_checkbox_change()
+        self._on_pi_checkbox_change()
+        self._on_satellite_change()
+
         # Satellite type
         if self._model.persistence.satellite_type.lower() == "planetscope":
             self._view.settings_view.vars["satellite_rb"].set(1)
@@ -1315,6 +1429,13 @@ class Controller(object):
         else:
             self._view.settings_view.vars["satellite_rb"].set(0)
 
+        # UNET type
+        if self._model.persistence.unet_type.lower() == "unet":
+            self._view.settings_view.vars["unet_rb"].set(1)
+        elif self._model.persistence.unet_type.lower() == "unetpp":
+            self._view.settings_view.vars["unet_rb"].set(2)
+        else:
+            self._view.settings_view.vars["unet_rb"].set(0)
         # Sentinel-2 settings
         blue_value = self._model.persistence.sentinel_2_blue
         self._view.settings_view.sentinel_blue_spinbox.set(blue_value)
@@ -1327,6 +1448,9 @@ class Controller(object):
 
         nir_value = self._model.persistence.sentinel_2_nir
         self._view.settings_view.sentinel_nir_spinbox.set(nir_value)
+
+        swir_value = self._model.persistence.sentinel_2_swir
+        self._view.settings_view.sentinel_swir_spinbox.set(swir_value)
 
         # Value settings
         n_estimators = self._model.persistence.training_estimators
@@ -1370,6 +1494,10 @@ class Controller(object):
         self._view.settings_view.floating_rf_entry.delete(0, END)
         self._view.settings_view.floating_rf_entry.insert(0, floating_rf_path)
 
+        unet_path = self._model.persistence.unet_path
+        self._view.settings_view.unet_entry.delete(0, END)
+        self._view.settings_view.unet_entry.insert(0, unet_path)
+
         # File settings
         file_extension = self._model.persistence.file_extension
         self._view.settings_view.file_extension_entry.delete(0, END)
@@ -1407,17 +1535,28 @@ class Controller(object):
         self._view.settings_view.washed_up_after_postfix_entry.delete(0, END)
         self._view.settings_view.washed_up_after_postfix_entry.insert(0, washed_up_above_postfix)
 
+        unet_classified_postfix = self._model.persistence.unet_classified_postfix
+        self._view.settings_view.unet_classified_postfix_entry.delete(0, END)
+        self._view.settings_view.unet_classified_postfix_entry.insert(0, unet_classified_postfix)
+
+        unet_heatmap_postfix = self._model.persistence.unet_heatmap_postfix
+        self._view.settings_view.unet_heatmap_postfix_entry.delete(0, END)
+        self._view.settings_view.unet_heatmap_postfix_entry.insert(0, unet_heatmap_postfix)
+
         # Training labels
         self._view.settings_view.vars["training_blue"].set(1 if self._model.persistence.training_label_blue else 0)
         self._view.settings_view.vars["training_green"].set(1 if self._model.persistence.training_label_green else 0)
         self._view.settings_view.vars["training_red"].set(1 if self._model.persistence.training_label_red else 0)
         self._view.settings_view.vars["training_nir"].set(1 if self._model.persistence.training_label_nir else 0)
+        self._view.settings_view.vars["training_swir"].set(1 if self._model.persistence.training_label_swir else 0)
         self._view.settings_view.vars["training_pi"].set(1 if self._model.persistence.training_label_pi else 0)
         self._view.settings_view.vars["training_ndwi"].set(1 if self._model.persistence.training_label_ndwi else 0)
         self._view.settings_view.vars["training_ndvi"].set(1 if self._model.persistence.training_label_ndvi else 0)
         self._view.settings_view.vars["training_rndvi"].set(1 if self._model.persistence.training_label_rndvi else 0)
         self._view.settings_view.vars["training_sr"].set(1 if self._model.persistence.training_label_sr else 0)
         self._view.settings_view.vars["training_apwi"].set(1 if self._model.persistence.training_label_apwi else 0)
+        self._view.settings_view.vars["training_mndbi"].set(1 if self._model.persistence.training_label_mndbi else 0)
+        self._view.settings_view.vars["training_api"].set(1 if self._model.persistence.training_label_api else 0)
 
         # Color settings
         for i in range(len(self._view.settings_view.color_buttons)):
@@ -1464,7 +1603,7 @@ class Controller(object):
 
         for file in new_files:
             name, extension = os.path.splitext(file)
-            if extension != ".tif":
+            if extension not in SUPPORTED_EXTENSIONS:
                 not_valid_extension = True
                 continue
             try:
@@ -1511,7 +1650,7 @@ class Controller(object):
             tkinter.messagebox.showerror(
                 parent=self._view.opened_files_lb,
                 title="File opening",
-                message="There were images with extension other than .tif! These were not added.",
+                message="There were images with extension other than .tif or .tiff! These were not added.",
             )
 
     def _training_delete_files(self) -> None:
@@ -1767,6 +1906,12 @@ class Controller(object):
                     title="Error",
                     message="Training interrupted!",
                 )
+        except IndexError as err:
+            tkinter.messagebox.showerror(
+                "Settings error",
+                "There are values wrongly set in Settings!",
+                parent=self._view,
+            )
         except Exception as exc:
             message = traceback.format_exception_only(type(exc), exc)[0]
             if len(message) == 0:
@@ -2019,7 +2164,7 @@ class Controller(object):
 
         active_window = self._view.get_active_window()
 
-        filetypes = (("tif files", "*.tif"), ("All files", "*.*"))
+        filetypes = (("tiff files", "*.tiff"), ("tif files", "*.tif"), ("All files", "*.*"))
 
         filenames = fd.askopenfilenames(
             parent=active_window,

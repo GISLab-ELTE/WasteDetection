@@ -17,6 +17,9 @@ import { defaults } from "ol/control/defaults";
 import { ZoomSlider } from "ol/control";
 import Draw from "ol/interaction/Draw.js";
 import Overlay from "ol/Overlay.js";
+import { toLonLat } from "ol/proj";
+import { TileWMS } from "ol/source";
+import { Circle as CircleStyle } from "ol/style";
 
 // Constant values
 const baseUrl = import.meta.env.VITE_DATA_URL;
@@ -29,6 +32,10 @@ const pusztazamorBbox = [2090012, 6002140, 2095385, 6005579];
 const rahoBbox = [2693024, 6114066, 2693905, 6114776];
 const drinaBbox = [2145189, 5426572, 2147977, 5430040];
 const drawType = "Polygon";
+if (!import.meta.env.VITE_GEOSERVER_URL) {
+  throw new Error("GEOSERVER_URL is not defined in the environment variables.");
+}
+const wmsUrl = import.meta.env.VITE_GEOSERVER_URL;
 
 // Variables
 var geojsonLayerGroup;
@@ -47,69 +54,53 @@ const annotationSave = document.getElementById("annotation-save");
 const annotationCancel = document.getElementById("annotation-cancel");
 
 // Styles for GeoJSON polygons
-const stylesClassified = {
-  MultiPolygon: new Style({
-    stroke: new Stroke({
-      color: "rgb(255, 128, 0)",
-      width: 3,
-    }),
-    fill: new Fill({
-      color: "rgba(255, 128, 0, 0.5)",
-    }),
+const styleClassified = new Style({
+  stroke: new Stroke({
+    color: "rgb(255, 128, 0)",
+    width: 3,
   }),
-};
-
-const stylesHeatmapHigh = {
-  MultiPolygon: new Style({
-    stroke: new Stroke({
-      color: "red",
-      width: 3,
-    }),
-    fill: new Fill({
-      color: "rgba(255, 0, 0, 0.5)",
-    }),
+  fill: new Fill({
+    color: "rgba(255, 128, 0, 0.5)",
   }),
-};
+});
 
-const stylesHeatmapMedium = {
-  MultiPolygon: new Style({
-    stroke: new Stroke({
-      color: "rgb(255, 255, 0)",
-      width: 3,
-    }),
-    fill: new Fill({
-      color: "rgba(255, 255, 0, 0.5)",
-    }),
+const styleHeatmapHigh = new Style({
+  stroke: new Stroke({
+    color: "red",
+    width: 3,
   }),
-};
-
-const stylesHeatmapLow = {
-  MultiPolygon: new Style({
-    stroke: new Stroke({
-      color: "green",
-      width: 3,
-    }),
-    fill: new Fill({
-      color: "rgba(0, 255, 0, 0.5)",
-    }),
+  fill: new Fill({
+    color: "rgba(255, 0, 0, 0.5)",
   }),
-};
+});
 
-const styleFunctionClassified = function (feature) {
-  return stylesClassified[feature.getGeometry().getType()];
-};
+const styleHeatmapMedium = new Style({
+  stroke: new Stroke({
+    color: "rgb(255, 255, 0)",
+    width: 3,
+  }),
+  fill: new Fill({
+    color: "rgba(255, 255, 0, 0.5)",
+  }),
+});
 
-const styleFunctionHeatmapHigh = function (feature) {
-  return stylesHeatmapHigh[feature.getGeometry().getType()];
-};
+const styleHeatmapLow = new Style({
+  stroke: new Stroke({
+    color: "green",
+    width: 3,
+  }),
+  fill: new Fill({
+    color: "rgba(0, 255, 0, 0.5)",
+  }),
+});
 
-const styleFunctionHeatmapMedium = function (feature) {
-  return stylesHeatmapMedium[feature.getGeometry().getType()];
-};
+const styleFunctionClassified = (_) => styleClassified;
 
-const styleFunctionHeatmapLow = function (feature) {
-  return stylesHeatmapLow[feature.getGeometry().getType()];
-};
+const styleFunctionHeatmapHigh = (_) => styleHeatmapHigh;
+
+const styleFunctionHeatmapMedium = (_) => styleHeatmapMedium;
+
+const styleFunctionHeatmapLow = (_) => styleHeatmapLow;
 
 // Sources and layers
 const sourceClassified = new VectorSource({ format: new GeoJSON() });
@@ -146,6 +137,60 @@ const layerDraw = new VectorLayer({
   source: sourceDraw,
   visible: false,
   zIndex: 100,
+});
+
+const highWaterLayer = new TileLayer({
+  title: "High Water Layer",
+  source: new TileWMS({
+    url: wmsUrl,
+    params: {
+      LAYERS: "waste_detection:Nagyvizi_meder_hatar", // Name defined on GeoServer
+      TILED: true,
+      transparent: true,
+      styles: "light_blue",
+    },
+    serverType: "geoserver",
+    transition: 0,
+  }),
+});
+
+const frequentFloodLayer = new TileLayer({
+  title: "Frequent Flood",
+  source: new TileWMS({
+    url: wmsUrl,
+    params: {
+      LAYERS: "waste_detection:Kisviz_HmaxGyakori", // Geoserver layer name remains unchanged
+      TILED: true,
+    },
+    serverType: "geoserver",
+    transition: 0,
+  }),
+});
+
+const mediumFloodLayer = new TileLayer({
+  title: "Medium Flood",
+  source: new TileWMS({
+    url: wmsUrl,
+    params: {
+      LAYERS: "waste_detection:Kisviz_HmaxKozepes", // Geoserver layer name remains unchanged
+      TILED: true,
+    },
+    serverType: "geoserver",
+    transition: 0,
+  }),
+});
+
+const rareFloodLayer = new TileLayer({
+  title: "Rare Flood",
+  source: new TileWMS({
+    url: wmsUrl,
+    params: {
+      LAYERS: "waste_detection:Kisviz_HmaxRitka", // Geoserver layer name remains unchanged
+      TILED: true,
+    },
+    serverType: "geoserver",
+    transition: 0,
+  }),
 });
 
 const draw = new Draw({
@@ -224,6 +269,15 @@ const map = new Map({
         }),
       ],
     }),
+    new LayerGroup({
+      title: "Flood prediction",
+      layers: [
+        highWaterLayer,
+        frequentFloodLayer,
+        mediumFloodLayer,
+        rareFloodLayer,
+      ],
+    }),
   ],
   overlays: [overlay],
   view: new View({
@@ -248,12 +302,24 @@ var layerSwitcher = new LayerSwitcher({
 map.addControl(layerSwitcher);
 
 // Functions
+// Add these helper functions (e.g. near the top of main.js)
+const showSpinner = function () {
+  const spinner = document.getElementById("spinner-overlay");
+  if (spinner) spinner.style.display = "flex";
+};
+
+const hideSpinner = function () {
+  const spinner = document.getElementById("spinner-overlay");
+  if (spinner) spinner.style.display = "none";
+};
+
 const removeLayersFromMap = function () {
   for (const source of sourcesAndLayers["sources"]) {
     source.clear();
   }
 
   map.removeLayer(geojsonLayerGroup);
+  layerGeoTiff.setSource(null);
 };
 
 const changeDate = function (newDate) {
@@ -272,8 +338,8 @@ const setAOILayers = function () {
 
   removeLayersFromMap();
 
-  layerGeoTiff.setSource(
-    new GeoTIFF({
+  if (date in satelliteImagesPaths[aoi]) {
+    const geoTiffSource = new GeoTIFF({
       sources: [
         {
           url: satelliteImagesPaths[aoi][date]["src"],
@@ -284,15 +350,18 @@ const setAOILayers = function () {
         },
       ],
       transition: 0,
-    }),
-  );
-  layers[0] = layerGeoTiff;
+    });
+
+    layerGeoTiff.setSource(geoTiffSource);
+  }
+
+  layers.push(layerGeoTiff);
 
   for (let i = 0; i < 4; i++) {
     sourcesAndLayers["sources"][i].setUrl(aoisWithDates[model][aoi][date][i]);
     sourcesAndLayers["sources"][i].refresh();
     sourcesAndLayers["layers"][i].setSource(sourcesAndLayers["sources"][i]);
-    layers[i + 1] = sourcesAndLayers["layers"][i];
+    layers.push(sourcesAndLayers["layers"][i]);
   }
 
   geojsonLayerGroup = new LayerGroup({
@@ -303,17 +372,21 @@ const setAOILayers = function () {
   map.addLayer(geojsonLayerGroup);
 };
 
-const changeAOI = function () {
-  let aoiBbox = null;
+const resetSlider = function () {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
 
   swipe.value = 0;
   swipe.max = Object.keys(aoisWithDates[model][aoi]).length - 1;
+};
 
-  const swipeValue = swipe.value;
+const changeAOI = function () {
+  let aoiBbox = null;
+  const aoi = selectedAOI.value;
+  const model = selectedModel.value;
 
-  changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
+  resetSlider();
+  changeDate(Object.keys(aoisWithDates[model][aoi])[swipe.value]);
   setAOILayers();
 
   if (aoi == "Kiskore") {
@@ -332,6 +405,11 @@ const changeAOI = function () {
   if (aoiBbox !== null) {
     map.getView().fit(aoiBbox, map.getSize());
   }
+};
+
+const updateModel = async function () {
+  resetSlider();
+  await updateClassification();
 };
 
 const resizeMap = function () {
@@ -373,17 +451,13 @@ const fetchGeojsonPaths = async function () {
       }
     }
   }
-
-  swipe.max =
-    Object.keys(aoisWithDates[modelId][Object.keys(aoisWithDates[modelId])[0]])
-      .length - 1;
 };
 
 const updateClassification = async function () {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
-  const swipeValue = swipe.value;
-  changeDate(Object.keys(aoisWithDates[model][aoi])[swipeValue]);
+
+  changeDate(Object.keys(aoisWithDates[model][aoi])[swipe.value]);
   setAOILayers(aoi);
   await displayExistingAnnotations();
 };
@@ -602,7 +676,7 @@ const postAnnotation = function (satellite_image_id, user_id, geom, waste) {
 
 // Events
 selectedAOI.onchange = changeAOI;
-selectedModel.onchange = updateClassification;
+selectedModel.onchange = updateModel;
 
 swipe.addEventListener("input", updateClassification);
 
@@ -639,3 +713,171 @@ await fetchGeojsonPaths();
 resizeMap();
 changeAOI();
 await displayExistingAnnotations();
+
+const popupElem = document.getElementById("popup");
+const popupContent = document.getElementById("popup-content");
+const popupCloser = document.getElementById("popup-closer");
+
+const popupOverlay = new Overlay({
+  element: popupElem,
+  autoPan: {
+    animation: {
+      duration: 250,
+    },
+  },
+});
+map.addOverlay(popupOverlay);
+
+popupCloser.onclick = function (event) {
+  event.preventDefault();
+  popupOverlay.setPosition(undefined);
+  popupCloser.blur();
+  return false;
+};
+
+const floodSource = new VectorSource();
+const floodLayer = new VectorLayer({
+  source: floodSource,
+  style: function (feature) {
+    const props = feature.getProperties();
+    if (props.type === "station") {
+      return new Style({
+        image: new CircleStyle({
+          radius: 6,
+          fill: new Fill({ color: "blue" }),
+          stroke: new Stroke({ color: "white", width: 2 }),
+        }),
+      });
+    } else if (props.type === "waste_deposit") {
+      return new Style({
+        image: new CircleStyle({
+          radius: 6,
+          fill: new Fill({ color: "red" }),
+          stroke: new Stroke({ color: "white", width: 2 }),
+        }),
+      });
+    }
+    return null;
+  },
+});
+map.addLayer(floodLayer);
+
+function showPopup(coordinate, htmlContent) {
+  if (!popupElem || !popupContent) {
+    console.error("ERROR: #popup element not found!");
+    return;
+  }
+  popupContent.innerHTML = htmlContent;
+  popupOverlay.setPosition(coordinate);
+}
+
+map.on("click", function (evt) {
+  let clickedFeature = null;
+  map.forEachFeatureAtPixel(evt.pixel, function (feature) {
+    clickedFeature = feature;
+    return true;
+  });
+
+  if (clickedFeature) {
+    const props = clickedFeature.getProperties();
+    if (props.type === "station") {
+      const stationName = props.name;
+      const forecasts = props.forecasts;
+      const popupHTML = createStationPopupHTML(
+        stationName,
+        forecasts,
+        props.lowest_level_cm,
+        props.highest_level_cm,
+      );
+      showPopup(evt.coordinate, popupHTML);
+    } else if (props.type === "waste_deposit") {
+      const html = `
+        <div class="popup-content-wrapper">
+          <h5>Waste Deposit</h5>
+          <!-- <p>DEM Elevation: <b>${props.elevation_m.toFixed(2)} m</b></p> -->
+          <p>Average Water Level: <b>${props.avg_abs_water_m.toFixed(2)} cm</b></p>
+          <p>water: <b>${props.closest_station_river}</b></p>
+          <p>Zones: <b>${props.flood_zone.join(", ")}</b></p>
+          <--<p>Status: <b>${props.flood_risk_status}</b></p>//-->
+        </div>
+      `;
+      showPopup(evt.coordinate, html);
+    }
+  } else {
+    const [lon, lat] = toLonLat(evt.coordinate);
+    showSpinner();
+    const disableFiltering = document.getElementById(
+      "all-stations-checkbox",
+    ).checked;
+    const url = `${flaskUrl}flood-forecast?lat=${lat}&lon=${lon}&disable_filtering=${disableFiltering}`;
+    fetch(url, {
+      method: "GET",
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Flood forecast request failed");
+        }
+        return res.json();
+      })
+      .then((geojson) => {
+        floodSource.clear();
+        const features = new GeoJSON().readFeatures(geojson, {
+          featureProjection: "EPSG:3857",
+          dataProjection: "EPSG:4326",
+        });
+        floodSource.addFeatures(features);
+        hideSpinner();
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+    popupOverlay.setPosition(undefined);
+  }
+});
+
+function createStationPopupHTML(
+  stationName,
+  forecasts,
+  lowest_level_cm,
+  highest_level_cm,
+) {
+  let html = `
+    <div class="popup-content-wrapper">
+      <h5 style="margin-top:0;">Station: ${stationName}</h5>
+      <p>Lowest Level: <span style="color: blue;">${lowest_level_cm} cm</span></p>
+      <p>Highest Level: <span style="color: red;">${highest_level_cm} cm</span></p>
+  `;
+  if (!forecasts || forecasts.length === 0) {
+    html += "<p>No forecast data available.</p></div>";
+    return html;
+  }
+  html += `
+      <div class="forecast-table-container">
+        <table class="forecast-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Water Level (cm)</th>
+              <th>Error Margin (cm)</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+  forecasts.forEach((fc) => {
+    html += `
+            <tr>
+              <td>${fc.date}</td>
+              <td>${fc.value_cm}</td>
+              <td>${fc.conf}</td>
+            </tr>
+    `;
+  });
+  html += `
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  return html;
+}

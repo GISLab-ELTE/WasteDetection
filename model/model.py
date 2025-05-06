@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import logging
 import os
 import copy
@@ -9,17 +10,23 @@ import cv2 as cv
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+import math
 
-from math import ceil
 from osgeo import gdal, osr
 from itertools import compress
 from scipy.ndimage import median_filter
 from skimage.filters import threshold_minimum
+from model.treshold import Treshold
+import model.gdal_utils as gdal_utils
 
+from model.index_calculator import IndexCalculator
+from model.unet import UNET
+from model.unet import UNETPP
+
+import torch
+import model.estimations as estimations
 from model.exceptions import *
-from shapely.geometry import shape
 from shapely.geometry import Point
-from shapely.ops import unary_union
 from model.persistence import Persistence
 from shapely.geometry.polygon import Polygon
 from sklearn.ensemble import RandomForestClassifier
@@ -78,95 +85,77 @@ class Model(object):
 
             band = dataset.GetRasterBand(1)
             band = band.ReadAsArray()
-            unique_values = np.unique(band)
 
-            rows, cols = band.shape
-            area = 0.0
+            pixel_area = self.pixel_size_x * self.pixel_size_y
 
             if image_type.lower() == "classified":
-                if self.persistence.garbage_c_id * 100 not in unique_values:
-                    return 0
+                return np.count_nonzero(band == self.persistence.garbage_c_id * 100) * pixel_area
+            if image_type.lower() == "heatmap":
+                if prob == "low":
+                    return np.count_nonzero(band == self.persistence.low_prob_value) * pixel_area
+                if prob == "medium":
+                    return np.count_nonzero(band == self.persistence.medium_prob_value) * pixel_area
+                if prob == "high":
+                    return np.count_nonzero(band == self.persistence.high_prob_value) * pixel_area
 
-                cond_list = [value % 100 == 0 for value in unique_values]
-
-                if not all(cond_list):
-                    return 0
-
-                for i in range(rows):
-                    for j in range(cols):
-                        if band[i, j] == self.persistence.garbage_c_id * 100:
-                            area += self.pixel_size_x * self.pixel_size_y
-            elif image_type.lower() == "heatmap":
-                for i in range(rows):
-                    for j in range(cols):
-                        if (
-                            prob == "low"
-                            and band[i, j] == self.persistence.low_prob_value
-                            or prob == "medium"
-                            and band[i, j] == self.persistence.medium_prob_value
-                            or prob == "high"
-                            and band[i, j] == self.persistence.high_prob_value
-                        ):
-                            area += self.pixel_size_x * self.pixel_size_y
-
-            return area
-        except NotEnoughBandsException:
-            raise
-        except Exception:
-            traceback.print_exc()
-            return None
+            raise ValueError("Unrecognized image_type!")
         finally:
             del dataset
 
-    def get_satellite_band(self, band: str) -> int:
+    def format_satellite_band_name(self, band: str) -> str:
         """
-        Returns the given satellite's band index.
+        Returns the formatted full name of the satellite band.
+        :param band: name of satellite band
+        :return: The formatted full name of the satellite band.
+        """
+        satellite_name = self.persistence.satellite_type.lower()
+        satellite_name = satellite_name.replace("-", "_")
+        band_name = band.lower()
+
+        return f"{satellite_name}_{band_name}"
+
+    def is_configured_band(self, band: str) -> bool:
+        """
+        Returns whether the given band exists in the configuration.
+
+        :param band: Name of the satellite band.
+        :return: true if the satellite is configured, false otherwise
+        """
+        formatted_band_name = self.format_satellite_band_name(band)
+        return hasattr(self.persistence, formatted_band_name)
+
+    def get_band_number(self, band: str) -> int:
+        """
+        Returns the given satellite's band's number.
 
         :param band: Name of satellite band.
         :return: Index of given satellite band.
         :raise NameError: If wrong satellite name is given.
         """
-
-        satellite_name = self.persistence.satellite_type.lower()
-        satellite_name = satellite_name.replace("-", "_")
-        band_name = band.lower()
-
-        index = satellite_name + "_" + band_name
-
-        if hasattr(self.persistence, index):
-            return getattr(self.persistence, index)
+        if self.is_configured_band(band):
+            formatted_band_name = self.format_satellite_band_name(band)
+            return getattr(self.persistence, formatted_band_name)
         else:
-            raise NameError("Wrong satellite or band name!")
+            raise NameError(f"Wrong satellite or band name! Band name: {band}")
 
-    def get_bands_indices(self, input_path: str, get: str) -> List[np.ndarray]:
+    def get_satellite_band(self, img: rasterio.DatasetReader, band: str, dtype: str) -> np.ndarray:
+        band_number = self.get_band_number(band)
+        return img.read(band_number).astype(dtype=dtype)
+
+    def get_bands(self, input_path: str, band_names: List[str], dtype: str) -> OrderedDict:
         """
-        Returns a list of arrays, containing the band values and/or calculated index values.
+        Returns the requested bands from an image.
 
         :param input_path: path of the input image
-        :param get: name of band/indices
-        :return: band values and/or index values
+        :param band_names: names of bands
+        :param dtype: the type of the data
+        :return: and ordered dictionary containing band values. The order is the same as in band_names
         """
-
-        get_list = Model.resolve_bands_indices_string(get)
-
+        bands = OrderedDict()
         with rasterio.open(input_path, "r") as img:
-            # read bands
-            try:
-                blue_ind = self.get_satellite_band("Blue")
-                green_ind = self.get_satellite_band("Green")
-                red_ind = self.get_satellite_band("Red")
-                nir_ind = self.get_satellite_band("NIR")
-
-                blue = (img.read(blue_ind)).astype(dtype="float32")
-                green = (img.read(green_ind)).astype(dtype="float32")
-                red = (img.read(red_ind)).astype(dtype="float32")
-                nir = (img.read(nir_ind)).astype(dtype="float32")
-            except Exception as exc:
-                raise NotEnoughBandsException(
-                    img.count, max([blue_ind, green_ind, red_ind, nir_ind]), input_path
-                ) from None
-
-            return Model.calculate_indices(get_list, {"blue": blue, "green": green, "red": red, "nir": nir})
+            for band_name in band_names:
+                bands[band_name] = self.get_satellite_band(img, band_name, dtype)
+        return bands
 
     def get_udm2_bands(self, udm2_input_path: str) -> np.ndarray:
         """
@@ -180,7 +169,7 @@ class Model(object):
             udm2_mask = None
 
             for udm2_band_name in self.persistence.udm2_masking_bands:
-                ind = self.get_satellite_band("UDM2_" + udm2_band_name)
+                ind = self.get_band_number("UDM2_" + udm2_band_name)
                 band = (img.read(ind)).astype(dtype="float32")
                 if udm2_mask is None:
                     udm2_mask = band
@@ -190,7 +179,7 @@ class Model(object):
             minimum_confidence = self.persistence.minimum_confidence
 
             if minimum_confidence >= 0 and udm2_mask is not None:
-                confidence_ind = self.get_satellite_band("UDM2_Confidence")
+                confidence_ind = self.get_band_number("UDM2_Confidence")
                 confidence_band = img.read(confidence_ind).astype(dtype="float32")
                 confidence_mask = np.where(confidence_band > minimum_confidence, 1, 0)
 
@@ -199,29 +188,36 @@ class Model(object):
             return udm2_mask
 
     def save_bands_indices(
-        self, input_path: str, save: str, postfix: str, working_dir: str, udm2_input_path: str = None
+        self,
+        input_path: str,
+        band_names: List[str],
+        index_names: List[str],
+        postfix: str,
+        working_dir: str,
+        udm2_input_path: str = None,
     ) -> str:
         """
         Saves the specified band values and/or index values to a single- or multi-band tif file.
 
         :param input_path: path of the input image
-        :param save: name of band/indices
+        :param requested_bands_and_indices: name of band/indices
         :param working_dir: path of the working directory
         :param postfix: file name postfix of the output image
         :param udm2_input_path: path of the input image containing udm2 images
         :return: path of the output image
         """
+        bands = self.get_bands(input_path, band_names, "float32")
 
-        list_of_bands_and_indices = self.get_bands_indices(
-            input_path=input_path,
-            get=save,
-        )
+        indices = IndexCalculator.calculate_indices(index_names, bands)
 
-        self.apply_water_and_udm2_masks(list_of_bands_and_indices, save, udm2_input_path)
+        bands_and_indices = bands.copy()
+        bands_and_indices.update(indices)
+        self.apply_water_and_udm2_masks(bands_and_indices, udm2_input_path)
 
-        bands = len(list_of_bands_and_indices)
         output_path = Model.output_path([input_path], postfix, self.persistence.file_extension, working_dir)
 
+        list_of_bands_and_indices = list(bands_and_indices.values())
+        bands = len(list_of_bands_and_indices)
         Model.save_tif(
             input_path=input_path,
             array=list_of_bands_and_indices,
@@ -363,16 +359,19 @@ class Model(object):
             # create matrices
             classification_matrix = classification_matrix.read(1)
             heatmap_matrix = heatmap_matrix.read(1)
-            morphology_matrix = np.empty_like(classification_matrix)
-            masked_classification = np.empty_like(classification_matrix)
-            masked_heatmap = np.empty_like(classification_matrix)
 
-            rows, cols = classification_matrix.shape
-            working_dir = self.persistence.working_dir if hasattr(self.persistence, "working_dir") else ""
+            working_dir = working_dir = (
+                self.persistence.working_dir
+                if hasattr(self.persistence, "working_dir")
+                else os.path.dirname(original_input_path)
+            )
 
             # output paths
             morphology_path = Model.output_path(
-                [original_input_path], "morphology", self.persistence.file_extension, working_dir
+                [original_input_path],
+                "morphology",
+                self.persistence.file_extension,
+                working_dir,
             )
             opening_path = Model.output_path(
                 [original_input_path],
@@ -399,15 +398,9 @@ class Model(object):
                 working_dir,
             )
 
-            for i in range(rows):
-                for j in range(cols):
-                    if (
-                        classification_matrix[i, j] == self.persistence.garbage_c_id * 100
-                        or classification_matrix[i, j] == self.persistence.water_c_id * 100
-                    ):
-                        morphology_matrix[i, j] = 1
-                    else:
-                        morphology_matrix[i, j] = 0
+            morphology_matrix = np.zeros_like(classification_matrix)
+            morphology_matrix[classification_matrix == self.persistence.garbage_c_id * 100] = 1
+            morphology_matrix[classification_matrix == self.persistence.water_c_id * 100] = 1
 
             Model.save_tif(
                 input_path=original_input_path,
@@ -417,23 +410,28 @@ class Model(object):
                 output_path=morphology_path,
             )
 
-            matrix = self.persistence.morphology_matrix_size, self.persistence.morphology_matrix_size
+            matrix = (
+                self.persistence.morphology_matrix_size,
+                self.persistence.morphology_matrix_size,
+            )
             opening = Model.morphology("opening", morphology_path, opening_path, matrix=matrix)
 
             if opening is not None:
                 dilation = Model.morphology(
-                    "dilation", opening_path, dilation_path, iterations=self.persistence.morphology_iterations
+                    "dilation",
+                    opening_path,
+                    dilation_path,
+                    iterations=self.persistence.morphology_iterations,
                 )
 
                 if dilation is not None:
-                    for i in range(rows):
-                        for j in range(cols):
-                            if dilation[i, j] == 1:
-                                masked_classification[i, j] = classification_matrix[i, j]
-                                masked_heatmap[i, j] = heatmap_matrix[i, j]
-                            else:
-                                masked_classification[i, j] = 0
-                                masked_heatmap[i, j] = 0
+                    dilation_mask = dilation == 0
+
+                    masked_classification = classification_matrix
+                    masked_classification[dilation_mask] = 0
+
+                    masked_heatmap = heatmap_matrix
+                    masked_heatmap[dilation_mask] = 0
 
                     Model.save_tif(
                         input_path=original_input_path,
@@ -476,6 +474,94 @@ class Model(object):
         :param heatmap_postfix: postfix of heatmap image name
         :return: path of the classified image and the heatmap image
         """
+        try:
+            ds = gdal.Open(input_path, gdal.GA_ReadOnly)
+            rows = ds.RasterYSize
+            cols = ds.RasterXSize
+            bands = ds.RasterCount
+            array = ds.ReadAsArray().astype(dtype="float32")
+        finally:
+            del ds
+
+        classes = clf.classes_.astype(np.int32)
+        garbage_class_index = np.nonzero(classes == (self.persistence.garbage_c_id * 100))[0][0]
+
+        array = np.stack(array, axis=2)
+        array = np.reshape(array, [rows * cols, bands])
+        nan_mask = np.count_nonzero(np.isnan(array), axis=1) > 0
+
+        # array to data frame
+        array_df = pd.DataFrame(array, dtype="float32").fillna(axis="index", value=0)
+
+        pred_proba = clf.predict_proba(array_df)
+
+        garbage_probabilities = pred_proba[:, garbage_class_index]
+
+        tresholds = [
+            Treshold(self.persistence.low_prob_percent / 100, self.persistence.low_prob_value),
+            Treshold(self.persistence.medium_prob_percent / 100, self.persistence.medium_prob_value),
+            Treshold(self.persistence.high_prob_percent / 100, self.persistence.high_prob_value),
+        ]
+
+        heatmap = estimations.create_heatmap(garbage_probabilities, tresholds)
+        heatmap[nan_mask] = 0
+        heatmap = heatmap.reshape((rows, cols))
+
+        classification = classes.take(np.argmax(pred_proba, axis=1), axis=0)
+        classification[nan_mask] = 0
+        classification = classification.reshape((rows, cols))
+
+        working_dir = (
+            self.persistence.working_dir if hasattr(self.persistence, "working_dir") else os.path.dirname(input_path)
+        )
+
+        classification_output_path = Model.output_path(
+            [input_path],
+            classification_postfix,
+            self.persistence.file_extension,
+            working_dir,
+        )
+        heatmap_output_path = Model.output_path(
+            [input_path],
+            heatmap_postfix,
+            self.persistence.file_extension,
+            working_dir,
+        )
+
+        Model.save_tif(
+            input_path=input_path,
+            array=[classification],
+            shape=classification.shape,
+            band_count=1,
+            output_path=classification_output_path,
+        )
+
+        Model.save_tif(
+            input_path=input_path,
+            array=[heatmap],
+            shape=heatmap.shape,
+            band_count=1,
+            output_path=heatmap_output_path,
+        )
+
+        return classification_output_path, heatmap_output_path
+
+    def create_classification_and_heatmap_with_UNET(
+        self,
+        input_path: str,
+        unet: Union[UNET, UNETPP],
+        classification_postfix: str,
+        heatmap_postfix: str,
+    ) -> Tuple[str, str]:
+        """
+        Creates classification and garbage heatmap with UNET Classifier.
+
+        :param input_path: input path of the image to be processed
+        :param unet: an instance of UNET
+        :param classification_postfix: postfix of classified image name
+        :param heatmap_postfix: postfix of heatmap image name
+        :return: path of the classified image and the heatmap image
+        """
 
         try:
             ds = gdal.Open(input_path, gdal.GA_ReadOnly)
@@ -486,67 +572,43 @@ class Model(object):
             bands = ds.RasterCount
             array = ds.ReadAsArray().astype(dtype="float32")
 
-            classes = clf.classes_
-
-            classification = np.zeros(shape=rows * cols, dtype=int)
-            heatmap = np.zeros(shape=rows * cols, dtype=int)
-
+            if bands < unet.in_channels:
+                raise NotEnoughBandsException(bands, unet.in_channels, input_path)
             # merge band values
             array = np.stack(array, axis=2)
-
             # reshape array
-            array = np.reshape(array, [rows * cols, bands])
+            array = np.reshape(array, [rows, cols, bands])
+            array = np.transpose(array, (2, 0, 1))
+            array = array[: unet.in_channels, :, :]
+            array = torch.tensor(array)
+            array = array.unsqueeze(0)
 
-            # array to data frame
-            array_df = pd.DataFrame(array, dtype="float32")
+            with torch.no_grad():
+                prob = unet.predict(array)
+            prob = prob.squeeze()
+            prob = np.asarray(prob)
+            classification = np.zeros(prob.shape)
+            classification[prob >= self.persistence.medium_prob_percent / 100] = 1
 
-            split_size = ceil(
-                array_df.shape[0]
-                / ceil((array_df.shape[0] * self.persistence.max_class_count) / self.persistence.max_class_value_count)
+            low_mask = np.where(
+                (prob > self.persistence.low_prob_percent / 100) & (prob <= self.persistence.medium_prob_percent / 100)
             )
-            split_count = ceil(
-                (array_df.shape[0] * self.persistence.max_class_count) / self.persistence.max_class_value_count
+            medium_mask = np.where(
+                (prob > self.persistence.medium_prob_percent / 100) & (prob <= self.persistence.high_prob_percent / 100)
             )
-            for c in range(split_count):
-                new_array_df = array_df[c * split_size : (c + 1) * split_size].dropna(axis="index")
-                pred_proba = clf.predict_proba(new_array_df)
+            high_mask = np.where(prob > self.persistence.high_prob_percent / 100)
 
-                counter = 0
-                for i in range(c * split_size, (c + 1) * split_size):
-                    if i == rows * cols:
-                        break
+            heatmap = np.zeros(prob.shape)
+            heatmap[low_mask] = self.persistence.low_prob_value
+            heatmap[medium_mask] = self.persistence.medium_prob_value
+            heatmap[high_mask] = self.persistence.high_prob_value
 
-                    if np.any(np.isnan(array[i])):
-                        continue
+            working_dir = (
+                self.persistence.working_dir
+                if hasattr(self.persistence, "working_dir")
+                else os.path.dirname(input_path)
+            )
 
-                    max_ind = np.argmax(pred_proba[counter])
-                    max_value = pred_proba[counter][max_ind]
-
-                    class_str = str(classes[max_ind])
-                    if class_str == (str(self.persistence.garbage_c_id * 100)):
-                        if max_value >= self.persistence.high_prob_percent / 100:
-                            heatmap[i] = self.persistence.high_prob_value
-                        elif (
-                            self.persistence.medium_prob_percent / 100
-                            <= max_value
-                            < self.persistence.high_prob_percent / 100
-                        ):
-                            heatmap[i] = self.persistence.medium_prob_value
-                        elif (
-                            self.persistence.low_prob_percent / 100
-                            <= max_value
-                            < self.persistence.medium_prob_percent / 100
-                        ):
-                            heatmap[i] = self.persistence.low_prob_value
-
-                    classification[i] = classes[max_ind]
-
-                    counter += 1
-
-            classification = classification.reshape((rows, cols))
-            heatmap = heatmap.reshape((rows, cols))
-
-            working_dir = self.persistence.working_dir if hasattr(self.persistence, "working_dir") else ""
             classification_output_path = Model.output_path(
                 [input_path],
                 classification_postfix,
@@ -579,23 +641,24 @@ class Model(object):
             )
 
             return classification_output_path, heatmap_output_path
-        except Exception:
+        except:
             traceback.print_exc()
             return "", ""
-        finally:
-            del ds
 
-    def apply_water_and_udm2_masks(self, list_of_bands_and_indices: List[np.ndarray], save: str, udm2_input_path: str):
+    def apply_water_and_udm2_masks(
+        self,
+        bands_and_indices: OrderedDict,
+        udm2_input_path: str,
+    ):
         """
         Apply masking based on configuration parameters.
 
-        :param list_of_bands_and_indices: list of bands and/or indices
+        :param bands_and_indices: list of bands and/or indices
         :param save: name of band/indices
         :param udm2_input_path: path of the UDM2 input image
         """
-
         if self.persistence.masking:
-            ndwi = self.get_ndwi(list_of_bands_and_indices, save)
+            ndwi = IndexCalculator.calculate_ndwi(bands_and_indices["green"], bands_and_indices["nir"])
 
             if ndwi is None:
                 logging.warning("Skip masking. NDWI could not be retrieved.")
@@ -608,35 +671,15 @@ class Model(object):
             water_mask = self.create_water_mask(ndwi, self.persistence.invert_water_mask)
 
             water_mask = self.water_mask_morphological_transform(
-                water_mask, self.persistence.open_kernel, self.persistence.close_kernel, self.persistence.dilute_kernel
+                water_mask,
+                self.persistence.open_kernel,
+                self.persistence.close_kernel,
+                self.persistence.dilute_kernel,
             )
 
             if water_mask is not None:
-                for bands_and_indices in list_of_bands_and_indices:
+                for bands_and_indices in bands_and_indices.values():
                     bands_and_indices[water_mask == 0] = np.nan
-
-    def get_ndwi(self, list_of_bands_and_indices: List[np.ndarray], training_labels: str) -> np.ndarray:
-        """
-        Retrieve or calculate NDWI values from bands and indices.
-
-        :param list_of_bands_and_indices: loaded bands
-        :param training_labels: name of band/indices
-
-        :return: ndarray ndwi values
-        """
-        ndwi = None
-
-        indices = self.resolve_bands_indices_string(training_labels)
-
-        if "ndwi" in indices:
-            ndwi = list_of_bands_and_indices[indices.index("ndwi")]
-
-        if ndwi is None and "green" and "nir" in indices:
-            green = list_of_bands_and_indices[indices.index("green")]
-            nir = list_of_bands_and_indices[indices.index("nir")]
-            ndwi = self.calculate_index(numerator=green - nir, denominator=green + nir)
-
-        return ndwi
 
     # Static public methods
     @staticmethod
@@ -667,7 +710,7 @@ class Model(object):
             geojson.dump(feature_collection, file, indent=4)
 
     @staticmethod
-    def get_min_max_value_of_band(input_path: str, band_number: int) -> Tuple[int, int]:
+    def get_min_max_value_of_band(input_path: str, band_number: int) -> Tuple[np.float32, np.float32]:
         """
         Calculates the minimum and maximum values of a band.
 
@@ -678,83 +721,7 @@ class Model(object):
 
         with rasterio.open(input_path, "r") as img:
             band = img.read(band_number)
-            min_value, max_value = np.nanmin(band), np.nanmax(band)
-            return int(min_value), int(max_value)
-
-    @staticmethod
-    def calculate_indices(get_list: List[str], bands: Dict[str, np.ndarray]) -> List[np.ndarray]:
-        # calculate indices
-        # PI = NIR / (NIR + RED)
-        # NDWI = (GREEN - NIR) / (GREEN + NIR)
-        # NDVI = (NIR - RED) / (NIR + RED)
-        # RNDVI = (RED - NIR) / (RED + NIR)
-        # SR = NIR / RED
-        # APWI = 1 - (RED + GREEN + NIR) / 3
-
-        blue = bands["blue"]
-        green = bands["green"]
-        red = bands["red"]
-        nir = bands["nir"]
-
-        list_of_bands_and_indices = list()
-        for item in get_list:
-            if item == "blue":
-                list_of_bands_and_indices.append(blue)
-            elif item == "green":
-                list_of_bands_and_indices.append(green)
-            elif item == "red":
-                list_of_bands_and_indices.append(red)
-            elif item == "nir":
-                list_of_bands_and_indices.append(nir)
-            elif item == "pi":
-                pi = Model.calculate_index(numerator=nir, denominator=nir + red)
-                list_of_bands_and_indices.append(pi)
-            elif item == "ndwi":
-                ndwi = Model.calculate_index(numerator=green - nir, denominator=green + nir)
-                list_of_bands_and_indices.append(ndwi)
-            elif item == "ndvi":
-                ndvi = Model.calculate_index(numerator=nir - red, denominator=nir + red)
-                list_of_bands_and_indices.append(ndvi)
-            elif item == "rndvi":
-                rndvi = Model.calculate_index(numerator=red - nir, denominator=red + nir)
-                list_of_bands_and_indices.append(rndvi)
-            elif item == "sr":
-                sr = Model.calculate_index(numerator=nir, denominator=red)
-                list_of_bands_and_indices.append(sr)
-            elif item == "apwi":
-                apwi = Model.calculate_index(numerator=blue, denominator=1 - (red + green + nir) / 3)
-                list_of_bands_and_indices.append(apwi)
-
-        return list_of_bands_and_indices
-
-    @staticmethod
-    def make_noisy_data(data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Adds noise to given dataframe
-        :param data: the dataframe to add noise to
-        :return: A dataframe that has noisy data added to it.
-        """
-
-        data_copy = data.copy()[["BLUE", "GREEN", "RED", "NIR", "PI", "NDWI", "NDVI", "RNDVI", "SR"]]
-        noise = (np.random.normal(0, 0.1, data_copy.shape) * 1000).astype(int)
-        data_copy = data_copy + noise
-        bands = {
-            "blue": np.expand_dims(data_copy["BLUE"].to_numpy(), axis=0),
-            "green": np.expand_dims(data_copy["GREEN"].to_numpy(), axis=0),
-            "red": np.expand_dims(data_copy["RED"].to_numpy(), axis=0),
-            "nir": np.expand_dims(data_copy["NIR"].to_numpy(), axis=0),
-        }
-
-        requested_indices = [col.lower() for col in data_copy.columns]
-        labels = [data["SURFACE"].to_numpy(), data["COD"].to_numpy()]
-        indices = [id.flatten() for id in Model.calculate_indices(requested_indices, bands)]
-        labels_indices = [pd.Series(col) for col in labels + indices]
-
-        data_noisy = pd.DataFrame(labels_indices).T
-        data_noisy.columns = data.columns
-        data_noisy.index.name = "FID"
-
-        return data_noisy
+            return np.nanmin(band), np.nanmax(band)
 
     @staticmethod
     def get_coords_inside_polygon(polygon_coords: List[float], bbox_coords: Tuple[int, ...]) -> List[Tuple[int, int]]:
@@ -837,49 +804,6 @@ class Model(object):
             del img_gdal
 
     @staticmethod
-    def calculate_index(numerator: np.ndarray, denominator: np.ndarray) -> np.ndarray:
-        """
-        Calculating an index based on given numerator and denominator.
-
-        :param numerator: numerator matrix
-        :param denominator: denominator matrix
-        :return: result matrix, containing the calculated values
-        """
-
-        # variables
-        index = np.ndarray(
-            shape=numerator.shape,
-            dtype="float32",
-        )
-
-        numerator_nan_min = np.nanmin(numerator)
-        numerator_nan_max = np.nanmax(numerator)
-
-        # calculate index
-        nan_mask = np.isnan(numerator) | np.isnan(denominator)
-        numerator_zero_mask = numerator == 0
-        denominator_zero_mask = denominator == 0
-
-        invalid_mask = nan_mask | (numerator_zero_mask & denominator_zero_mask)
-        valid_mask = np.logical_not(invalid_mask)
-
-        valid_denominator_non_zero_mask = valid_mask & np.logical_not(denominator_zero_mask)
-        valid_denominator_zero_mask = valid_mask & denominator_zero_mask
-
-        numerator_positive_denominator_zero_mask = valid_denominator_zero_mask & (numerator > 0)
-        numerator_negative_denominator_zero_mask = valid_denominator_zero_mask & (numerator < 0)
-
-        index[invalid_mask] = float("NaN")
-        index[numerator_positive_denominator_zero_mask] = numerator_nan_max
-        index[numerator_negative_denominator_zero_mask] = numerator_nan_min
-        index[valid_denominator_non_zero_mask] = (
-            numerator[valid_denominator_non_zero_mask] / denominator[valid_denominator_non_zero_mask]
-        )
-
-        # return index values
-        return index
-
-    @staticmethod
     def output_path(
         input_paths: List[str],
         postfix: str,
@@ -901,62 +825,8 @@ class Model(object):
             file_name_with_extension = os.path.basename(path)
             file_name, _ = os.path.splitext(file_name_with_extension)
             file_names.append(file_name)
-        output_path = working_dir + "/" + "_".join(file_names) + "_" + postfix + "." + output_file_extension
+        output_path = os.path.join(working_dir, "_".join(file_names) + "_" + postfix + "." + output_file_extension)
         return output_path
-
-    @staticmethod
-    def resolve_bands_indices_string(string: str) -> List[str]:
-        """
-        Resolves band strings.
-
-        :param string: name of band/indices separated by "-", or "all", "all_no_blue", "bands", "indices"
-        :return: list containing the band/index values
-        """
-
-        string_list = string.lower().split("-")
-
-        if "all" in string_list:
-            return [
-                "blue",
-                "green",
-                "red",
-                "nir",
-                "pi",
-                "ndwi",
-                "ndvi",
-                "rndvi",
-                "sr",
-            ]
-        elif "all_no_blue" in string_list:
-            return ["green", "red", "nir", "pi", "ndwi", "ndvi", "rndvi", "sr"]
-        elif "bands" in string_list:
-            return ["blue", "green", "red", "nir"]
-        elif "indices" in string_list:
-            return ["pi", "ndwi", "ndvi", "rndvi", "sr"]
-
-        bands_indices = list()
-        if "blue" in string_list:
-            bands_indices.append("blue")
-        if "green" in string_list:
-            bands_indices.append("green")
-        if "red" in string_list:
-            bands_indices.append("red")
-        if "nir" in string_list:
-            bands_indices.append("nir")
-        if "pi" in string_list:
-            bands_indices.append("pi")
-        if "ndwi" in string_list:
-            bands_indices.append("ndwi")
-        if "ndvi" in string_list:
-            bands_indices.append("ndvi")
-        if "rndvi" in string_list:
-            bands_indices.append("rndvi")
-        if "sr" in string_list:
-            bands_indices.append("sr")
-        if "apwi" in string_list:
-            bands_indices.append("apwi")
-
-        return bands_indices
 
     @staticmethod
     def get_coords_of_pixel(i: int, j: int, gt: Tuple[int, ...]) -> Tuple[float, float]:
@@ -999,35 +869,6 @@ class Model(object):
         return bbox
 
     @staticmethod
-    def get_bbox_of_all_given_values(input_file: str, value: int) -> List:
-        """
-        Calculates all bounding boxes of all pixels.
-
-        :param input_file: Path of input file.
-        :param value: Numerical value of the pixels.
-        :return: List of bounding boxes.
-        """
-
-        dataset = gdal.Open(input_file, gdal.GA_ReadOnly)
-        values = dataset.GetRasterBand(1).ReadAsArray()
-        gt = dataset.GetGeoTransform()
-
-        all_bboxes = list()
-        rows, cols = values.shape
-
-        for i in range(rows):
-            for j in range(cols):
-                if values[i, j] != value:
-                    continue
-                else:
-                    bbox = Model.get_bbox_of_pixel(i, j, gt)
-                    all_bboxes.append(bbox)
-
-        dataset = None
-
-        return all_bboxes
-
-    @staticmethod
     def get_waste_geojson(input_file: str, output_file: str, search_value: int) -> None:
         """
         Unites the adjacent pixels, then creates a GeoJSON file containing the result polygons.
@@ -1037,55 +878,32 @@ class Model(object):
         :param search_value: Numerical value of the pixels.
         :return:
         """
+        try:
+            input_ds = gdal.Open(input_file)
+            projection = input_ds.GetProjection()
+            input_band = input_ds.GetRasterBand(1)
 
-        all_bboxes = Model.get_bbox_of_all_given_values(input_file, search_value)
+            driver = gdal.ogr.GetDriverByName("GeoJSON")
+            output_ds = driver.CreateDataSource(output_file)
+            spatial_reference = gdal.osr.SpatialReference(wkt=projection)
 
-        ds = gdal.Open(input_file, gdal.GA_ReadOnly)
-        srs_wkt = ds.GetProjection()
-        srs_converter = osr.SpatialReference()
-        srs_converter.ImportFromWkt(srs_wkt)
+            output_layer = output_ds.CreateLayer("layer", srs=spatial_reference)
 
-        ds = None
+            field_definition = gdal.ogr.FieldDefn("field", gdal.ogr.OFTInteger)
+            output_layer.CreateField(field_definition)
+            output_field = output_layer.GetLayerDefn().GetFieldIndex("field")
 
-        features = list()
-        polygon_id = 1
+            raster_data = input_band.ReadAsArray()
+            mask = raster_data == search_value
+            mask_ds = gdal_utils.create_in_memory_dataset(mask, input_ds, gdal.GDT_Byte)
 
-        for bbox in all_bboxes:
-            bbox.append(bbox[0])
-
-            coords = list(map(list, bbox))
-
-            bbox_transformed = list(map(tuple, coords))
-
-            polygon = geojson.Polygon([bbox_transformed])
-
-            features.append(geojson.Feature(geometry=polygon, properties={"id": str(polygon_id)}))
-
-            polygon_id += 1
-
-        feature_collection = geojson.FeatureCollection(features)
-
-        polygons = list()
-        for elem in feature_collection["features"]:
-            polygon = shape(elem["geometry"])
-            polygons.append(polygon)
-
-        if polygons:
-            boundary = gpd.GeoSeries(unary_union(polygons))
-            boundary = boundary.__geo_interface__
-            boundary["crs"] = {
-                "type": "name",
-                "properties": {"name": "urn:ogc:def:crs:EPSG::3857"},
-            }
-        else:
-            boundary = {"type": "FeatureCollection", "features": []}
-
-        output_dir = os.path.dirname(output_file)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-
-        with open(output_file, "w") as file:
-            geojson.dump(boundary, file)
+            response = gdal.Polygonize(input_band, mask_ds.GetRasterBand(1), output_layer, output_field)
+            if response != 0:
+                logging.error("something went wrong when creating polygon. Error code: %s", response)
+        finally:
+            del input_ds
+            del output_ds
+            del mask_ds
 
     @staticmethod
     def convert_multipolygons_to_polygons(data_file: Dict) -> Dict:
@@ -1563,3 +1381,53 @@ class Model(object):
         except Exception:
             logging.warning("Error apply morphological transformation to the water mask: ")
             traceback.print_exc()
+
+
+class FloodPrediction:
+    """
+    A class containing flood-related utility methods.
+    """
+
+    @staticmethod
+    def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """
+        Calculate the great-circle distance between two points on the Earth.
+        """
+        R = 6371000  # radius in meters
+        d_lat = math.radians(lat2 - lat1)
+        d_lon = math.radians(lon2 - lon1)
+        a = (
+            math.sin(d_lat / 2) ** 2
+            + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lon / 2) ** 2
+        )
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        return R * c
+
+    @staticmethod
+    def get_elevation_from_dem(dem_path: str, point: Point, point_crs: str, dem_crs: str) -> float:
+        """
+        Returns the elevation for a given point from a DEM file.
+        """
+        transformer = pyproj.Transformer.from_crs(point_crs, dem_crs, always_xy=True)
+        x, y = transformer.transform(point.x, point.y)
+        with rasterio.open(dem_path) as dem:
+            row, col = dem.index(x, y)
+            return float(dem.read(1)[row, col])
+
+    @staticmethod
+    def check_flood_zone(point: Point, flood_zones: dict, point_crs: str) -> list:
+        """
+        Check to which flood zones a point belongs.
+        :param point: Shapely point.
+        :param flood_zones: Dictionary of flood zone names and corresponding shapefile paths.
+        :param point_crs: The CRS to use for filtering.
+        :return: List of zone names or ["no flood zone"]
+        """
+        res = []
+        for zone_name, shp_path in flood_zones.items():
+            gdf = gpd.read_file(shp_path)
+            if gdf.crs != point_crs:
+                gdf = gdf.to_crs(point_crs)
+            if gdf.contains(point).any():
+                res.append(zone_name)
+        return res if res else ["no flood zone"]

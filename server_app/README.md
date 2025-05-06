@@ -18,6 +18,7 @@
    - `download-init`: Initialize image database: Download all the images on the given time interval.
    - `download-update`: Download new images. Cannot be used with `download-init`.
    - `classify`: Execute classification (does not download images).
+   - `classify-unet`: Execute classification using UNET (does not download images).
 
 ## Running the application
 
@@ -28,6 +29,7 @@
    - `--download-init`: Initialize image database: Download all the images on the given time interval.
    - `--download-update`: Download new images. Cannot be used with `--download-init`.
    - `--classify`: Execute classification (does not download images).
+   - `--classify-unet`: Execute classification using UNET (does not download images).
 
 ## Configuration
 
@@ -52,10 +54,15 @@ Meaning of the parameters in `config.sample.json` file:
 - `min_coverage`: Minimum image coverage in percentage.
 - `clf_path`: Path of Random Forest classifier.
 - `clf_id`: The Id of the Random Forest classifier.
+- `unet_path`: Path of UNET classifier.
+- `unet_id`: The Id of the UNET classifier.
+- `unet_type`: The type of architecture the model is, either `unet` or `unetpp`
 - `classification_postfix`: File name postfix of classified image.
 - `heatmap_postfix`: File name postfix of heatmap image.
 - `masked_classification_postfix`: File name postfix of masked classified image.
 - `masked_heatmap_postfix`: File name postfix of masked heatmap image.
+- `unet_classification_postfix`: File name postfix of image classified with UNET.
+- `unet_heatmap_postfix`: File name postfix of heatmap image created with UNET.
 - `file_extension`: Extension of result images.
 - `garbage_c_id`: Class ID of garbage class.
 - `water_c_id`: Class ID of water class.
@@ -66,6 +73,7 @@ Meaning of the parameters in `config.sample.json` file:
 - `planet_search_url`: URL for searching images using Planet API.
 - `download_start_time`: Start time of downloading.
 - `first_sentinel-2_date`: Date of first ever acquisition of Sentinel-2.
+- `minimum_image_age`: The minimum age of an image in days. The server app will search for images that are atleast as old as the minimum age.
 - `low_prob_percent`: Threshold percentage of the classifier's prediction confidence for low probability.
 - `medium_prob_percent`: Threshold percentage of the classifier's prediction confidence for medium probability.
 - `high_prob_percent`: Threshold percentage of the classifier's prediction confidence for high probability.
@@ -77,6 +85,8 @@ Meaning of the parameters in `config.sample.json` file:
 - `planetscope_green`: The index of the Green band on the PlanetScope image.
 - `planetscope_red`: The index of the Red band on the PlanetScope image.
 - `planetscope_nir`: The index of the NIR band on the PlanetScope image.
+- `enabled_bands`: The names of the bands that should be used during pre-processing and classification
+- `enabled_indices`: The names of the indices that should be using during pre-processing and classification
 - `masking`: Turn water and cloud masking on.
 - `udm2_eliminator`: The value to mask out in UDM2 cloud masking.
 - `udm2_masking_bands`: List of UDM2 bands to use in cloud masking.

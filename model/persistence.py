@@ -20,7 +20,6 @@ class Persistence(object):
         self.config_file_path = config_file_path
         self.clf = None
         self.data_file = None
-
         self.load()
 
     # Non-static public methods
