@@ -1,5 +1,6 @@
 # Website for Plastic Waste Monitoring
 
-After downloading the files, navigate to the `app` folder and then install `npm`: `npm install`
+The web application consist of a _Flask_ backend written in _Python_ and
+an OpenLayers-based web frontend written in _JavaScript_ - using _Vite_.
 
-Then you can start the local server: `npm start`
+You may find their respective install guides in the subfolders.

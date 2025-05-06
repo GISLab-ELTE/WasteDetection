@@ -1,14 +1,11 @@
-# OpenLayers + Vite
+# OpenLayers + Vite Application Frontend
 
-This example demonstrates how the `ol` package can be used with [Vite](https://vitejs.dev/).
+Install the dependencies with the _NPM_ package manager:
 
-To get started, run the following (requires Node 14+):
+    npm install`
 
-    npx create-ol-app my-app --template vite
+Then you can start the local server:
 
-Then change into your new `my-app` directory and start a development server (available at http://localhost:5173):
-
-    cd my-app
     npm start
 
 To generate a build ready for production:
