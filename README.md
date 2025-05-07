@@ -28,7 +28,7 @@ The goal of our research is to develop an accurate classification method for pla
 
 ## Features
 
-- **Location**: You can choose from four previously set locations: [Kisköre](https://goo.gl/maps/NT4vUMRAMj85fbuo9), [Lake Călinești](https://goo.gl/maps/DdvVcAoQom5bEuGD9), [Pusztazámor](https://goo.gl/maps/PjAxwq1fL6thphRY8) and [Рахів](https://goo.gl/maps/auupf9ozG5aXG9LQ6); or define your own.
+- **Location**: You can choose from four previously set locations: [Kisköre](https://goo.gl/maps/NT4vUMRAMj85fbuo9), [Lake Călinești](https://goo.gl/maps/DdvVcAoQom5bEuGD9), [Pusztazámor](https://goo.gl/maps/PjAxwq1fL6thphRY8), [Рахів](https://goo.gl/maps/auupf9ozG5aXG9LQ6) and [Visegrád (Drina)](https://maps.app.goo.gl/4vJWCSgdhM8zmudN7); or define your own.
 
 - **Date**: It can be changed using the swipe. You can select from the last five most recent days when the cloud cover over the areas was below a threshold (15%).
 
