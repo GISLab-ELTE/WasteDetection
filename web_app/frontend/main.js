@@ -797,8 +797,8 @@ map.on("click", function (evt) {
           <!-- <p>DEM Elevation: <b>${props.elevation_m.toFixed(2)} m</b></p> -->
           <p>Average Water Level: <b>${props.avg_abs_water_m.toFixed(2)} cm</b></p>
           <p>water: <b>${props.closest_station_river}</b></p>
-          <p>Zones: <b>${props.flood_zone.join(", ")}</b></p>
-          <--<p>Status: <b>${props.flood_risk_status}</b></p>//-->
+          <!-- <p>Zones: <b>${props.flood_zone.join(", ")}</b></p> -->
+          <!-- <p>Status: <b>${props.flood_risk_status}</b></p> -->
         </div>
       `;
       showPopup(evt.coordinate, html);
@@ -806,13 +806,13 @@ map.on("click", function (evt) {
   } else {
     const [lon, lat] = toLonLat(evt.coordinate);
     showSpinner();
-	// DISABLED TEMPORARILY
-	/*
+    // DISABLED TEMPORARILY
+    /*
     const disableFiltering = document.getElementById(
       "all-stations-checkbox",
     ).checked;
 	*/
-	const disableFiltering = true;
+    const disableFiltering = true;
     const url = `${flaskUrl}flood-forecast?lat=${lat}&lon=${lon}&disable_filtering=${disableFiltering}`;
     fetch(url, {
       method: "GET",

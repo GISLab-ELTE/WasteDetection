@@ -533,7 +533,9 @@ def flood_forecast():
     avg_abs_level = sum(all_levels) / len(all_levels) if all_levels else 0.0
 
     # Determine flood zones
-    zones = FloodPrediction.check_flood_zone(deposit_point, FLOOD_ZONES, DEM_CRS)
+    # DISABLED TEMPORARILY
+    zones = ["not computed"]
+    # zones = FloodPrediction.check_flood_zone(deposit_point, FLOOD_ZONES, DEM_CRS)
     deposit_feature = build_deposit_feature(lon, lat, deposit_elevation, avg_abs_level, zones, river)
 
     # Combine deposit and station features to geosjon
