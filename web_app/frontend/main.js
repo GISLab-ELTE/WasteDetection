@@ -806,9 +806,13 @@ map.on("click", function (evt) {
   } else {
     const [lon, lat] = toLonLat(evt.coordinate);
     showSpinner();
+	// DISABLED TEMPORARILY
+	/*
     const disableFiltering = document.getElementById(
       "all-stations-checkbox",
     ).checked;
+	*/
+	const disableFiltering = true;
     const url = `${flaskUrl}flood-forecast?lat=${lat}&lon=${lon}&disable_filtering=${disableFiltering}`;
     fetch(url, {
       method: "GET",
