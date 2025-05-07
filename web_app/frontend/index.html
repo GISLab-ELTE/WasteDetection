@@ -52,6 +52,13 @@
       <div class="row">
         <div id="header" class="col-12">
           <h1>Plastic Waste Monitoring</h1>
+          <a href="https://interreg-danube.eu/projects/aquatic-plastic">
+            <img
+              src="imgs/aquatic_plastic_logo.png"
+              class="float-end"
+              alt="Aquatic Plastic Interreg logo"
+            />
+          </a>
           <a href="https://petkupa.hu/eng/">
             <img
               src="imgs/pet_logo_en.png"
@@ -95,7 +102,7 @@
           model classifies the pictures and displays the results in the web
           view. You can check out the extension of polluted areas on the set
           locations in the previous five days when the cloud cover over them was
-          0%.
+          below a threshold (15%).
           <br />
           <br />
 
@@ -103,21 +110,25 @@
           <ul>
             <li>
               <b>Location: </b>
-              You can choose from four previosly set locations:
+              You can choose from four previously set locations:
               <i>
                 <a href="https://goo.gl/maps/NT4vUMRAMj85fbuo9">Kisköre</a>,
                 <a href="https://goo.gl/maps/DdvVcAoQom5bEuGD9"
                   >Lake Călinești</a
                 >,
-                <a href="https://goo.gl/maps/PjAxwq1fL6thphRY8">Pusztazámor</a>
-                and
+                <a href="https://goo.gl/maps/PjAxwq1fL6thphRY8">Pusztazámor</a>,
                 <a href="https://goo.gl/maps/auupf9ozG5aXG9LQ6">Рахів</a>
+                and
+                <a href="https://maps.app.goo.gl/4vJWCSgdhM8zmudN7"
+                  >Visegrád (Drina)</a
+                >
               </i>
             </li>
             <li>
               <b>Date: </b>
               It can be changed using the swipe. You can select from the last
-              five most recent days when the cloud cover over the areas was 0%.
+              five most recent days when the cloud cover over the areas was
+              below a threshold (15%).
             </li>
             <li>
               <b>Colors: </b>
@@ -149,6 +160,13 @@
                   confidence below 80%.
                 </li>
               </ul>
+            </li>
+            <li>
+              <b>Flood prediction: </b>
+              Visualize flood hazard areas (with probability of flooding), water
+              mark locations and their water level predictions. Functionality is
+              based on integrated national data services. (Available for Hungary
+              in the demo app.)
             </li>
           </ul>
         </div>

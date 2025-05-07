@@ -796,7 +796,7 @@ map.on("click", function (evt) {
           <h5>Waste Deposit</h5>
           <!-- <p>DEM Elevation: <b>${props.elevation_m.toFixed(2)} m</b></p> -->
           <p>Average Water Level: <b>${props.avg_abs_water_m.toFixed(2)} cm</b></p>
-          <p>water: <b>${props.closest_station_river}</b></p>
+          <p>River: <b>${props.closest_station_river}</b></p>
           <!-- <p>Zones: <b>${props.flood_zone.join(", ")}</b></p> -->
           <!-- <p>Status: <b>${props.flood_risk_status}</b></p> -->
         </div>

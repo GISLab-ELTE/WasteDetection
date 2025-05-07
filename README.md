@@ -22,7 +22,7 @@ The following processes can be performed:
 
 ## Description
 
-The goal of our research is to develop an accurate classification method for plastic waste detection to provide a viable platform for repeatable, cost-effective and large-scale monitoring. Such a robust waste monitoring solution would speed up the detection of illegal waste hot-spots close to water flows and floating waste islands on rivers, as well as support waste collection actions with an automatic monitoring system. This application automatically searches for newly recorded satellite images and downloads them on a daily basis. After this a Random Forest model classifies the pictures and displays the results in the web view. You can check out the extension of polluted areas on the set locations in the previous five days when the cloud cover over them was 0%.
+The goal of our research is to develop an accurate classification method for plastic waste detection to provide a viable platform for repeatable, cost-effective and large-scale monitoring. Such a robust waste monitoring solution would speed up the detection of illegal waste hot-spots close to water flows and floating waste islands on rivers, as well as support waste collection actions with an automatic monitoring system. This application automatically searches for newly recorded satellite images and downloads them on a daily basis. After this a Random Forest model classifies the pictures and displays the results in the web view. You can check out the extension of polluted areas on the set locations in the previous five days when the cloud cover over them was below a threshold (15%).
 
 ![Web Application](web_app/screenshot.png)
 
@@ -30,13 +30,18 @@ The goal of our research is to develop an accurate classification method for pla
 
 - **Location**: You can choose from four previously set locations: [Kisköre](https://goo.gl/maps/NT4vUMRAMj85fbuo9), [Lake Călinești](https://goo.gl/maps/DdvVcAoQom5bEuGD9), [Pusztazámor](https://goo.gl/maps/PjAxwq1fL6thphRY8) and [Рахів](https://goo.gl/maps/auupf9ozG5aXG9LQ6); or define your own.
 
-- **Date**: It can be changed using the swipe. You can select from the last five most recent days when the cloud cover over the areas was 0%.
+- **Date**: It can be changed using the swipe. You can select from the last five most recent days when the cloud cover over the areas was below a threshold (15%).
 
 - **Colors**:
+
   - **Classified**: Orange. All pixels that were classified as plastic waste.
   - **Heatmap High**: Red. Pixels that were classified as plastic waste with a confidence of 90% or higher.
   - **Heatmap Medium**: Yellow. Pixels that were classified as plastic waste with a confidence between 80% and 90%.
   - **Heatmap Low**: Green. Pixels that were classified as plastic waste with a confidence below 80%.
+
+- **Flood prediction**: Visualize flood hazard areas (with probability of flooding), water mark locations and their water level predictions. Functionality is based on integrated national data services. (Available for Hungary in the demo app.)
+
+![Flood Prediction](web_app/screenshot_flood.png)
 
 # Publications
 
