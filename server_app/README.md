@@ -91,9 +91,9 @@ Meaning of the parameters in `config.sample.json` file:
 - `udm2_eliminator`: The value to mask out in UDM2 cloud masking.
 - `udm2_masking_bands`: List of UDM2 bands to use in cloud masking.
 - `invert_water_mask`: Inverts created water mask.
-- `open_kernel`: The size of the ellíptic kernel in pixel, used for morphologically opening the water mask.
-- `close_kernel`: The size of the ellíptic kernel in pixel. Used for morphologically closing the water mask.
-- `dilute_kernel`: The size of the ellíptic kernel in pixel. Used for morphologically diluting the water mask.
+- `open_kernel`: The size of the elliptic kernel in pixel, used for morphological opening the water mask.
+- `close_kernel`: The size of the elliptic kernel in pixel. Used for morphological closing the water mask.
+- `dilute_kernel`: The size of the elliptic kernel in pixel. Used for morphological diluting the water mask.
 - `minimum_confidence`: The minimum confidence above which the program accepts an udm2 mask value.
 - `planetscope_udm2_clear`: The index of the Clear band on the PlanetScope UDM2 image.
 - `planetscope_udm2_snow`: The index of the Snow band on the PlanetScope UDM2 image.
@@ -104,3 +104,11 @@ Meaning of the parameters in `config.sample.json` file:
 - `planetscope_udm2_confidence`: The index of the Confidence band on the PlanetScope UDM2 image.
 
 These values can be overridden if you create a `config.local.json` file in the `resources` folder. In this it is enough to include the fields that you want to change the value of.
+
+## Adding new monitoring locations
+
+Monitored locations are defined in the `resources/locations.geojson` file. The file is a standard GeoJSON _FeatureCollection_.  
+You may define your own monitored locations in 2 ways:
+
+1. Extend / modify this file with further custom locations, then _rebuild the docker image_.
+2. Define a custom file with the `data_file_path` configuration parameter in runtime.

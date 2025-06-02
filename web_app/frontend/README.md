@@ -2,7 +2,7 @@
 
 Install the dependencies with the _NPM_ package manager:
 
-    npm install`
+    npm install
 
 Then you can start the local server:
 

@@ -16,6 +16,10 @@ The following processes can be performed:
 
 - **Washed up waste detection**: Identification of plastic waste that was discharged in the floodplain on high-resolution satellite images.
 
+## Install and run the desktop application
+
+See the [guide](desktop_app/README.md) in the `desktop_app` folder.
+
 # Web Application
 
 **Online Demo: [gis.inf.elte.hu/waste-detection/](https://gis.inf.elte.hu/waste-detection/)**
@@ -42,6 +46,14 @@ The goal of our research is to develop an accurate classification method for pla
 - **Flood prediction**: Visualize flood hazard areas (with probability of flooding), water mark locations and their water level predictions. Functionality is based on integrated national data services. (Available for Hungary in the demo app.)
 
 ![Flood Prediction](web_app/screenshot_flood.png)
+
+## Install and run the web application
+
+For the web application to function properly, you need to install and run 3 components:
+
+- the [server application](server_app/README.md);
+- the [web backend application](web_app/backend/README.md);
+- the [web frontend application](web_app/frontend/README.md).
 
 # Publications
 
