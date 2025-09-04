@@ -14,7 +14,6 @@
    ```
 
    Options:
-
    - `download-init`: Initialize image database: Download all the images on the given time interval.
    - `download-update`: Download new images. Cannot be used with `download-init`.
    - `classify`: Execute classification (does not download images).

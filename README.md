@@ -37,7 +37,6 @@ The goal of our research is to develop an accurate classification method for pla
 - **Date**: It can be changed using the swipe. You can select from the last five most recent days when the cloud cover over the areas was below a threshold (15%).
 
 - **Colors**:
-
   - **Classified**: Orange. All pixels that were classified as plastic waste.
   - **Heatmap High**: Red. Pixels that were classified as plastic waste with a confidence of 90% or higher.
   - **Heatmap Medium**: Yellow. Pixels that were classified as plastic waste with a confidence between 80% and 90%.
