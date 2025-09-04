@@ -25,7 +25,7 @@ import { Circle as CircleStyle } from "ol/style";
 const baseUrl = import.meta.env.VITE_DATA_URL;
 const flaskUrl = import.meta.env.VITE_FLASK_URL;
 const bingKey =
-  "AgKv8E2vHuEwgddyzg_pRM6ycSRygeePXSFYTqc8jbikPT8ILyQxm1EF3YUmeRQ2";
+  "AveIPe9bMEVGeWSg59UKe5Ptq9UQ5JM73v5AKwKgN7MrIzP6gYcFdIMDezisMGKN";
 const kiskoreBbox = [2283300, 6021945, 2284684, 6023968];
 const kanyahazaBbox = [2588995, 6087354, 2597328, 6091368];
 const pusztazamorBbox = [2090012, 6002140, 2095385, 6005579];
