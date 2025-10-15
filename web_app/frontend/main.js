@@ -24,7 +24,7 @@ import { Circle as CircleStyle } from "ol/style";
 // Constant values
 const baseUrl = import.meta.env.VITE_DATA_URL;
 const flaskUrl = import.meta.env.VITE_FLASK_URL;
-const googleKey = ""; // ADD API KEY
+const googleKey = "AIzaSyCq3T4xTynHUWB1wN3aZcKvYK0wOZlpuT4";
 const kiskoreBbox = [2283300, 6021945, 2284684, 6023968];
 const kanyahazaBbox = [2588995, 6087354, 2597328, 6091368];
 const pusztazamorBbox = [2090012, 6002140, 2095385, 6005579];
@@ -246,9 +246,9 @@ const map = new Map({
           title: "Google Roads",
           type: "base",
           source: new Google({
-              key: googleKey,
-              mapType: "roadmap",
-            })
+            key: googleKey,
+            mapType: "roadmap",
+          }),
         }),
         new TileLayer({
           title: "Google Aerial",
