@@ -7,7 +7,7 @@ import GeoTIFF from "ol/source/GeoTIFF.js";
 import OSM from "ol/source/OSM";
 import LayerSwitcher from "ol-layerswitcher";
 import LayerGroup from "ol/layer/Group";
-import BingMaps from "ol/source/BingMaps";
+import Google from "ol/source/Google.js";
 import XYZ from "ol/source/XYZ";
 import GeoJSON from "ol/format/GeoJSON";
 import { Fill, Stroke, Style } from "ol/style";
@@ -24,8 +24,7 @@ import { Circle as CircleStyle } from "ol/style";
 // Constant values
 const baseUrl = import.meta.env.VITE_DATA_URL;
 const flaskUrl = import.meta.env.VITE_FLASK_URL;
-const bingKey =
-  "AveIPe9bMEVGeWSg59UKe5Ptq9UQ5JM73v5AKwKgN7MrIzP6gYcFdIMDezisMGKN";
+const googleKey = "AIzaSyCq3T4xTynHUWB1wN3aZcKvYK0wOZlpuT4";
 const kiskoreBbox = [2283300, 6021945, 2284684, 6023968];
 const kanyahazaBbox = [2588995, 6087354, 2597328, 6091368];
 const pusztazamorBbox = [2090012, 6002140, 2095385, 6005579];
@@ -244,27 +243,27 @@ const map = new Map({
           source: new OSM(),
         }),
         new TileLayer({
-          title: "Bing Roads",
+          title: "Google Roads",
           type: "base",
-          source: new BingMaps({
-            key: bingKey,
-            imagerySet: "Road",
+          source: new Google({
+            key: googleKey,
+            mapType: "roadmap",
           }),
         }),
         new TileLayer({
-          title: "Bing Aerial",
+          title: "Google Aerial",
           type: "base",
-          source: new BingMaps({
-            key: bingKey,
-            imagerySet: "Aerial",
+          source: new Google({
+            key: googleKey,
+            mapType: "satellite",
           }),
         }),
         new TileLayer({
-          title: "Bing Hybrid",
+          title: "Google Hybrid",
           type: "base",
-          source: new BingMaps({
-            key: bingKey,
-            imagerySet: "AerialWithLabels",
+          source: new Google({
+            key: googleKey,
+            mapType: "hybrid",
           }),
         }),
       ],
