@@ -263,7 +263,8 @@ const map = new Map({
           type: "base",
           source: new Google({
             key: googleKey,
-            mapType: "hybrid",
+            mapType: "satellite",
+            layerTypes: ["layerRoadmap"],
           }),
         }),
       ],
