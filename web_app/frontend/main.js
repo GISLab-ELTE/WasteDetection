@@ -138,59 +138,68 @@ const layerDraw = new VectorLayer({
   zIndex: 100,
 });
 
-const highWaterLayer = new TileLayer({
-  title: "High Water Layer",
-  source: new TileWMS({
-    url: wmsUrl,
-    params: {
-      LAYERS: "waste_detection:Nagyvizi_meder_hatar", // Name defined on GeoServer
-      TILED: true,
-      transparent: true,
-      styles: "light_blue",
-    },
-    serverType: "geoserver",
-    transition: 0,
-  }),
-});
+const floodLayerConfigs = [
+  {
+    title: "High Water Layer",
+    LAYERS: "waste_detection:Nagyvizi_meder_hatar",
+  },
+  {
+    title: "Frequent Flood",
+    LAYERS: "waste_detection:Kisviz_HmaxGyakori",
+  },
+  {
+    title: "Medium Flood",
+    LAYERS: "waste_detection:Kisviz_HmaxKozepes",
+  },
+  {
+    title: "Rare Flood",
+    LAYERS: "waste_detection:Kisviz_HmaxRitka",
+  },
+];
 
-const frequentFloodLayer = new TileLayer({
-  title: "Frequent Flood",
-  source: new TileWMS({
-    url: wmsUrl,
-    params: {
-      LAYERS: "waste_detection:Kisviz_HmaxGyakori", // Geoserver layer name remains unchanged
-      TILED: true,
-    },
-    serverType: "geoserver",
-    transition: 0,
-  }),
-});
+async function createFloodLayers(floodLayerConfigs) {
+  async function isWmsAvailable() {
+    try {
+      const res = await fetch(wmsUrl + "?service=WMS&request=GetCapabilities");
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
 
-const mediumFloodLayer = new TileLayer({
-  title: "Medium Flood",
-  source: new TileWMS({
-    url: wmsUrl,
-    params: {
-      LAYERS: "waste_detection:Kisviz_HmaxKozepes", // Geoserver layer name remains unchanged
-      TILED: true,
-    },
-    serverType: "geoserver",
-    transition: 0,
-  }),
-});
+  const available = await isWmsAvailable();
+  if (!available) {
+    console.warn(`Flood prediction is temporarily disabled.`);
+    return [];
+  }
 
-const rareFloodLayer = new TileLayer({
-  title: "Rare Flood",
-  source: new TileWMS({
-    url: wmsUrl,
-    params: {
-      LAYERS: "waste_detection:Kisviz_HmaxRitka", // Geoserver layer name remains unchanged
-      TILED: true,
-    },
-    serverType: "geoserver",
-    transition: 0,
-  }),
-});
+  var layers = floodLayerConfigs.filter(Boolean).map((config) => {
+    return new TileLayer({
+      title: config.title,
+      visible: true,
+      source: new TileWMS({
+        url,
+        params: {
+          LAYERS: config.LAYERS,
+          TILED: true,
+          transparent: true,
+          styles: style,
+        },
+        serverType: "geoserver",
+        transition: 0,
+      }),
+    });
+  });
+
+  layers.forEach((layer) => {
+    console.warn(layer.title + ` loading failed, disabling.`);
+    layer.getSource().on("tileloaderror", () => layer.setVisible(false));
+  });
+
+  return layers;
+}
+
+let floodPredictionLayers = await createFloodLayers(floodLayerConfigs);
 
 const draw = new Draw({
   source: sourceDraw,
@@ -269,15 +278,6 @@ const map = new Map({
         }),
       ],
     }),
-    new LayerGroup({
-      title: "Flood prediction",
-      layers: [
-        highWaterLayer,
-        frequentFloodLayer,
-        mediumFloodLayer,
-        rareFloodLayer,
-      ],
-    }),
   ],
   overlays: [overlay],
   view: new View({
@@ -287,6 +287,15 @@ const map = new Map({
   }),
   controls: defaults({ attribution: false }).extend([new ZoomSlider()]),
 });
+
+if (floodPredictionLayers?.length > 0) {
+  map.addLayer(
+    new LayerGroup({
+      title: "Flood prediction",
+      layers: floodPredictionLayers,
+    }),
+  );
+}
 
 var layerAnnotation = new LayerGroup({
   title: "Manual annotation",
