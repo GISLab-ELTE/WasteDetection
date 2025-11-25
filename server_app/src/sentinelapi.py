@@ -83,7 +83,7 @@ class SentinelAPI(BaseAPI):
                 DataCollection.SENTINEL2_L2A,
                 bbox=bbox,
                 time=time_interval,
-                query={"eo:cloud_cover": {"lte": int(self.settings.max_cloud_cover)}},
+                filter=f"eo:cloud_cover <= {int(self.settings.max_cloud_cover)}",
                 fields={
                     "include": [
                         "id",
