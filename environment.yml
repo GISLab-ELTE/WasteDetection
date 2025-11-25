@@ -2,6 +2,7 @@ name: WasteDetection
 channels:
   - conda-forge
   - pytorch
+  - defaults
 dependencies:
   - pytorch=2.4.0
   - black=23.3.0
@@ -18,13 +19,13 @@ dependencies:
   - matplotlib=3.4.3
   - numpy=1.24.4
   - pandas=1.3.3
-  - pillow=8.3.2
+  - pillow=9.2.0
   - pip=21.2.4
   - python=3.8.12
   - rasterio=1.2.8
   - scikit-image=0.19.0
   - scikit-learn=0.24.2
-  - sentinelhub=3.4.4
+  - sentinelhub=3.11.1
   - shapely=1.8.0
   - tk=8.6.11 # for desktop_app
   - pip:
