@@ -141,33 +141,35 @@ const layerDraw = new VectorLayer({
 const floodLayerConfigs = [
   {
     title: "High Water Layer",
-    LAYERS: "waste_detection:Nagyvizi_meder_hatar",
+    layers: "waste_detection:Nagyvizi_meder_hatar",
+    transparent: true,
+    styles: "light_blue"
   },
   {
     title: "Frequent Flood",
-    LAYERS: "waste_detection:Kisviz_HmaxGyakori",
+    layers: "waste_detection:Kisviz_HmaxGyakori",
   },
   {
     title: "Medium Flood",
-    LAYERS: "waste_detection:Kisviz_HmaxKozepes",
+    layers: "waste_detection:Kisviz_HmaxKozepes",
   },
   {
     title: "Rare Flood",
-    LAYERS: "waste_detection:Kisviz_HmaxRitka",
+    layers: "waste_detection:Kisviz_HmaxRitka",
   },
 ];
 
-async function createFloodLayers(floodLayerConfigs) {
-  async function isWmsAvailable() {
+async function isGeoServerAvailable() {
     try {
-      const res = await fetch(wmsUrl + "?service=WMS&request=GetCapabilities");
-      return res.ok;
+        const res = await fetch(wmsUrl + "?service=WMS&request=GetCapabilities");
+        return res.ok;
     } catch {
-      return false;
+        return false;
     }
-  }
+}
 
-  const available = await isWmsAvailable();
+async function createFloodLayers(floodLayerConfigs) {
+  const available = await isGeoServerAvailable();
   if (!available) {
     console.warn(`Flood prediction is temporarily disabled.`);
     return [];
@@ -178,12 +180,12 @@ async function createFloodLayers(floodLayerConfigs) {
       title: config.title,
       visible: true,
       source: new TileWMS({
-        url,
+        url: wmsUrl,
         params: {
-          LAYERS: config.LAYERS,
+          LAYERS: config.layers,
           TILED: true,
-          transparent: true,
-          styles: style,
+          ...(config.transparent !== undefined ? { transparent: config.transparent } : {}),
+          ...(config.styles !== undefined ? { styles: config.styles } : {}),
         },
         serverType: "geoserver",
         transition: 0,
@@ -191,10 +193,12 @@ async function createFloodLayers(floodLayerConfigs) {
     });
   });
 
-  layers.forEach((layer) => {
-    console.warn(layer.title + ` loading failed, disabling.`);
-    layer.getSource().on("tileloaderror", () => layer.setVisible(false));
-  });
+    layers.forEach((layer) => {
+      layer.getSource().on("tileloaderror", () => {
+        console.warn(`${layer.get('title')} loading failed, disabling.`);
+        layer.setVisible(false);
+      });
+    });
 
   return layers;
 }
