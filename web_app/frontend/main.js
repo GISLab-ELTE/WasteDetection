@@ -263,23 +263,6 @@ const map = new Map({
             mapType: "roadmap",
           }),
         }),
-        new TileLayer({
-          title: "Google Aerial",
-          type: "base",
-          source: new Google({
-            key: googleKey,
-            mapType: "satellite",
-          }),
-        }),
-        new TileLayer({
-          title: "Google Hybrid",
-          type: "base",
-          source: new Google({
-            key: googleKey,
-            mapType: "satellite",
-            layerTypes: ["layerRoadmap"],
-          }),
-        }),
       ],
     }),
   ],
