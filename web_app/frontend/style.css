@@ -16,6 +16,7 @@
 
 .ol-annotation-popup {
   position: absolute;
+  display: none;
   background-color: white;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   padding: 15px;
@@ -81,6 +82,7 @@
 
 .ol-popup {
   position: absolute;
+  display: none;
   background: white;
   padding: 10px;
   border-radius: 8px;
@@ -88,8 +90,10 @@
   bottom: 12px;
   left: -50px;
   min-width: 200px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  width: 400px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
   font-size: 14px;
+  font-family: "Segoe UI", Roboto, sans-serif;
 }
 
 .ol-popup-closer {
@@ -101,16 +105,6 @@
 
 .ol-popup-closer:after {
   content: "✖";
-}
-
-#popup {
-  position: absolute;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-  padding: 12px;
-  width: 400px;
-  font-family: "Segoe UI", Roboto, sans-serif;
 }
 
 .popup-content-wrapper h5 {
