@@ -25,6 +25,7 @@ import { Circle as CircleStyle } from "ol/style";
 const baseUrl = import.meta.env.VITE_DATA_URL;
 const flaskUrl = import.meta.env.VITE_FLASK_URL;
 const googleKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const stadiaKey = import.meta.env.VITE_STADIA_MAPS_API_KEY;
 const kiskoreBbox = [2283300, 6021945, 2284684, 6023968];
 const kanyahazaBbox = [2588995, 6087354, 2597328, 6091368];
 const pusztazamorBbox = [2090012, 6002140, 2095385, 6005579];
@@ -246,6 +247,7 @@ const map = new Map({
         new TileLayer({
           title: "None",
           type: "base",
+          visible: false,
           source: new XYZ({
             url: null,
           }),
@@ -253,14 +255,32 @@ const map = new Map({
         new TileLayer({
           title: "OpenStreetMap",
           type: "base",
+          visible: false,
           source: new OSM(),
         }),
         new TileLayer({
           title: "Google Roads",
           type: "base",
+          visible: false,
           source: new Google({
             key: googleKey,
             mapType: "roadmap",
+          }),
+        }),
+        new TileLayer({
+          title: "Stadia Satellite",
+          type: "base",
+          visible: true, // default selected
+          source: new XYZ({
+            url: `https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.png?api_key=${stadiaKey}`
+          }),
+        }),
+        new TileLayer({
+          title: "Stadia Terrain",
+          type: "base",
+          visible: false,
+          source: new XYZ({
+            url: `https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png?api_key=${stadiaKey}`
           }),
         }),
       ],

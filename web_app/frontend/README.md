@@ -40,3 +40,4 @@ If you want to override an environment variable, you should create a local .env 
 | `VITE_FLASK_URL`           | Backend Flask service URL hosting the annotation service.                                                                           |
 | `VITE_GEOSERVER_URL`       | Backend GeoServer URL hosting the TileWMS for flood zone maps.                                                                      |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps API key.                                                                                                                |
+| `VITE_STADIA_MAPS_API_KEY` | Stadia Maps API key.                                                                                                                |
