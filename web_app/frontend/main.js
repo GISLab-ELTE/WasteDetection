@@ -144,7 +144,7 @@ const floodLayerConfigs = [
     title: "High Water Layer",
     layers: "waste_detection:Nagyvizi_meder_hatar",
     transparent: true,
-    styles: "light_blue"
+    styles: "light_blue",
   },
   {
     title: "Frequent Flood",
@@ -161,12 +161,12 @@ const floodLayerConfigs = [
 ];
 
 async function isGeoServerAvailable() {
-    try {
-        const res = await fetch(wmsUrl + "?service=WMS&request=GetCapabilities");
-        return res.ok;
-    } catch {
-        return false;
-    }
+  try {
+    const res = await fetch(wmsUrl + "?service=WMS&request=GetCapabilities");
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 async function createFloodLayers(floodLayerConfigs) {
@@ -185,7 +185,9 @@ async function createFloodLayers(floodLayerConfigs) {
         params: {
           LAYERS: config.layers,
           TILED: true,
-          ...(config.transparent !== undefined ? { transparent: config.transparent } : {}),
+          ...(config.transparent !== undefined
+            ? { transparent: config.transparent }
+            : {}),
           ...(config.styles !== undefined ? { styles: config.styles } : {}),
         },
         serverType: "geoserver",
@@ -194,12 +196,12 @@ async function createFloodLayers(floodLayerConfigs) {
     });
   });
 
-    layers.forEach((layer) => {
-      layer.getSource().on("tileloaderror", () => {
-        console.warn(`${layer.get('title')} loading failed, disabling.`);
-        layer.setVisible(false);
-      });
+  layers.forEach((layer) => {
+    layer.getSource().on("tileloaderror", () => {
+      console.warn(`${layer.get("title")} loading failed, disabling.`);
+      layer.setVisible(false);
     });
+  });
 
   return layers;
 }
@@ -272,7 +274,7 @@ const map = new Map({
           type: "base",
           visible: true, // default selected
           source: new XYZ({
-            url: `https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.png?api_key=${stadiaKey}`
+            url: `https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.png?api_key=${stadiaKey}`,
           }),
         }),
         new TileLayer({
@@ -280,7 +282,7 @@ const map = new Map({
           type: "base",
           visible: false,
           source: new XYZ({
-            url: `https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png?api_key=${stadiaKey}`
+            url: `https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png?api_key=${stadiaKey}`,
           }),
         }),
       ],

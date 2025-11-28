@@ -16,6 +16,6 @@ export default {
     },
   },
   server: {
-    port: 5500
+    port: 5500,
   },
 };
