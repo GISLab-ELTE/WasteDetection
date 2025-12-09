@@ -26,7 +26,7 @@ The application expects the following environment variables:
 | `FLASK_APP_HOST`          | Host address for the Flask server. Default: `0.0.0.0`.                                         |
 | `FLASK_APP_PORT`          | Port number the app listens to. Default: `5000`.                                               |
 | `FLASK_DEBUG`             | Enables debug mode and CORS configuration. Default: `False`.                                   |
-| `FLASK_CORS_ORIGIN`       | Allowed CORS origin during development. Default: `http://localhost:5173`.                      |
+| `FLASK_CORS_ORIGIN`       | Allowed CORS origin during development. Default: `http://localhost:5500`.                      |
 | `GUNICORN_WORKERS`        | Number of Gunicorn worker processes. Default: `5`.                                             |
 
 ## Running the Application
@@ -66,7 +66,7 @@ docker run -d --name web_app_backend_container \
   -e POINT_CRS="EPSG:23700" \
   -e DEM_CRS="EPSG:32634" \
   -e FLASK_DEBUG=True \
-  -e FLASK_CORS_ORIGIN="http://localhost:5173" \
+  -e FLASK_CORS_ORIGIN="http://localhost:5500" \
   -v /absolute/path/to/data:/app/data \
   --net=host \
   --restart always \
@@ -127,5 +127,5 @@ curl "http://127.0.0.1:5000/flood-forecast?lat=47.0&lon=19.0&disable_filtering=f
 ## Notes
 
 - Always replace sensitive values before committing or sharing (`OVSZ_TOKEN`, DB credentials).
-- This backend is meant to be used in conjunction with a frontend running at `http://localhost:5173`.
+- This backend is meant to be used in conjunction with a frontend running at `http://localhost:5500`.
 - For persistent volumes or logs, consider mounting additional volumes (e.g., `/app/logs`).
