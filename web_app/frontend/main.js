@@ -257,7 +257,7 @@ const map = new Map({
         new TileLayer({
           title: "OpenStreetMap",
           type: "base",
-          visible: false,
+          visible: true, // default selected
           source: new OSM(),
         }),
         new TileLayer({
@@ -269,14 +269,17 @@ const map = new Map({
             mapType: "roadmap",
           }),
         }),
+        // Remove Stadia Satellite layer temporarily due to requiring paid plan
+        /*
         new TileLayer({
           title: "Stadia Satellite",
           type: "base",
-          visible: true, // default selected
+          visible: false,
           source: new XYZ({
             url: `https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.png?api_key=${stadiaKey}`,
           }),
         }),
+        */
         new TileLayer({
           title: "Stadia Terrain",
           type: "base",
