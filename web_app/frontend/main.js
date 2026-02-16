@@ -26,11 +26,6 @@ const baseUrl = import.meta.env.VITE_DATA_URL;
 const flaskUrl = import.meta.env.VITE_FLASK_URL;
 const googleKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const stadiaKey = import.meta.env.VITE_STADIA_MAPS_API_KEY;
-const kiskoreBbox = [2283300, 6021945, 2284684, 6023968];
-const kanyahazaBbox = [2588995, 6087354, 2597328, 6091368];
-const pusztazamorBbox = [2090012, 6002140, 2095385, 6005579];
-const rahoBbox = [2693024, 6114066, 2693905, 6114776];
-const drinaBbox = [2145189, 5426572, 2147977, 5430040];
 const drawType = "Polygon";
 if (!import.meta.env.VITE_GEOSERVER_URL) {
   throw new Error("GEOSERVER_URL is not defined in the environment variables.");
@@ -41,6 +36,7 @@ const wmsUrl = import.meta.env.VITE_GEOSERVER_URL;
 var geojsonLayerGroup;
 var aoisWithDates;
 var satelliteImagesPaths;
+var locations;
 var drawVisible = false;
 var drawnFeatures = [];
 
@@ -402,7 +398,6 @@ const resetSlider = function () {
 };
 
 const changeAOI = function () {
-  let aoiBbox = null;
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
 
@@ -410,21 +405,10 @@ const changeAOI = function () {
   changeDate(Object.keys(aoisWithDates[model][aoi])[swipe.value]);
   setAOILayers();
 
-  if (aoi == "Kiskore") {
-    aoiBbox = kiskoreBbox;
-  } else if (aoi == "Kanyahaza") {
-    aoiBbox = kanyahazaBbox;
-  } else if (aoi == "Pusztazamor") {
-    aoiBbox = pusztazamorBbox;
-  } else if (aoi == "Raho") {
-    aoiBbox = rahoBbox;
-  } else if (aoi == "Drina") {
-    aoiBbox = drinaBbox;
-  } else {
-    aoiBbox = null;
-  }
-  if (aoiBbox !== null) {
-    map.getView().fit(aoiBbox, map.getSize());
+  // Get bounding box from locations data
+  const location = locations.find((loc) => loc.id === aoi);
+  if (location && location.bbox) {
+    map.getView().fit(location.bbox, map.getSize());
   }
 };
 
@@ -451,6 +435,25 @@ const fetchSatelliteImagePaths = async function () {
         baseUrl + satelliteImagesPaths[outKey][inKey]["src"];
     }
   }
+};
+
+const fetchLocations = async function () {
+  const res = await fetch("locations.json");
+  locations = await res.json();
+
+  // Populate the location select dropdown
+  const locationSelect = document.getElementById("location");
+  locationSelect.innerHTML = ""; // Clear existing options
+
+  locations.forEach((location, index) => {
+    const option = document.createElement("option");
+    option.value = location.id;
+    option.text = location.name;
+    if (index === 0) {
+      option.selected = true; // Select the first option by default
+    }
+    locationSelect.add(option);
+  });
 };
 
 const fetchGeojsonPaths = async function () {
@@ -729,6 +732,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   await changeElemsBasedOnLoginStatus();
 });
 
+await fetchLocations();
 await fetchSatelliteImagePaths();
 await fetchGeojsonPaths();
 resizeMap();

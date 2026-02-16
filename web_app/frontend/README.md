@@ -41,3 +41,22 @@ If you want to override an environment variable, you should create a local .env 
 | `VITE_GEOSERVER_URL`       | Backend GeoServer URL hosting the TileWMS for flood zone maps.                                                                      |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps API key.                                                                                                                |
 | `VITE_STADIA_MAPS_API_KEY` | Stadia Maps API key.                                                                                                                |
+
+## Configuration Files
+
+### locations.json
+
+Defines the available locations, their display names, and bounding boxes for map navigation. This file is located in the `public` directory (`public/locations.json`) and is served as a static asset.
+To add or modify locations, edit the `public/locations.json` file directly. The file must be a JSON array containing location objects with the following structure:
+
+```json
+[
+  {
+    "id": "string",       // Unique identifier (must match AOI keys in geojson_files.json)
+    "name": "string",     // Display name for the location
+    "bbox": [number, number, number, number]  // Bounding box [minX, minY, maxX, maxY] in map projection (EPSG:3857)
+  }
+]
+```
+
+**Note**: The `id` field in the frontend's `locations.json` must match the location keys used in the `satellite_images.json` and `geojson_files.json` - produced by the _server_app_.
