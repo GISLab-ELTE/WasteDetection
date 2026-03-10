@@ -4,6 +4,8 @@ import json
 import time
 import pathlib
 import requests
+import numpy as np
+import rasterio
 
 import datetime as dt
 
@@ -13,7 +15,6 @@ from model.persistence import Persistence
 from server_app.src.baseapi import BaseAPI
 from typing import List, TypeVar, Tuple, Dict
 from shapely.geometry import Polygon
-
 
 TimeType = TypeVar("TimeType", dt.date, dt.datetime)
 
@@ -46,6 +47,9 @@ class PlanetAPI(BaseAPI):
         self.order_urls = dict()
 
         self.successful_orders = list()
+
+        self.download_results = []
+        self.metadata_records = []
 
     def login(self) -> None:
         """
@@ -160,7 +164,7 @@ class PlanetAPI(BaseAPI):
 
     def download(self, num_loops: int = 1000) -> None:
         """
-        Downloads the available images.
+        Downloads the available images and stores the results in the `download_results` field.
 
         :param num_loops: Maximum number of iterations when waiting for order to be activated.
         :return: None
@@ -375,11 +379,64 @@ class PlanetAPI(BaseAPI):
                 r = requests.get(url, allow_redirects=True)
                 path.parent.mkdir(parents=True, exist_ok=True)
                 open(path, "wb").write(r.content)
+                self.download_results.append((date, path))
+
             else:
                 print("{} already exists, skipping...".format(name))
             time.sleep(2)
 
         return True
+
+    # TODO: Test metadata creation with Planet.
+    def create_metadata_records(self) -> Tuple[float, float]:
+        """
+        Calculates the min and max values of an image, excluding NoData (0).
+
+        :param image_data: A numpy array representing the image band.
+        :return: A tuple of (min, max) as floats.
+        """
+
+        for timestamp, path in self.download_results:
+            try:
+                with rasterio.open(path) as src:
+                    abs_min, abs_max = self.image_stats(src)
+                    metadata = {
+                        "filename": str(path.resolve()),
+                        "acquisition_date": timestamp,
+                        "min": abs_min,
+                        "max": abs_max,
+                        "satellite_type": "PlanetScope",
+                        "src": "Planet Labs",
+                    }
+                    self.metadata_records.append(metadata)
+
+            except Exception as e:
+                print(f"Error processing {path.name}: {e}")
+                continue
+
+        self.download_results.clear()
+
+    def image_stats(self, src: rasterio.DatasetReader) -> Tuple[float, float]:
+        """
+        Calculates global maximum and minimum values of the image across all bands.
+
+        :param src: the rasterio DatasetReader
+        :return: (min, max) pair
+        """
+        all_mins = []
+        all_maxs = []
+
+        for i in src.indexes:
+            band_data = src.read(i, masked=True)
+
+            if band_data.count() > 0:
+                all_mins.append(float(band_data.min()))
+                all_maxs.append(float(band_data.max()))
+
+        if not all_mins:
+            return 0.0, 0.0
+
+        return min(all_mins), max(all_maxs)
 
     @staticmethod
     def calculate_coverage(feature: Dict, item: Dict) -> float:

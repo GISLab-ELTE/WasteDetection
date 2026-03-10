@@ -86,5 +86,10 @@
   "planetscope_udm2_light_haze": 4,
   "planetscope_udm2_heavy_haze": 5,
   "planetscope_udm2_cloud": 6,
-  "planetscope_udm2_confidence": 7
+  "planetscope_udm2_confidence": 7,
+  "web_app_base_url": "http://127.0.0.1:5000",
+  "web_app_login_endpoint": "/login",
+  "web_app_upload_endpoint": "/image-upload",
+  "web_app_auth_email": "",
+  "web_app_auth_password": ""
 }

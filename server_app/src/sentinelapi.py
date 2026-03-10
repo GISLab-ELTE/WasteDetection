@@ -1,8 +1,11 @@
 import datetime as dt
+import numpy as np
+import rasterio
 
 from server_app.src.baseapi import BaseAPI
-from typing import Dict, Tuple, List
+from typing import Any, Dict, Tuple, List, Union
 from model.persistence import Persistence
+from pathlib import Path
 
 from sentinelhub import (
     SHConfig,
@@ -38,6 +41,9 @@ class SentinelAPI(BaseAPI):
         self.instance_id = None
         self.sh_client_id = None
         self.sh_client_secret = None
+
+        self.download_results = []
+        self.metadata_records = []
 
         self.resolution = 10
 
@@ -144,16 +150,74 @@ class SentinelAPI(BaseAPI):
 
     def download(self) -> None:
         """
-        Downloads the available images.
+        Orchestrates the download process and returns a report of metadata and
+        stores the results in the `download_results` field.
+        """
+        for feature_id, requests in self.requests.items():
+            for timestamp, request_obj in requests:
+                try:
+                    request_obj.save_data()
+                    self.download_results.append((timestamp, request_obj))
+                    filenames = request_obj.get_filename_list()
+                    if filenames:
+                        folder_name = Path(filenames[0]).parent.name
+                        print(f"Successfully downloaded: {feature_id} -> {folder_name}")
+
+                except Exception as e:
+                    print(f"Error downloading {feature_id} at {timestamp}: {e}")
+                    continue
+
+    def create_metadata_records(self) -> None:
+        """
+        Creates metadata records using the `download_results` field to upload to web_app.
+        Stores the results in the `metadata_records` and clears the `download_results` to
+        avoid data duplication.
 
         :return: None
         """
 
-        for feature_id in self.requests.keys():
-            for acquisition in self.requests[feature_id]:
-                acquisition[1].save_data()
-                print(feature_id)
-                print(acquisition[1].get_filename_list()[0].split("\\")[0])
+        for timestamp, request_obj in self.download_results:
+            filenames = request_obj.get_filename_list()
+            if not filenames:
+                continue
+
+            path = Path(request_obj.data_folder) / filenames[0]
+            with rasterio.open(path) as src:
+                abs_min, abs_max = self.image_stats(src)
+                self.metadata_records.append(
+                    {
+                        "filename": str(path.resolve()),
+                        "acquisition_date": timestamp.strftime("%Y-%m-%d"),
+                        "min": abs_min,
+                        "max": abs_max,
+                        "satellite_type": "Sentinel-2 L2A",
+                        "src": "ESA",
+                    }
+                )
+
+        self.download_results.clear()
+
+    def image_stats(self, src: rasterio.DatasetReader) -> Tuple[float, float]:
+        """
+        Calculates global maximum and minimum values of the image across all bands.
+
+        :param src: the rasterio DatasetReader
+        :return: (min, max) pair
+        """
+        all_mins = []
+        all_maxs = []
+
+        for i in src.indexes:
+            band_data = src.read(i, masked=True)
+
+            if band_data.count() > 0:
+                all_mins.append(float(band_data.min()))
+                all_maxs.append(float(band_data.max()))
+
+        if not all_mins:
+            return 0.0, 0.0
+
+        return min(all_mins), max(all_maxs)
 
     @staticmethod
     def generate_evalscript(masking: bool, with_swir: bool) -> str:
