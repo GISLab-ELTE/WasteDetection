@@ -152,8 +152,12 @@ def create_satellite_image():
         min=data["min"],
         max=data["max"],
     )
-    db.session.add(image)
-    db.session.commit()
+    try:
+        db.session.add(image)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Unique constraint violation"}), 400
     return jsonify({"id": image.id}), 201
 
 
