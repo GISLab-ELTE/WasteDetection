@@ -101,6 +101,11 @@ Meaning of the parameters in `config.sample.json` file:
 - `planetscope_udm2_heavy_haze`: The index of the Heavy Haze band on the PlanetScope UDM2 image.
 - `planetscope_udm2_cloud`: The index of the Cloud band on the PlanetScope UDM2 image.
 - `planetscope_udm2_confidence`: The index of the Confidence band on the PlanetScope UDM2 image.
+- `web_app_base_url`: The root domain or host address of the machine where the web app is hosted.
+- `web_app_login_endpoint`: The specific API route used for authentication.
+- `web_app_upload_endpoint`: The API endpoint for uploading satellite images.
+- `web_app_auth_email`: The authentication email used to upload the satellite images.
+- `web_app_auth_password`: The web app password for the owner of the `web_app_auth_email`.
 
 These values can be overridden if you create a `config.local.json` file in the `resources` folder. In this it is enough to include the fields that you want to change the value of.
 

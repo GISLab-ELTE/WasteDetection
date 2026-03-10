@@ -2,13 +2,15 @@ import os
 import json
 import fnmatch
 import logging
+from urllib.parse import urljoin
 
 import numpy as np
 import datetime as dt
 
 from pathlib import Path
+import requests
 from model.model import Model
-from typing import List, Optional
+from typing import Dict, List, Optional
 from collections import OrderedDict
 from server_app.src.planetapi import PlanetAPI
 from server_app.src.sentinelapi import SentinelAPI
@@ -133,6 +135,8 @@ class Process(object):
         logging.warning("\nALERT\nAcquisition dates:\n")
         self.print_acquisition_dates(observation_max_span)
 
+        self.handle_metadata_upload()
+
         logging.info("Startup process ended.")
 
     def execute_classification(self) -> None:
@@ -189,11 +193,12 @@ class Process(object):
                 pass
             else:
                 success = True
-
         logging.info("Finished downloading images.")
 
         logging.warning("\nALERT\nAcquisition dates:\n")
         self.print_acquisition_dates(max_num_of_results)
+
+        self.handle_metadata_upload()
 
     def create_estimations(self) -> None:
         """
@@ -239,14 +244,14 @@ class Process(object):
                     udm2_file_path,
                 )
 
-                (classified, heatmap) = self.model.create_classification_and_heatmap_with_random_forest(
+                classified, heatmap = self.model.create_classification_and_heatmap_with_random_forest(
                     indices_path,
                     self.model.persistence.clf,
                     self.model.persistence.classification_postfix,
                     self.model.persistence.heatmap_postfix,
                 )
 
-                (masked_classified, masked_heatmap) = self.model.create_masked_classification_and_heatmap(
+                masked_classified, masked_heatmap = self.model.create_masked_classification_and_heatmap(
                     indices_path,
                     classified,
                     heatmap,
@@ -449,6 +454,102 @@ class Process(object):
         with open(file_path, "w") as file:
             estimations_file_content[clf_id] = model_data
             json.dump(estimations_file_content, file, indent=4)
+
+    def _is_config_complete_for_upload(self) -> bool:
+        """
+        Checks whether all configuration data is present to
+        perform uploads.
+        """
+
+        return (
+            self.model.persistence.web_app_base_url
+            and self.model.persistence.web_app_login_endpoint
+            and self.model.persistence.web_app_upload_endpoint
+            and self.model.persistence.web_app_auth_email
+            and self.model.persistence.web_app_auth_password
+        )
+
+    def handle_metadata_upload(self) -> None:
+        """
+        Orchestrates the creation and upload of metadata.
+        """
+        if not self._is_config_complete_for_upload():
+            logging.warning("Metadata upload skipped: Configuration is incomplete.")
+            return
+        logging.info("Preparing metadata records for upload...")
+        try:
+            self.api.create_metadata_records()
+        except Exception as e:
+            logging.error(f"Failed to create metadata records: {e}")
+            return
+
+        records = self.api.metadata_records
+        all_uploads = len(records) if records else 0
+        if all_uploads == 0:
+            logging.info("No metadata records were generated. Skipping upload.")
+            return
+        logging.info(f"Metadata preparation complete. Starting upload of {all_uploads} records to web app...")
+
+        successful_uploads = self.upload_metadata_to_web_app(records)
+        if successful_uploads == all_uploads:
+            logging.info(f"Successfully uploaded all {all_uploads} metadata items.")
+        else:
+            failed_count = all_uploads - successful_uploads
+            logging.error(
+                f"Upload partial failure: {successful_uploads}/{all_uploads} succeeded. "
+                f"({failed_count} records failed). Check individual record logs for details."
+            )
+
+    def upload_metadata_to_web_app(self, metadata: List[Dict]) -> int:
+        """
+        Uses web app satellite-images endpoint and user login credentials
+        to upload metadata of the downloaded images. Logs upload errors.
+
+        :param metadata: List of metadata dictionaries.
+        :return: Number of successful uploads.
+        """
+
+        with requests.Session() as session:
+            base_url = self.model.persistence.web_app_base_url
+            login_endpoint = self.model.persistence.web_app_login_endpoint
+            upload_endpoint = self.model.persistence.web_app_upload_endpoint
+            auth = {
+                "email": self.model.persistence.web_app_auth_email,
+                "password": self.model.persistence.web_app_auth_password,
+            }
+
+            try:
+                login_response = session.post(urljoin(base_url, login_endpoint), json=auth, allow_redirects=False)
+                login_response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                logging.error(f"Web app login failed: {e}")
+                return 0
+
+            TIMEOUT_SECONDS = 15
+            successful_uploads = 0
+            upload_url = urljoin(base_url, upload_endpoint)
+
+            for m in metadata:
+                try:
+                    response = session.post(upload_url, json=m, timeout=TIMEOUT_SECONDS)
+                    response.raise_for_status()
+                    successful_uploads += 1
+
+                except requests.exceptions.HTTPError as e:
+                    resp = e.response
+                    error_msg = f"Status {resp.status_code}"
+
+                    if "application/json" in resp.headers.get("Content-Type", ""):
+                        try:
+                            error_json = resp.json()
+                            error_detail = error_json.get("error", "No error detail provided")
+                            error_msg += f": {error_detail}"
+                        except (ValueError, AttributeError):
+                            pass
+
+                    logging.error(f"Upload failed for item {m['filename']}. {error_msg}")
+
+            return successful_uploads
 
     def join_path(self, key_1: str, key_2: str) -> str:
         """

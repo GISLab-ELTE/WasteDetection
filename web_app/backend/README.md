@@ -28,6 +28,7 @@ The application expects the following environment variables:
 | `FLASK_DEBUG`             | Enables debug mode and CORS configuration. Default: `False`.                                   |
 | `FLASK_CORS_ORIGIN`       | Allowed CORS origin during development. Default: `http://localhost:5500`.                      |
 | `GUNICORN_WORKERS`        | Number of Gunicorn worker processes. Default: `5`.                                             |
+| `SESSION_COOKIE_SECURE`   | Require secure connection for sending cookies. Default: `True`.                                |
 
 ## Running the Application
 
@@ -67,6 +68,7 @@ docker run -d --name web_app_backend_container \
   -e DEM_CRS="EPSG:32634" \
   -e FLASK_DEBUG=True \
   -e FLASK_CORS_ORIGIN="http://localhost:5500" \
+  -e SESSION_COOKIE_SECURE=True \
   -v /absolute/path/to/data:/app/data \
   --net=host \
   --restart always \

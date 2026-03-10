@@ -1,5 +1,6 @@
-from typing import Dict, Tuple
+from inspect import _void
 from abc import ABC, abstractmethod
+from typing import Dict, List, Tuple
 from model.persistence import Persistence
 
 
@@ -56,7 +57,19 @@ class BaseAPI(ABC):
     @abstractmethod
     def download(self) -> None:
         """
-        Downloads the available images.
+        Downloads the available images and stores the results in the `download_results` field.
+
+        :return: None
+        """
+
+        pass
+
+    @abstractmethod
+    def create_metadata_records(self) -> None:
+        """
+        Creates metadata records using the `download_results` field to upload to web_app.
+        Stores the results in the `metadata_records` and clears the `download_results` to
+        avoid data duplication.
 
         :return: None
         """
