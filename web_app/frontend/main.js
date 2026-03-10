@@ -728,9 +728,12 @@ annotationCloser.onclick = annotationContainerClose;
 annotationCancel.onclick = annotationContainerClose;
 annotationSave.onclick = annotationContainerSave;
 
-document.addEventListener("DOMContentLoaded", async function () {
-  await changeElemsBasedOnLoginStatus();
-});
+if (document.readyState === "loading") {
+  await new Promise((resolve) => {
+    document.addEventListener("DOMContentLoaded", resolve, { once: true });
+  });
+}
+await changeElemsBasedOnLoginStatus();
 
 await fetchLocations();
 await fetchSatelliteImagePaths();
