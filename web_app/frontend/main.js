@@ -846,7 +846,7 @@ map.on("click", function (evt) {
       "all-stations-checkbox",
     ).checked;
 	*/
-    const disableFiltering = true;
+    const disableFiltering = false;
     const url = `${flaskUrl}flood-forecast?lat=${lat}&lon=${lon}&disable_filtering=${disableFiltering}`;
     fetch(url, {
       method: "GET",
