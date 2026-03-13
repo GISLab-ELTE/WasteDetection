@@ -68,10 +68,7 @@
 }
 
 #login-button {
-  margin: 0 auto;
-  display: block;
-  text-align: center;
-  margin-top: 10px;
+  white-space: nowrap;
 }
 
 #date {
