@@ -521,7 +521,7 @@ const annotationContainerSave = async function () {
 
 const displayExistingAnnotations = async function () {
   var loginStatus = await checkLoginStatus();
-  if (!loginStatus.logged_in) {
+  if (!loginStatus?.logged_in) {
     return;
   }
 
@@ -598,6 +598,12 @@ const checkLoginStatus = async function () {
 const changeElemsBasedOnLoginStatus = async function () {
   var loginStatus = await checkLoginStatus();
   const loginLogoutButton = document.getElementById("login-button");
+
+  if (!loginStatus) {
+    loginLogoutButton.style.display = "none";
+    removeAnnotation();
+    return;
+  }
 
   if (loginStatus.logged_in) {
     loginLogoutButton.innerHTML = "Logout";
