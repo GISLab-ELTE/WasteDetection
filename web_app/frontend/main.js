@@ -49,7 +49,7 @@ const annotationCloser = document.getElementById("annotation-popup-closer");
 const annotationSave = document.getElementById("annotation-save");
 const annotationCancel = document.getElementById("annotation-cancel");
 
-// Styles for GeoJSON polygons
+/// Styles for GeoJSON polygons
 const styleClassified = new Style({
   stroke: new Stroke({
     color: "rgb(255, 128, 0)",
@@ -765,6 +765,7 @@ map.addOverlay(popupOverlay);
 popupCloser.onclick = function (event) {
   event.preventDefault();
   popupOverlay.setPosition(undefined);
+  popupElem.style.display = "none";
   popupCloser.blur();
   return false;
 };
@@ -802,6 +803,7 @@ function showPopup(coordinate, htmlContent) {
     return;
   }
   popupContent.innerHTML = htmlContent;
+  popupElem.style.display = "block";
   popupOverlay.setPosition(coordinate);
 }
 
@@ -869,6 +871,7 @@ map.on("click", function (evt) {
       })
       .catch((err) => {
         console.error(err);
+        hideSpinner();
       });
     popupOverlay.setPosition(undefined);
   }
