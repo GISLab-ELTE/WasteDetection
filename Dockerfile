@@ -49,13 +49,6 @@ COPY web_app/backend/environment.yml .
 RUN conda env create -f environment.yml -q && \
     conda clean --all -y -q
 
-# Install execstack and fix PyTorch shared libraries
-RUN apt-get update \
-    && apt-get install -y patchelf \
-    && find $(conda info --base)/envs/WasteDetection*/lib/python*/site-packages/torch -name "*.so" -exec sh -c 'patchelf --clear-execstack "$1" || true' _ {} \; \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /workspace/flask_app
 COPY web_app/backend/ ./
 COPY model/ model/

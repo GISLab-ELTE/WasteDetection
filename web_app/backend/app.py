@@ -9,7 +9,7 @@ from datetime import datetime
 from flask_migrate import Migrate
 from sqlalchemy.exc import IntegrityError
 from flask import Flask, jsonify, request
-from model.model import FloodPrediction
+from model.flood_prediction import FloodPrediction
 from models import db, User, SatelliteImage, Annotation
 from flask_login import (
     LoginManager,
@@ -18,13 +18,9 @@ from flask_login import (
     login_required,
     current_user,
 )
-import math
 import requests
-import geopandas as gpd
-import rasterio
 from shapely.geometry import Point
 from pyproj import Transformer
-from models import db
 
 # Create app
 app = Flask(__name__)
