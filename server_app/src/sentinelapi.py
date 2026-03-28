@@ -1,5 +1,4 @@
 import datetime as dt
-import numpy as np
 import rasterio
 
 from server_app.src.baseapi import BaseAPI
@@ -19,11 +18,21 @@ from sentinelhub import (
     filter_times,
 )
 
+# SentinelHub endpoint presets
+SENTINELHUB_DEFAULT = "sentinelhub"
+SENTINELHUB_CDSE = "cdse"
+
+CDSE_BASE_URL = "https://sh.dataspace.copernicus.eu"
+CDSE_TOKEN_URL = "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"
+
 
 class SentinelAPI(BaseAPI):
     """
     API class for downloading Sentinel-2 satellite images.
 
+    Supports both the default SentinelHub and the Copernicus Data Space
+    Ecosystem (CDSE) SentinelHub.  The backend is selected via the
+    ``sentinel_hub_type`` configuration key (``"sentinelhub"`` or ``"cdse"``).
     """
 
     def __init__(self, settings: Persistence, data_file: Dict) -> None:
@@ -49,23 +58,60 @@ class SentinelAPI(BaseAPI):
 
         self.requests = dict()
 
+        # Determine which SentinelHub backend to use (default: sentinelhub)
+        self.hub_type: str = getattr(settings, "sentinel_hub_type", SENTINELHUB_DEFAULT).lower()
+        if self.hub_type not in (SENTINELHUB_DEFAULT, SENTINELHUB_CDSE):
+            raise ValueError(
+                f"Unknown sentinel_hub_type '{self.hub_type}'. "
+                f"Must be '{SENTINELHUB_DEFAULT}' or '{SENTINELHUB_CDSE}'."
+            )
+
+        # Pre-build the data collection for the chosen backend
+        self.data_collection = self._resolve_data_collection()
+
         self.evalscript = self.generate_evalscript(settings.masking, "swir" in settings.enabled_bands)
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _resolve_data_collection(self) -> DataCollection:
+        """Return the appropriate ``DataCollection`` for the configured hub type."""
+        if self.hub_type == SENTINELHUB_CDSE:
+            return DataCollection.SENTINEL2_L2A.define_from(
+                "s2l2a_cdse",
+                service_url=CDSE_BASE_URL,
+            )
+        return DataCollection.SENTINEL2_L2A
+
+    # ------------------------------------------------------------------
+    # Public interface
+    # ------------------------------------------------------------------
 
     def login(self) -> None:
         """
         Logs into the API account.
 
+        Configures the ``SHConfig`` object for either the default
+        SentinelHub or the CDSE SentinelHub, depending on ``self.hub_type``.
+
         :return: None
         """
 
         self.sh_client_id = self.settings.sentinel_sh_client_id
-        self.instance_id = self.settings.sentinel_instance_id
         self.sh_client_secret = self.settings.sentinel_sh_client_secret
 
         self.config = SHConfig()
         self.config.sh_client_id = self.sh_client_id
-        self.config.instance_id = self.instance_id
         self.config.sh_client_secret = self.sh_client_secret
+
+        if self.hub_type == SENTINELHUB_CDSE:
+            self.config.sh_base_url = CDSE_BASE_URL
+            self.config.sh_token_url = CDSE_TOKEN_URL
+        else:
+            # Default SentinelHub requires an instance ID
+            self.instance_id = self.settings.sentinel_instance_id
+            self.config.instance_id = self.instance_id
 
         self.catalog = SentinelHubCatalog(config=self.config)
 
@@ -86,7 +132,7 @@ class SentinelAPI(BaseAPI):
             bbox = BBox(bbox=bbox_coords, crs=CRS.POP_WEB)
 
             search_iterator = self.catalog.search(
-                DataCollection.SENTINEL2_L2A,
+                self.data_collection,
                 bbox=bbox,
                 time=time_interval,
                 filter=f"eo:cloud_cover <= {int(self.settings.max_cloud_cover)}",
@@ -119,7 +165,7 @@ class SentinelAPI(BaseAPI):
                     evalscript=self.evalscript,
                     input_data=[
                         SentinelHubRequest.input_data(
-                            data_collection=DataCollection.SENTINEL2_L2A,
+                            data_collection=self.data_collection,
                             time_interval=(
                                 timestamp - time_difference,
                                 timestamp + time_difference,
