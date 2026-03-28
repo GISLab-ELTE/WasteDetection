@@ -1,4 +1,5 @@
 import math
+from typing import Dict, List
 
 import geopandas as gpd
 import pyproj
@@ -34,11 +35,13 @@ class FloodPrediction:
         transformer = pyproj.Transformer.from_crs(point_crs, dem_crs, always_xy=True)
         x, y = transformer.transform(point.x, point.y)
         with rasterio.open(dem_path) as dem:
+            if not (dem.bounds.left <= x <= dem.bounds.right and dem.bounds.bottom <= y <= dem.bounds.top):
+                raise ValueError(f'Point ({x}, {y}) is outside DEM extent {dem.bounds}')
             row, col = dem.index(x, y)
             return float(dem.read(1)[row, col])
 
     @staticmethod
-    def check_flood_zone(point: Point, flood_zones: dict, point_crs: str) -> list:
+    def check_flood_zone(point: Point, flood_zones: Dict[str, str], point_crs: str) -> List[str]:
         """
         Check to which flood zones a point belongs.
         :param point: Shapely point.
@@ -49,7 +52,7 @@ class FloodPrediction:
         res = []
         for zone_name, shp_path in flood_zones.items():
             gdf = gpd.read_file(shp_path)
-            if gdf.crs != point_crs:
+            if gdf.crs != pyproj.CRS.from_user_input(point_crs):
                 gdf = gdf.to_crs(point_crs)
             if gdf.contains(point).any():
                 res.append(zone_name)

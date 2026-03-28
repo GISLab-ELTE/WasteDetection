@@ -535,7 +535,7 @@ def flood_forecast():
     # Determine flood zones
     # DISABLED TEMPORARILY
     zones = ["not computed"]
-    # zones = FloodPrediction.check_flood_zone(deposit_point, FLOOD_ZONES, DEM_CRS)
+    # zones = FloodPrediction.check_flood_zone(deposit_point, FLOOD_ZONES, POINT_CRS)
     deposit_feature = build_deposit_feature(lon, lat, deposit_elevation, avg_abs_level, zones, river)
 
     # Combine deposit and station features to geosjon
