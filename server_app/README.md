@@ -44,8 +44,9 @@ Meaning of the parameters in `config.sample.json` file:
 - `satellite_images_path`: Path of the dynamically produced JSON file that stores the location of the downloaded satellite images. Relative to `workspace_root_dir`.
 - `planet_api_key`: Planet Account API key.
 - `sentinel_sh_client_id`: Account OAuth client ID in SentinelHub.
-- `sentinel_instance_id`: Account User ID in SentinelHub.
+- `sentinel_instance_id`: Account User ID in SentinelHub. Only required when `sentinel_hub_type` is `"sentinelhub"`.
 - `sentinel_sh_client_secret`: Account OAuth Secret in SentinelHub.
+- `sentinel_hub_type`: The SentinelHub backend to use. Accepted values are `"sentinelhub"` (default – the [Sentinel Hub](https://www.sentinel-hub.com/) service by Sinergise) and `"cdse"` (the [Copernicus Data Space Ecosystem](https://dataspace.copernicus.eu/) SentinelHub). When set to `"cdse"`, the application authenticates against the CDSE identity provider and uses the CDSE Processing API endpoints; `sentinel_instance_id` is not required in this case.
 - `satellite_type`: Name of the satellite that took the images.
 - `data_file_path`: Path of the GeoJSON file containing the AOIs.
 - `observation_span_in_days`: Number of days to analyze.

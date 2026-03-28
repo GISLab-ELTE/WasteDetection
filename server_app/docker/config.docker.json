@@ -10,5 +10,6 @@
   "planet_api_key": "***",
   "sentinel_sh_client_id": "***",
   "sentinel_instance_id": "***",
-  "sentinel_sh_client_secret": "***"
+  "sentinel_sh_client_secret": "***",
+  "sentinel_hub_type": "sentinelhub"
 }
