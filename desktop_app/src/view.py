@@ -12,7 +12,6 @@ from desktop_app.src.settings_view import SettingsView
 from desktop_app.src.auto_scrollbar import AutoScrollbar
 from desktop_app.src.training_view import TrainingView, ZoomCanvas
 
-
 THEME = "lumen"
 SIZE = "1600x880"
 

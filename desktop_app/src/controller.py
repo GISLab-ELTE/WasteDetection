@@ -19,7 +19,6 @@ from typing import Union, List, TextIO, Tuple, Set
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from ttkbootstrap.dialogs.colorchooser import ColorChooserDialog
 
-
 MAX_PIXEL_COUNT = 40000000
 SUPPORTED_EXTENSIONS = [".tif", ".tiff"]
 
@@ -1884,7 +1883,7 @@ class Controller(object):
 
                 return
 
-            (df, labeled_images) = self._model.create_training_df(usable_data)
+            df, labeled_images = self._model.create_training_df(usable_data)
             df.sort_values(by=["FID", "COD"], inplace=True, ignore_index=True)
 
             file = self._save_file("sav")

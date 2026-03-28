@@ -12,7 +12,6 @@ from typing import Tuple, Union, List
 from matplotlib.colors import ListedColormap
 from desktop_app.src.auto_scrollbar import AutoScrollbar
 
-
 # constants
 MAX_PIXEL_COUNT = 40000000
 

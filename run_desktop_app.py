@@ -6,7 +6,6 @@ import desktop_app.src.controller as controller
 from model import persistence
 from desktop_app.src.view_model import ViewModel
 
-
 if __name__ == "__main__":
     CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/resources/config.sample.json"
     try:

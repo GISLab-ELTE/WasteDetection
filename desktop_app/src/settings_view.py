@@ -4,7 +4,6 @@ import ttkbootstrap as ttk
 from typing import List, Dict
 from ttkbootstrap.tooltip import ToolTip
 
-
 THEME = "lumen"
 SIZE = "1450x830"
 

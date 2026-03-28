@@ -9,7 +9,7 @@ from datetime import datetime
 from flask_migrate import Migrate
 from sqlalchemy.exc import IntegrityError
 from flask import Flask, jsonify, request
-from model.model import FloodPrediction
+from model.flood_prediction import FloodPrediction
 from models import db, User, SatelliteImage, Annotation
 from flask_login import (
     LoginManager,
@@ -18,13 +18,9 @@ from flask_login import (
     login_required,
     current_user,
 )
-import math
 import requests
-import geopandas as gpd
-import rasterio
 from shapely.geometry import Point
 from pyproj import Transformer
-from models import db
 
 # Create app
 app = Flask(__name__)
@@ -539,7 +535,7 @@ def flood_forecast():
     # Determine flood zones
     # DISABLED TEMPORARILY
     zones = ["not computed"]
-    # zones = FloodPrediction.check_flood_zone(deposit_point, FLOOD_ZONES, DEM_CRS)
+    # zones = FloodPrediction.check_flood_zone(deposit_point, FLOOD_ZONES, POINT_CRS)
     deposit_feature = build_deposit_feature(lon, lat, deposit_elevation, avg_abs_level, zones, river)
 
     # Combine deposit and station features to geosjon

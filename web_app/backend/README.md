@@ -13,8 +13,8 @@ The application expects the following environment variables:
 | `API_URL`                 | Flood forecast API URL (e.g., `https://hydroinfo.hu/WSCSS/ovszws/api.php`)                     |
 | `OVSZ_TOKEN`              | API token for accessing the external flood forecast service.                                   |
 | `VARID`                   | Numerical identifier for API request parameters (e.g. `4`).                                    |
-| `data_folder`             | Base path to where your spatial files (TIFF/Shape) are located.                                |
-| `HUNGARY_ELEVATION_MODEL` | DEM raster file name relative to `data_folder`.                                                |
+| `DATA_FOLDER`             | Base path to where your spatial files (TIFF/Shape) are located.                                |
+| `HUNGARY_ELEVATION_MODEL` | DEM raster file name relative to `DATA_FOLDER`.                                                |
 | `STATIONS_DISTANCE_LIMIT` | Max distance (in meters) from deposit to stations (default: `40000`).                          |
 | `FLOOD_ZONE_MEDIUM`       | Shapefile path for medium flood zones.                                                         |
 | `FLOOD_ZONE_LOW`          | Shapefile path for low flood zones.                                                            |
@@ -57,7 +57,7 @@ docker run -d --name web_app_backend_container \
   -e API_URL="https://hydroinfo.hu/WSCSS/ovszws/api.php" \
   -e OVSZ_TOKEN="your_token" \
   -e VARID=4 \
-  -e data_folder="/app/data" \
+  -e DATA_FOLDER="/app/data" \
   -e HUNGARY_ELEVATION_MODEL="output_slope.tif" \
   -e STATIONS_DISTANCE_LIMIT=40000 \
   -e FLOOD_ZONE_MEDIUM="HU_HU1000/HU_HU1000_HMP_20140322.shp" \
@@ -78,6 +78,9 @@ docker run -d --name web_app_backend_container \
 ## Running Locally (without Docker)
 
 Make sure you have Python, PostgreSQL, and PostGIS installed.
+
+The backend's flood forecast route now depends only on the lightweight `model/flood_prediction.py`
+module, so ML packages such as PyTorch are not required for the web backend environment.
 
 ```bash
 export $(cat .env | xargs)  # Or use direnv
