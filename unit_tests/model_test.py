@@ -5,7 +5,6 @@ import model.persistence as persistence
 
 from desktop_app.src.view_model import ViewModel
 
-
 DEFAULT_RF_PATH = "desktop_app/clf/random_forest_model.sav"
 CONFIG_FILE_NAME_DESKTOP_APP = "desktop_app/resources/config.sample.json"
 

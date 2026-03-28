@@ -36,7 +36,7 @@ class FloodPrediction:
         x, y = transformer.transform(point.x, point.y)
         with rasterio.open(dem_path) as dem:
             if not (dem.bounds.left <= x <= dem.bounds.right and dem.bounds.bottom <= y <= dem.bounds.top):
-                raise ValueError(f'Point ({x}, {y}) is outside DEM extent {dem.bounds}')
+                raise ValueError(f"Point ({x}, {y}) is outside DEM extent {dem.bounds}")
             row, col = dem.index(x, y)
             return float(dem.read(1)[row, col])
 

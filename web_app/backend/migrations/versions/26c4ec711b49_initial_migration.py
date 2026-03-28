@@ -10,7 +10,6 @@ from alembic import op
 import geoalchemy2
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
 revision = "26c4ec711b49"
 down_revision = None
