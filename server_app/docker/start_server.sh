@@ -31,6 +31,6 @@ elif echo "${ARGS[@]}" | grep -qw "classify"; then
 fi;
 
 source /opt/conda/etc/profile.d/conda.sh
-conda activate WasteDetection
+conda activate WasteDetection-ServerApp
 
 python run_server_app.py "${PYTHON_ARGS[@]}"

@@ -2,6 +2,22 @@
 
 Automated waste detection and change analysis based on multispectral satellite imagery, written in Python.
 
+## Conda environments
+
+Previous releases contained a root `environment.yml` that contained dependencies for all Python subprojects.  
+For leaner installs, we have switched to use the dedicated environment files for the subprojects:
+
+- `desktop_app/environment.yml` for the [Desktop Application](desktop_app/README.md)
+- `server_app/environment.yml` for the [Server Application](server_app/README.md)
+- `web_app/backend/environment.yml` for the [Web Backend Application](web_app/backend/README.md)
+
+Example:
+
+```bash
+conda env create -f desktop_app/environment.yml
+conda activate WasteDetection-DesktopApp
+```
+
 # Desktop Application
 
 This application is designed primarily to facilitate the work of waste collection organisations. The aim was to implement waste detection methods that could be used in practice and make the work of organisations faster and more efficient. The solution developed is compatible with any satellite imagery with at least four bands, which must include the _Blue_, _Green_, _Red_, _Near Infrared_ bands.

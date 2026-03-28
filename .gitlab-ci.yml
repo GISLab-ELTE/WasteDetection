@@ -6,7 +6,7 @@ workflow:
 
 variables:
   DS_EXCLUDED_ANALYZERS: gemnasium-python
-  IMAGE_NAME_BASE: "$CI_REGISTRY_IMAGE/base"
+  IMAGE_NAME_DESKTOP: "$CI_REGISTRY_IMAGE/desktop_app"
   IMAGE_NAME_SERVER: "$CI_REGISTRY_IMAGE/server_app"
   IMAGE_NAME_WEB_BACKEND: "$CI_REGISTRY_IMAGE/web_app_backend"
   CONTAINER_NAME_WEB_BACKEND: "web_app_backend_container"
@@ -61,15 +61,22 @@ lint:prettier:
 lint:package:
   image: mambaorg/micromamba
   stage: lint
+  parallel:
+    matrix:
+      - APP_PATH: desktop_app
+      - APP_PATH: server_app
+      - APP_PATH: web_app/backend
   script:
-    - micromamba env create -f environment.yml -n TestEnv --dry-run
+    - micromamba env create -f $APP_PATH/environment.yml -n TestEnv --dry-run
   rules:
     - changes:
-        - environment.yml
+        - desktop_app/environment.yml
+        - server_app/environment.yml
+        - web_app/backend/environment.yml
 
 # Tests
 unittest:
-  image: "$IMAGE_NAME_BASE"
+  image: "$IMAGE_NAME_DESKTOP"
   stage: test
   before_script:
     # Configure shell for Anaconda (called in ~/.bashrc, but in CI the shell is not interactive)
@@ -79,7 +86,7 @@ unittest:
     - conda info
   script:
     # Activate environment
-    - conda activate WasteDetection
+    - conda activate WasteDetection-DesktopApp
     # Run unit tests
     - python -m unittest discover -s ./unit_tests -p *_test.py
 
@@ -105,7 +112,7 @@ webapp-build:
   # Login to GitLab Container Registry
   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
-baseimage:
+desktopapp:
   stage: build
   image: docker:latest
   tags:
@@ -117,20 +124,20 @@ baseimage:
     - *docker-login
   script:
     # Build Docker image
-    - docker build $IMAGE_FOLDER --pull --target base -t "$IMAGE_NAME_BASE:latest"
+    - docker build $IMAGE_FOLDER --pull --target desktop_app -t "$IMAGE_NAME_DESKTOP:latest"
     # Push Docker image to registries
-    - docker push "$IMAGE_NAME_BASE:latest"
+    - docker push "$IMAGE_NAME_DESKTOP:latest"
     # Remove old, now dangling versions of the image
-    - DANGLING_NUMBER=$(docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_BASE"  --format "{{.ID}}" | wc -l)
+    - DANGLING_NUMBER=$(docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_DESKTOP"  --format "{{.ID}}" | wc -l)
     - >
       if [ $DANGLING_NUMBER -gt 0 ]; then
-         docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_BASE" --format "{{.ID}}" | xargs docker image rm
+         docker image ls --filter "dangling=true" --filter "reference=$IMAGE_NAME_DESKTOP" --format "{{.ID}}" | xargs docker image rm
       fi
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       changes:
         - Dockerfile
-        - environment.yml
+        - desktop_app/environment.yml
         - .gitlab-ci.yml
 
 serverapp:
@@ -215,5 +222,6 @@ webapp-backend:
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       changes:
+        - Dockerfile
         - web_app/backend/**/*
         - .gitlab-ci.yml
