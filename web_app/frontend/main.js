@@ -31,6 +31,7 @@ if (!import.meta.env.VITE_GEOSERVER_URL) {
   throw new Error("GEOSERVER_URL is not defined in the environment variables.");
 }
 const wmsUrl = import.meta.env.VITE_GEOSERVER_URL;
+const defaultLocation = import.meta.env.VITE_DEFAULT_LOCATION || "";
 
 // Variables
 var geojsonLayerGroup;
@@ -300,7 +301,6 @@ if (floodPredictionLayers?.length > 0) {
   map.addLayer(
     new LayerGroup({
       title: "Flood prediction",
-      visible: false,
       layers: floodPredictionLayers,
     }),
   );
@@ -450,8 +450,8 @@ const fetchLocations = async function () {
     const option = document.createElement("option");
     option.value = location.id;
     option.text = location.name;
-    if (index === 0) {
-      option.selected = true; // Select the first option by default
+    if (defaultLocation ? location.id === defaultLocation : index === 0) {
+      option.selected = true;
     }
     locationSelect.add(option);
   });
