@@ -33,15 +33,16 @@ If you want to override an environment variable, you should create a local .env 
 
 ### Variables
 
-| Name                       | Description                                                                                                                         |
-| :------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_BASE_URL`            | Frontend application base URL. Only used in `vite.config.ts`. In the code, the built-in `BASE_URL` variable should be used instead. |
-| `VITE_DATA_URL`            | Backend data URL hosting the satellite imagery and the produced classification data.                                                |
-| `VITE_FLASK_URL`           | Backend Flask service URL hosting the annotation service.                                                                           |
-| `VITE_GEOSERVER_URL`       | Backend GeoServer URL hosting the TileWMS for flood zone maps.                                                                      |
-| `VITE_GOOGLE_MAPS_API_KEY` | Google Maps API key.                                                                                                                |
-| `VITE_STADIA_MAPS_API_KEY` | Stadia Maps API key.                                                                                                                |
-| `VITE_DEFAULT_LOCATION`    | Default selected location `id` from `locations.json`. If empty or unset, the first location is selected.                            |
+| Name                           | Description                                                                                                                         |
+| :----------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_BASE_URL`                | Frontend application base URL. Only used in `vite.config.ts`. In the code, the built-in `BASE_URL` variable should be used instead. |
+| `VITE_DATA_URL`                | Backend data URL hosting the satellite imagery and the produced classification data.                                                |
+| `VITE_FLASK_URL`               | Backend Flask service URL hosting the annotation service.                                                                           |
+| `VITE_GEOSERVER_URL`           | Backend GeoServer URL hosting the TileWMS for flood zone maps.                                                                      |
+| `VITE_GOOGLE_MAPS_API_KEY`     | Google Maps API key.                                                                                                                |
+| `VITE_STADIA_MAPS_API_KEY`     | Stadia Maps API key.                                                                                                                |
+| `VITE_DEFAULT_LOCATION`        | Default selected location `id` from `locations.json`. If empty or unset, the first location is selected.                            |
+| `VITE_DEFAULT_HEATMAP_LEVEL`   | Minimum heatmap level enabled by default. Accepted values: `low`, `medium`, `high`, `none`. Defaults to `high`.                     |
 
 ## Configuration Files
 

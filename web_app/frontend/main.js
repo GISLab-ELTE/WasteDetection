@@ -32,6 +32,19 @@ if (!import.meta.env.VITE_GEOSERVER_URL) {
 }
 const wmsUrl = import.meta.env.VITE_GEOSERVER_URL;
 const defaultLocation = import.meta.env.VITE_DEFAULT_LOCATION || "";
+const defaultHeatmapLevel = (
+  import.meta.env.VITE_DEFAULT_HEATMAP_LEVEL || "high"
+).toLowerCase();
+
+// Determine default heatmap visibility based on the configured level.
+// "low" enables all three, "medium" enables medium+high, "high" enables only high, "none" disables all.
+const heatmapLevels = ["low", "medium", "high"];
+const heatmapThreshold = heatmapLevels.indexOf(defaultHeatmapLevel);
+const defaultHeatmapVisibility = {
+  low: heatmapThreshold >= 0 && heatmapThreshold <= 0,
+  medium: heatmapThreshold >= 0 && heatmapThreshold <= 1,
+  high: heatmapThreshold >= 0 && heatmapThreshold <= 2,
+};
 
 // Variables
 var geojsonLayerGroup;
@@ -118,17 +131,17 @@ const layerClassified = new VectorLayer({
 const layerHeatmapLow = new VectorLayer({
   title: "Heatmap Low",
   style: styleFunctionHeatmapLow,
-  visible: false,
+  visible: defaultHeatmapVisibility.low,
 });
 const layerHeatmapMedium = new VectorLayer({
   title: "Heatmap Medium",
   style: styleFunctionHeatmapMedium,
-  visible: false,
+  visible: defaultHeatmapVisibility.medium,
 });
 const layerHeatmapHigh = new VectorLayer({
   title: "Heatmap High",
   style: styleFunctionHeatmapHigh,
-  visible: true,
+  visible: defaultHeatmapVisibility.high,
 });
 const layerDraw = new VectorLayer({
   source: sourceDraw,
