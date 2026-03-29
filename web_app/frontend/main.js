@@ -175,7 +175,7 @@ async function createFloodLayers(floodLayerConfigs) {
   var layers = floodLayerConfigs.filter(Boolean).map((config) => {
     return new TileLayer({
       title: config.title,
-      visible: true,
+      visible: false,
       source: new TileWMS({
         url: wmsUrl,
         params: {
