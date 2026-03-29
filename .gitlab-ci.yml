@@ -11,6 +11,9 @@ variables:
   IMAGE_NAME_WEB_BACKEND: "$CI_REGISTRY_IMAGE/web_app_backend"
   CONTAINER_NAME_WEB_BACKEND: "web_app_backend_container"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  DEPLOY_AQPLA:
+    value: "false"
+    description: "Set to 'true' to build and deploy the AQPLA frontend"
 
 include:
   - template: Jobs/Dependency-Scanning.gitlab-ci.yml
@@ -124,8 +127,7 @@ webapp-build-aqpla:
       - web_app/frontend/dist/
     expire_in: 1 week
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-      when: manual
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH && $DEPLOY_AQPLA == "true"
 
 # Docker images
 .docker-login: &docker-login
@@ -233,11 +235,7 @@ webapp-frontend-aqpla:
     name: aqpla
     url: https://gis.inf.elte.hu/aqpla
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-      changes:
-        - web_app/**/*
-        - .gitlab-ci.yml
-      when: manual
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH && $DEPLOY_AQPLA == "true"
 
 webapp-backend:
   stage: deploy
