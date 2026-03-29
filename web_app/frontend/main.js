@@ -300,6 +300,7 @@ if (floodPredictionLayers?.length > 0) {
   map.addLayer(
     new LayerGroup({
       title: "Flood prediction",
+      visible: false,
       layers: floodPredictionLayers,
     }),
   );
