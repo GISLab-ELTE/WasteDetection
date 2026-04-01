@@ -23,13 +23,20 @@ import { Circle as CircleStyle } from "ol/style";
 
 // Constant values
 const baseUrl = import.meta.env.VITE_DATA_URL;
-const flaskUrl = import.meta.env.VITE_FLASK_URL;
+const flaskUrl = import.meta.env.VITE_FLASK_URL || null;
+if (!flaskUrl) {
+  console.warn(
+    "VITE_FLASK_URL is not defined or empty. Login, annotation, and flood forecast features will be disabled.",
+  );
+}
 const googleKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const stadiaKey = import.meta.env.VITE_STADIA_MAPS_API_KEY;
 const drawType = "Polygon";
 const wmsUrl = import.meta.env.VITE_GEOSERVER_URL || "";
 if (!wmsUrl) {
-  console.warn("VITE_GEOSERVER_URL is not defined or empty. Flood prediction and GeoServer-related features will be disabled.");
+  console.warn(
+    "VITE_GEOSERVER_URL is not defined or empty. Flood prediction and GeoServer-related features will be disabled.",
+  );
 }
 const defaultLocation = import.meta.env.VITE_DEFAULT_LOCATION || "";
 const defaultHeatmapLevel = (
@@ -184,10 +191,7 @@ async function isGeoServerAvailable() {
 
 async function createFloodLayers(floodLayerConfigs) {
   const available = await isGeoServerAvailable();
-  if (!available) {
-    console.warn(`Flood prediction is temporarily disabled.`);
-    return [];
-  }
+  if (!available) return [];
 
   var layers = floodLayerConfigs.filter(Boolean).map((config) => {
     return new TileLayer({
@@ -594,6 +598,8 @@ const removeAnnotation = function () {
 };
 
 const checkLoginStatus = async function () {
+  if (!flaskUrl) return null;
+
   try {
     const response = await fetch(flaskUrl + "check-login", {
       method: "GET",
@@ -613,8 +619,8 @@ const checkLoginStatus = async function () {
 };
 
 const changeElemsBasedOnLoginStatus = async function () {
-  var loginStatus = await checkLoginStatus();
   const loginLogoutButton = document.getElementById("login-button");
+  var loginStatus = flaskUrl && (await checkLoginStatus());
 
   if (!loginStatus) {
     loginLogoutButton.style.display = "none";
@@ -634,6 +640,8 @@ const changeElemsBasedOnLoginStatus = async function () {
 };
 
 const getUserId = async function () {
+  if (!flaskUrl) return null;
+
   try {
     const response = await fetch(flaskUrl + "check-login", {
       method: "GET",
@@ -662,8 +670,9 @@ const getFilenameFromSrc = function (src) {
 };
 
 const getSatelliteImageId = async function (src) {
-  const filename = getFilenameFromSrc(src);
+  if (!flaskUrl) return null;
 
+  const filename = getFilenameFromSrc(src);
   try {
     const response = await fetch(flaskUrl + "get-satellite-image-id", {
       method: "POST",
@@ -687,6 +696,8 @@ const getSatelliteImageId = async function (src) {
 };
 
 const logout = function () {
+  if (!flaskUrl) return;
+
   fetch(flaskUrl + "logout", {
     method: "POST",
     credentials: "include",
@@ -709,6 +720,8 @@ const createWKTPolygon = function (coordinates) {
 };
 
 const postAnnotation = function (satellite_image_id, user_id, geom, waste) {
+  if (!flaskUrl) return;
+
   fetch(flaskUrl + "annotations", {
     method: "POST",
     headers: {
@@ -825,6 +838,8 @@ function showPopup(coordinate, htmlContent) {
 }
 
 map.on("click", function (evt) {
+  if (!flaskUrl) return;
+
   let clickedFeature = null;
   map.forEachFeatureAtPixel(evt.pixel, function (feature) {
     clickedFeature = feature;
