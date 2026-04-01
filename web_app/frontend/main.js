@@ -23,14 +23,24 @@ import { Circle as CircleStyle } from "ol/style";
 
 // Constant values
 const baseUrl = import.meta.env.VITE_DATA_URL;
-const flaskUrl = import.meta.env.VITE_FLASK_URL || null;
+const flaskUrl = import.meta.env.VITE_FLASK_URL || "";
 if (!flaskUrl) {
   console.warn(
     "VITE_FLASK_URL is not defined or empty. Login, annotation, and flood forecast features will be disabled.",
   );
 }
-const googleKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-const stadiaKey = import.meta.env.VITE_STADIA_MAPS_API_KEY;
+const googleKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+if (!googleKey) {
+  console.warn(
+    "VITE_GOOGLE_MAPS_API_KEY is not defined or empty. Google Maps basemap layer will be disabled.",
+  );
+}
+const stadiaKey = import.meta.env.VITE_STADIA_MAPS_API_KEY || "";
+if (!stadiaKey) {
+  console.warn(
+    "VITE_STADIA_MAPS_API_KEY is not defined or empty. Stadia basemap layers will be disabled.",
+  );
+}
 const drawType = "Polygon";
 const wmsUrl = import.meta.env.VITE_GEOSERVER_URL || "";
 if (!wmsUrl) {
@@ -277,34 +287,42 @@ const map = new Map({
           visible: true, // default selected
           source: new OSM(),
         }),
-        new TileLayer({
-          title: "Google Roads",
-          type: "base",
-          visible: false,
-          source: new Google({
-            key: googleKey,
-            mapType: "roadmap",
-          }),
-        }),
+        ...(googleKey
+          ? [
+              new TileLayer({
+                title: "Google Roads",
+                type: "base",
+                visible: false,
+                source: new Google({
+                  key: googleKey,
+                  mapType: "roadmap",
+                }),
+              }),
+            ]
+          : []),
+        ...(stadiaKey
+          ? [
+              new TileLayer({
+                title: "Stadia Terrain",
+                type: "base",
+                visible: false,
+                source: new XYZ({
+                  url: `https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png?api_key=${stadiaKey}`,
+                }),
+              }),
+            ]
+          : []),
         // Remove Stadia Satellite layer temporarily due to requiring paid plan
         /*
-        new TileLayer({
-          title: "Stadia Satellite",
-          type: "base",
-          visible: false,
-          source: new XYZ({
-            url: `https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.png?api_key=${stadiaKey}`,
-          }),
-        }),
-        */
-        new TileLayer({
-          title: "Stadia Terrain",
-          type: "base",
-          visible: false,
-          source: new XYZ({
-            url: `https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png?api_key=${stadiaKey}`,
-          }),
-        }),
+            new TileLayer({
+              title: "Stadia Satellite",
+              type: "base",
+              visible: false,
+              source: new XYZ({
+                url: `https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.png?api_key=${stadiaKey}`,
+              }),
+            }),
+           */
       ],
     }),
   ],
