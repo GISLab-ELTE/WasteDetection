@@ -27,10 +27,10 @@ const flaskUrl = import.meta.env.VITE_FLASK_URL;
 const googleKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const stadiaKey = import.meta.env.VITE_STADIA_MAPS_API_KEY;
 const drawType = "Polygon";
-if (!import.meta.env.VITE_GEOSERVER_URL) {
-  throw new Error("GEOSERVER_URL is not defined in the environment variables.");
+const wmsUrl = import.meta.env.VITE_GEOSERVER_URL || "";
+if (!wmsUrl) {
+  console.warn("VITE_GEOSERVER_URL is not defined or empty. Flood prediction and GeoServer-related features will be disabled.");
 }
-const wmsUrl = import.meta.env.VITE_GEOSERVER_URL;
 const defaultLocation = import.meta.env.VITE_DEFAULT_LOCATION || "";
 const defaultHeatmapLevel = (
   import.meta.env.VITE_DEFAULT_HEATMAP_LEVEL || "high"
@@ -171,6 +171,9 @@ const floodLayerConfigs = [
 ];
 
 async function isGeoServerAvailable() {
+  if (!wmsUrl) {
+    return false;
+  }
   try {
     const res = await fetch(wmsUrl + "?service=WMS&request=GetCapabilities");
     return res.ok;
