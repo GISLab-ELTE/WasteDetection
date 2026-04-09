@@ -213,58 +213,6 @@ class SentinelAPI(BaseAPI):
                     print(f"Error downloading {feature_id} at {timestamp}: {e}")
                     continue
 
-    def create_metadata_records(self) -> None:
-        """
-        Creates metadata records using the `download_results` field to upload to web_app.
-        Stores the results in the `metadata_records` and clears the `download_results` to
-        avoid data duplication.
-
-        :return: None
-        """
-
-        for timestamp, request_obj in self.download_results:
-            filenames = request_obj.get_filename_list()
-            if not filenames:
-                continue
-
-            path = Path(request_obj.data_folder) / filenames[0]
-            with rasterio.open(path) as src:
-                abs_min, abs_max = self.image_stats(src)
-                self.metadata_records.append(
-                    {
-                        "filename": str(path.resolve()),
-                        "acquisition_date": timestamp.strftime("%Y-%m-%d"),
-                        "min": abs_min,
-                        "max": abs_max,
-                        "satellite_type": "Sentinel-2 L2A",
-                        "src": "ESA",
-                    }
-                )
-
-        self.download_results.clear()
-
-    def image_stats(self, src: rasterio.DatasetReader) -> Tuple[float, float]:
-        """
-        Calculates global maximum and minimum values of the image across all bands.
-
-        :param src: the rasterio DatasetReader
-        :return: (min, max) pair
-        """
-        all_mins = []
-        all_maxs = []
-
-        for i in src.indexes:
-            band_data = src.read(i, masked=True)
-
-            if band_data.count() > 0:
-                all_mins.append(float(band_data.min()))
-                all_maxs.append(float(band_data.max()))
-
-        if not all_mins:
-            return 0.0, 0.0
-
-        return min(all_mins), max(all_maxs)
-
     @staticmethod
     def generate_evalscript(masking: bool, with_swir: bool) -> str:
         """

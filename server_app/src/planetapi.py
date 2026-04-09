@@ -387,57 +387,6 @@ class PlanetAPI(BaseAPI):
 
         return True
 
-    # TODO: Test metadata creation with Planet.
-    def create_metadata_records(self) -> Tuple[float, float]:
-        """
-        Calculates the min and max values of an image, excluding NoData (0).
-
-        :param image_data: A numpy array representing the image band.
-        :return: A tuple of (min, max) as floats.
-        """
-
-        for timestamp, path in self.download_results:
-            try:
-                with rasterio.open(path) as src:
-                    abs_min, abs_max = self.image_stats(src)
-                    metadata = {
-                        "filename": str(path.resolve()),
-                        "acquisition_date": timestamp,
-                        "min": abs_min,
-                        "max": abs_max,
-                        "satellite_type": "PlanetScope",
-                        "src": "Planet Labs",
-                    }
-                    self.metadata_records.append(metadata)
-
-            except Exception as e:
-                print(f"Error processing {path.name}: {e}")
-                continue
-
-        self.download_results.clear()
-
-    def image_stats(self, src: rasterio.DatasetReader) -> Tuple[float, float]:
-        """
-        Calculates global maximum and minimum values of the image across all bands.
-
-        :param src: the rasterio DatasetReader
-        :return: (min, max) pair
-        """
-        all_mins = []
-        all_maxs = []
-
-        for i in src.indexes:
-            band_data = src.read(i, masked=True)
-
-            if band_data.count() > 0:
-                all_mins.append(float(band_data.min()))
-                all_maxs.append(float(band_data.max()))
-
-        if not all_mins:
-            return 0.0, 0.0
-
-        return min(all_mins), max(all_maxs)
-
     @staticmethod
     def calculate_coverage(feature: Dict, item: Dict) -> float:
         """

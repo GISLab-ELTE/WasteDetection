@@ -469,6 +469,44 @@ class Process(object):
             and self.model.persistence.web_app_auth_password
         )
 
+    def create_metadata_records(self) -> List:
+        """
+        Creates metadata records using the `api.download_results` to upload to web_app.
+        Returns the created metadata.
+        :return: List of metadata records.
+        """
+
+        satellite_type, src = None, None
+        if self.satellite_type == "planetscope":
+            satellite_type, src = "PlanetScope", "Planet Labs"
+        elif self.satellite_type == "sentinel-2":
+            satellite_type, src = "Sentinel-2 L2A", "ESA"
+
+        metadata_records = []
+        satellite_images_path = Path(self.join_path("workspace_root_dir", "satellite_images_path")).parent
+        for timestamp, request_obj in self.api.download_results:
+            filenames = request_obj.get_filename_list()
+            if not filenames:
+                continue
+
+            path = Path(request_obj.data_folder) / filenames[0]
+            relpath = path.relative_to(satellite_images_path)
+            min_val, max_val = self.model.get_min_max_value_of_band(path, 3)
+            min_val, max_val = float(min_val), float(max_val)
+            metadata_records.append(
+                {
+                    "filename": str(relpath),
+                    "acquisition_date": timestamp.strftime("%Y-%m-%d"),
+                    "min": min_val,
+                    "max": max_val,
+                    "satellite_type": satellite_type,
+                    "src": src,
+                }
+            )
+
+        self.api.download_results.clear()
+        return metadata_records
+
     def handle_metadata_upload(self) -> None:
         """
         Orchestrates the creation and upload of metadata.
@@ -478,12 +516,11 @@ class Process(object):
             return
         logging.info("Preparing metadata records for upload...")
         try:
-            self.api.create_metadata_records()
+            records = self.create_metadata_records()
         except Exception as e:
             logging.error(f"Failed to create metadata records: {e}")
             return
 
-        records = self.api.metadata_records
         all_uploads = len(records) if records else 0
         if all_uploads == 0:
             logging.info("No metadata records were generated. Skipping upload.")

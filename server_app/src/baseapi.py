@@ -63,15 +63,3 @@ class BaseAPI(ABC):
         """
 
         pass
-
-    @abstractmethod
-    def create_metadata_records(self) -> None:
-        """
-        Creates metadata records using the `download_results` field to upload to web_app.
-        Stores the results in the `metadata_records` and clears the `download_results` to
-        avoid data duplication.
-
-        :return: None
-        """
-
-        pass
