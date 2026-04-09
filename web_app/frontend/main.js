@@ -653,9 +653,9 @@ const getUserId = async function () {
 };
 
 const getFilenameFromSrc = function (src) {
-  const parts = src.split("/");
-  const lastElement = parts[parts.length - 1];
-  return lastElement;
+  const url = new URL(src);
+  const subPath = url.pathname.substring(1);
+  return subPath;
 };
 
 const getSatelliteImageId = async function (src) {
