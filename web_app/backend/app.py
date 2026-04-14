@@ -28,7 +28,9 @@ app = Flask(__name__)
 # Configure application and logger
 Config.check_env_variables()
 app.config.from_object(Config)
-app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=(os.getenv("SESSION_COOKIE_SECURE") == "True"))
+cookieSecure = os.getenv("SESSION_COOKIE_SECURE", default="True") == "True"
+cookieSameSite = os.getenv("SESSION_COOKIE_SAMESITE", default="Lax")
+app.config.update(SESSION_COOKIE_SECURE=cookieSecure, SESSION_COOKIE_SAMESITE=cookieSameSite)
 gunicorn_logger = logging.getLogger("gunicorn.error")
 app.logger.handlers = gunicorn_logger.handlers
 app.logger.setLevel(gunicorn_logger.level)
