@@ -40,6 +40,8 @@ class PlanetAPI(BaseAPI):
         self.orders_url = None
         self.id_url = None
         self.item_type = None
+        self.product_bundle = "analytic_sr_udm2"
+        self.required_permissions = PlanetAPI.get_required_permissions(self.product_bundle)
         self.auth = None
         self.headers = None
 
@@ -62,6 +64,8 @@ class PlanetAPI(BaseAPI):
         self.search_url = self.settings.planet_search_url
         self.orders_url = self.settings.planet_orders_url
         self.item_type = self.settings.planet_item_type
+        self.product_bundle = getattr(self.settings, "planet_product_bundle", self.product_bundle)
+        self.required_permissions = PlanetAPI.get_required_permissions(self.product_bundle)
         self.auth = HTTPBasicAuth(self.api_key, "")
         self.headers = {"content-type": "application/json"}
 
@@ -112,6 +116,7 @@ class PlanetAPI(BaseAPI):
             )
 
             geojson["features"] = self.filter_by_coverage(feature, geojson["features"])
+            geojson["features"] = self.filter_by_permissions(geojson["features"])
             feature_id = feature["properties"]["id"]
             time_difference = dt.timedelta(hours=12)
             image_ids = PlanetAPI.get_image_ids(geojson)
@@ -135,8 +140,8 @@ class PlanetAPI(BaseAPI):
                 products = [
                     {
                         "item_ids": [product],
-                        "item_type": "PSScene",
-                        "product_bundle": "analytic_sr_udm2",
+                        "item_type": self.item_type,
+                        "product_bundle": self.product_bundle,
                     }
                 ]
 
@@ -153,7 +158,11 @@ class PlanetAPI(BaseAPI):
                 date_time_obj = dt.datetime.strptime("_".join(product.split("_")[:2]), "%Y%m%d_%H%M%S")
                 date_time_str = dt.datetime.strftime(date_time_obj, "%Y-%m-%d")
 
-                order_url = self.place_order(request_clip)
+                try:
+                    order_url = self.place_order(request_clip)
+                except Exception as e:
+                    print(f"Failed to place order for Planet item {product}. Skipping. Error: {e}")
+                    continue
 
                 if feature["properties"]["id"] not in self.order_urls.keys():
                     self.order_urls[feature["properties"]["id"]] = dict()
@@ -186,7 +195,12 @@ class PlanetAPI(BaseAPI):
                     order_id, order_state = self.get_state(self.order_urls[feature][date][0])
 
                     if order_state in success_states:
-                        success = self.download_order(feature, date, self.order_urls[feature][date][0])
+                        try:
+                            success = self.download_order(feature, date, self.order_urls[feature][date][0])
+                        except Exception as e:
+                            print(f"Failed to download order for {feature} on {date}. Error: {e}")
+                            self.order_urls[feature][date][1] = "failed"
+                            continue
                         if not success:
                             time.sleep(2)
                             continue
@@ -293,6 +307,24 @@ class PlanetAPI(BaseAPI):
             )
         )
 
+    def filter_by_permissions(self, items: List[Dict]) -> List[Dict]:
+        """
+        Keeps only items that contain all required permissions for the selected bundle.
+
+        :param items: Search result items.
+        :return: Search result items where all required permissions are present.
+        """
+
+        if len(self.required_permissions) == 0:
+            return items
+
+        return list(
+            filter(
+                lambda item: set(self.required_permissions).issubset(set(item.get("_permissions", []))),
+                items,
+            )
+        )
+
     def place_order(self, request: Dict) -> str:
         """
         Places the order with set parameters.
@@ -310,7 +342,24 @@ class PlanetAPI(BaseAPI):
         print(response)
 
         if not response.ok:
-            raise Exception(response.content)
+            try:
+                error_message = response.json()
+            except ValueError:
+                raise Exception(response.content)
+
+            details = error_message.get("field", {}).get("Details", [])
+            if details:
+                detail_messages = ", ".join(detail.get("message", "Unknown details") for detail in details)
+                raise Exception(
+                    "Planet order rejected. "
+                    f"No access to requested assets for bundle '{self.product_bundle}' "
+                    f"(item type '{self.item_type}'). Details: {detail_messages}. "
+                    "Use a product bundle your account is entitled to "
+                    "(set 'planet_product_bundle' in your config.local.json), "
+                    "or use imagery older than your account delay window."
+                )
+
+            raise Exception(error_message)
 
         order_id = response.json()["id"]
         print("Order id:", order_id)
@@ -414,6 +463,32 @@ class PlanetAPI(BaseAPI):
 
         image_ids = [feature["id"] for feature in geojson["features"]]
         return image_ids
+
+    @staticmethod
+    def get_required_permissions(product_bundle: str) -> List[str]:
+        """
+        Returns minimum permission strings needed for known bundles.
+
+        :param product_bundle: Planet product bundle.
+        :return: Required permission strings for filtering quick-search results.
+        """
+
+        bundle_permissions = {
+            "analytic_sr_udm2": [
+                "assets.ortho_analytic_4b_sr:download",
+                "assets.ortho_udm2:download",
+            ],
+            "analytic_udm2": [
+                "assets.ortho_analytic_4b:download",
+                "assets.ortho_udm2:download",
+            ],
+            "analytic_8b_sr_udm2": [
+                "assets.ortho_analytic_8b_sr:download",
+                "assets.ortho_udm2:download",
+            ],
+        }
+
+        return bundle_permissions.get(product_bundle, [])
 
     @staticmethod
     def get_unique_image_ids(image_ids: List[str], time_difference: dt.timedelta) -> List[str]:

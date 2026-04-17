@@ -68,7 +68,8 @@ Meaning of the parameters in `config.sample.json` file:
 - `water_c_id`: Class ID of water class.
 - `morphology_matrix_size`: Matrix size (N x N) of kernel in morphological transformations.
 - `morphology_iterations`: Number of iterations in morphological transformations.
-- `planet_item_type`: Represents the class of spacecraft and/or processing level of an item (in the Planet API, an item is an entry in our catalog, and generally represents a single logical observation (or scene) captured by a satellite).
+- `planet_item_type`: Represents the class of spacecraft and/or processing level of an item, defaults to `PSScene`. In the Planet API, an item is an entry in our catalog, and generally represents a single logical observation (or scene) captured by a satellite).
+- `planet_product_bundle`: Planet product bundle requested during ordering (default: `analytic_sr_udm2`).
 - `planet_orders_url`: URL for placing orders using Planet API.
 - `planet_search_url`: URL for searching images using Planet API.
 - `download_start_time`: Start time of downloading.

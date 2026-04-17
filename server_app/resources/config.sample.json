@@ -34,6 +34,7 @@
   "morphology_matrix_size": 2,
   "morphology_iterations": 1,
   "planet_item_type": "PSScene",
+  "planet_product_bundle": "analytic_sr_udm2",
   "planet_orders_url": "https://api.planet.com/compute/ops/orders/v2",
   "planet_search_url": "https://api.planet.com/data/v1/quick-search",
   "download_start_time": "08:00:00",
