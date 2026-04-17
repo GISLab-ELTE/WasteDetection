@@ -10,10 +10,7 @@ else
   exit 1
 fi;
 
-if [[ -d "/mnt/output" ]]; then
-  mkdir -p /mnt/output/satellite_images/automatic
-  mkdir -p /mnt/output/webapp_results/automatic
-else
+if [[ ! -d "/mnt/output" ]]; then
   echo "No mounted output directory!"
   exit 1
 fi;
