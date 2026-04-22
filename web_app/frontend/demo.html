@@ -51,10 +51,10 @@
           <label for="model" class="form-label"><b>Model:</b></label>
           <select id="model" class="form-select" aria-label="model"></select>
         </div>
-        <div class="col-12 col-lg-2">
+        <div id="date-selector" class="col-12 col-lg-2">
           <label id="date" class="form-label" for="swipe"><b>Date:</b></label>
         </div>
-        <div class="col-12 col-lg-12">
+        <div id="swipe-container" class="col-12 col-lg-12">
           <input
             id="swipe"
             class="form-range"
@@ -63,6 +63,11 @@
             max="4"
             value="0"
           />
+        </div>
+        <div id="no-images-message" class="col-12" style="display: none">
+          <p class="text-muted fst-italic">
+            No images are available for this location.
+          </p>
         </div>
         <!-- DISABLED TEMPORARILY
         <div class="col-12 col-lg-2">

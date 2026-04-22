@@ -75,6 +75,9 @@ var drawnFeatures = [];
 const selectedAOI = document.getElementById("location");
 const selectedModel = document.getElementById("model");
 const swipe = document.getElementById("swipe");
+const dateSelectorEl = document.getElementById("date-selector");
+const swipeContainer = document.getElementById("swipe-container");
+const noImagesMessage = document.getElementById("no-images-message");
 const annotationContainer = document.getElementById("annotation-popup");
 const annotationCloser = document.getElementById("annotation-popup-closer");
 const annotationSave = document.getElementById("annotation-save");
@@ -432,6 +435,14 @@ const resetSlider = function () {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
 
+  const hasImages = aoisWithDates[model] && aoisWithDates[model][aoi];
+
+  if (dateSelectorEl) dateSelectorEl.style.display = hasImages ? "" : "none";
+  if (swipeContainer) swipeContainer.style.display = hasImages ? "" : "none";
+  if (noImagesMessage) noImagesMessage.style.display = hasImages ? "none" : "";
+
+  if (!hasImages) return;
+
   swipe.value = 0;
   swipe.max = Object.keys(aoisWithDates[model][aoi]).length - 1;
 };
@@ -441,8 +452,14 @@ const changeAOI = function () {
   const model = selectedModel.value;
 
   resetSlider();
-  changeDate(Object.keys(aoisWithDates[model][aoi])[swipe.value]);
-  setAOILayers();
+
+  const hasImages = aoisWithDates[model] && aoisWithDates[model][aoi];
+  if (hasImages) {
+    changeDate(Object.keys(aoisWithDates[model][aoi])[swipe.value]);
+    setAOILayers();
+  } else {
+    removeLayersFromMap();
+  }
 
   // Get bounding box from locations data
   const location = locations.find((loc) => loc.id === aoi);
@@ -519,6 +536,8 @@ const fetchGeojsonPaths = async function () {
 const updateClassification = async function () {
   const aoi = selectedAOI.value;
   const model = selectedModel.value;
+
+  if (!(aoisWithDates[model] && aoisWithDates[model][aoi])) return;
 
   changeDate(Object.keys(aoisWithDates[model][aoi])[swipe.value]);
   setAOILayers(aoi);
